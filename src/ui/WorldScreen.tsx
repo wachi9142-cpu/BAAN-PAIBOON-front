@@ -4,6 +4,8 @@ import { Sky } from '@react-three/drei'
 import { formatClock, formatSavedAt, markCleanExit, periodOfDay, useGame } from '../game/store'
 import { AUTO_SAVE_CHOICES, useSettings } from '../game/settings'
 import { PLACES, PLOTS } from '../game/content/village'
+import { SOUND_PERIODS } from '../game/content/soundscape'
+import { useVillageSoundscape } from '../game/audio/useSoundscape'
 import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
 import { SaveSlots } from './SaveSlots'
@@ -23,6 +25,7 @@ export function WorldScreen() {
   const [menu, setMenu] = useState(false)
 
   useAutoSave()
+  useVillageSoundscape()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -164,6 +167,28 @@ function SaveIndicator() {
   )
 }
 
+function VolumeRow({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: number
+  disabled?: boolean
+  onChange: (v: number) => void
+}) {
+  return (
+    <label className="setting">
+      <span>{label}</span>
+      <span className="vol">
+        <input type="range" min={0} max={1} step={0.05} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
+        <output>{Math.round(value * 100)}</output>
+      </span>
+    </label>
+  )
+}
+
 type MenuView = 'main' | 'settings' | 'slots' | 'confirm-exit' | 'confirm-title' | 'exited'
 
 function GameMenu({ onClose }: { onClose: () => void }) {
@@ -268,6 +293,26 @@ function GameMenu({ onClose }: { onClose: () => void }) {
         {view === 'settings' && (
           <>
             <h2>ตั้งค่าเกม</h2>
+            <div className="setting-group">เสียงและดนตรี</div>
+            <label className="setting">
+              <span>เปิดเพลง</span>
+              <input type="checkbox" checked={settings.musicOn} onChange={(e) => settings.set({ musicOn: e.target.checked })} />
+            </label>
+            <VolumeRow label="ระดับเสียงเพลง" value={settings.musicVolume} disabled={!settings.musicOn} onChange={(musicVolume) => settings.set({ musicVolume })} />
+            <VolumeRow label="เสียงธรรมชาติ" value={settings.ambienceVolume} onChange={(ambienceVolume) => settings.set({ ambienceVolume })} />
+            <VolumeRow label="เสียงเอฟเฟกต์" value={settings.sfxVolume} onChange={(sfxVolume) => settings.set({ sfxVolume })} />
+            <label className="setting">
+              <span>ทดลองฟังช่วงเวลา</span>
+              <select value={settings.soundPreview} onChange={(e) => settings.set({ soundPreview: e.target.value as typeof settings.soundPreview })}>
+                <option value="auto">ตามเวลาในเกม</option>
+                {SOUND_PERIODS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="setting-group">การเล่น</div>
             <label className="setting">
               <span>บันทึกอัตโนมัติ</span>
               <input type="checkbox" checked={settings.autoSave} onChange={(e) => settings.set({ autoSave: e.target.checked })} />
