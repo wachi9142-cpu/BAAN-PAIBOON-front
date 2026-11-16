@@ -39,8 +39,15 @@ export interface Toast {
   tone?: 'info' | 'success' | 'discover'
 }
 
+export type SaveStatus = 'saved' | 'saving' | 'error'
+
 interface GameState {
   save: SaveData | null
+  /** สถานะการบันทึกล่าสุด (ไม่ถูกเซฟ) */
+  saveStatus: SaveStatus
+  lastSavedAt: number | null
+  /** ฟังก์ชันที่ฉาก 3D ลงทะเบียนไว้ เพื่อส่งตำแหน่งล่าสุดเข้าเซฟ */
+  flushWorld: (() => void) | null
   screen: Screen
   /** ตัวละครที่กำลังสร้าง (ยังไม่ได้เซฟ) */
   draft: PlayerProfile | null
@@ -57,6 +64,27 @@ interface GameState {
   setNearby: (id: string | null) => void
   toast: (t: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
+  setFlushWorld: (fn: (() => void) | null) => void
+  /** บันทึกทันที คืนค่า true ถ้าสำเร็จ */
+  saveNow: () => boolean
+  /** บันทึกแล้วกลับหน้าหลัก คืนค่า false ถ้าบันทึกไม่สำเร็จ (ยังไม่ออก) */
+  exitToTitle: (force?: boolean) => boolean
+}
+
+const SAVE_KEY = 'baan-paiboon-save'
+
+/** storage ที่รายงานผลการบันทึกกลับเข้า store (เพื่อแสดงสถานะ/ยืนยันก่อนออก) */
+const trackedStorage = {
+  getItem: (k: string) => localStorage.getItem(k),
+  setItem: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v)
+      useGame.setState({ saveStatus: 'saved', lastSavedAt: Date.now() })
+    } catch {
+      useGame.setState({ saveStatus: 'error' })
+    }
+  },
+  removeItem: (k: string) => localStorage.removeItem(k),
 }
 
 const STARTING_COINS = 200
@@ -68,6 +96,9 @@ export const useGame = create<GameState>()(
   persist(
     (set, get) => ({
       save: null,
+      saveStatus: 'saved',
+      lastSavedAt: null,
+      flushWorld: null,
       screen: 'title',
       draft: null,
       toasts: [],
@@ -131,11 +162,29 @@ export const useGame = create<GameState>()(
         setTimeout(() => get().dismissToast(id), 5000)
       },
       dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
+
+      setFlushWorld: (flushWorld) => set({ flushWorld }),
+
+      saveNow: () => {
+        set({ saveStatus: 'saving' })
+        // ส่งตำแหน่งล่าสุดจากฉาก 3D เข้า save → persist จะเขียนลง storage ทันที
+        get().flushWorld?.()
+        // บังคับเขียนอีกครั้ง แม้ไม่มีอะไรเปลี่ยน
+        trackedStorage.setItem(SAVE_KEY, JSON.stringify({ state: { save: get().save }, version: SAVE_VERSION }))
+        return get().saveStatus === 'saved'
+      },
+
+      exitToTitle: (force = false) => {
+        const ok = get().saveNow()
+        if (!ok && !force) return false
+        set({ screen: 'title', toasts: [], nearbyPlaceId: null, flushWorld: null })
+        return true
+      },
     }),
     {
-      name: 'baan-paiboon-save',
+      name: SAVE_KEY,
       version: SAVE_VERSION,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => trackedStorage),
       // เก็บเฉพาะเซฟ ไม่เก็บสถานะหน้าจอ/แจ้งเตือน
       partialize: (s) => ({ save: s.save }),
       migrate: (persisted) => persisted as { save: SaveData | null },
