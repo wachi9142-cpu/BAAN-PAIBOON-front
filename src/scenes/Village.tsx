@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
-import { Billboard, Text } from '@react-three/drei'
+import { TextSprite } from './TextSprite'
 import {
   PLACES,
   PLOTS,
   ROADS,
   TREES,
-  WORLD_HALF_SIZE,
   type Place,
   type Plot,
   type Road,
@@ -14,8 +13,6 @@ import {
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
 import { House, VillagerHouse, GableRoof } from './models/House'
-
-const FONT = 'https://fonts.gstatic.com/s/mitr/v12/pxiEypw5ucZF8ZcaJIPecmNE.woff'
 
 /** ฉากหมู่บ้านทั้งหมด (สิ่งที่อยู่นิ่ง) */
 export function Village({ playerHouseId, playerName }: { playerHouseId?: string; playerName?: string }) {
@@ -32,6 +29,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
         <PlotMesh key={p.id} plot={p} houseId={playerHouseId} ownerName={playerName} />
       ))}
       <Trees />
+      <Mountains />
     </group>
   )
 }
@@ -39,9 +37,39 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
 function Ground() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[WORLD_HALF_SIZE * 2 + 120, WORLD_HALF_SIZE * 2 + 120]} />
+      <planeGeometry args={[700, 700]} />
       <meshStandardMaterial color="#8fa860" />
     </mesh>
+  )
+}
+
+/** ทิวเขาไกล ๆ รอบหมู่บ้าน (ฉากหลัง เดินไปไม่ถึง) */
+function Mountains() {
+  const peaks = useMemo(() => {
+    const out: { x: number; z: number; r: number; h: number; c: string }[] = []
+    const colors = ['#5f7f5a', '#6b8c63', '#557552', '#738f6a']
+    for (let i = 0; i < 46; i++) {
+      const a = (i / 46) * Math.PI * 2 + Math.sin(i * 3.7) * 0.05
+      const dist = 210 + ((i * 37) % 50)
+      out.push({
+        x: Math.cos(a) * dist,
+        z: Math.sin(a) * dist,
+        r: 28 + ((i * 53) % 26),
+        h: 35 + ((i * 71) % 45),
+        c: colors[i % colors.length],
+      })
+    }
+    return out
+  }, [])
+  return (
+    <group>
+      {peaks.map((p, i) => (
+        <mesh key={i} position={[p.x, p.h / 2 - 2, p.z]} rotation={[0, i, 0]}>
+          <coneGeometry args={[p.r, p.h, 7]} />
+          <meshStandardMaterial color={p.c} flatShading />
+        </mesh>
+      ))}
+    </group>
   )
 }
 
@@ -62,11 +90,7 @@ function Label({ text, y, color = '#2e2a24' }: { text: string; y: number; color?
   const show = useSettings((s) => s.showLabels)
   if (!show) return null
   return (
-    <Billboard position={[0, y, 0]}>
-      <Text font={FONT} fontSize={0.9} color={color} outlineWidth={0.06} outlineColor="#f6efe1" anchorY="bottom">
-        {text}
-      </Text>
-    </Billboard>
+    <TextSprite text={text} color={color} position={[0, y, 0]} height={0.9} />
   )
 }
 

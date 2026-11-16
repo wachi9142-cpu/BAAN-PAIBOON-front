@@ -21,7 +21,7 @@ export function ChooseHouseScreen() {
   return (
     <div className="setup">
       <div className="setup-stage">
-        <PreviewStage camera={[10, 7, 13]} target={[0, 2.2, 0]} minDistance={8} maxDistance={24}>
+        <PreviewStage camera={[14, 8, 18]} target={[0, 2.4, 0]} minDistance={10} maxDistance={30}>
           <House design={design} />
           <group position={[1.2, 0, 4.6]}>
             <Character appearance={draft.appearance} />

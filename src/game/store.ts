@@ -1,12 +1,13 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Appearance } from './content/appearance'
 import { SPAWN, STARTING_PLOT_ID } from './content/village'
+import { clearSaves, listSaves, loadLatest, writeSave, type Envelope, type SaveReason } from './save/localSave'
+import { cloudEnabled, flushOutbox, queueForUpload, type CloudStatus } from './save/cloudSync'
 
 /**
  * SaveData = ข้อมูลที่ต้องเก็บถาวร (เซฟเกม)
- * ตอนนี้เก็บใน localStorage — อนาคตส่งก้อนเดียวกันนี้ไป BAAN-PAIBOON-back
- * เมื่อเปลี่ยนรูปแบบ ให้เพิ่ม SAVE_VERSION และเขียน migrate ด้านล่าง
+ * เก็บในเครื่อง (3 ช่องหมุนเวียน) + คิวส่งขึ้นเซิร์ฟเวอร์ (BAAN-PAIBOON-back)
+ * เมื่อเปลี่ยนรูปแบบ ให้เพิ่ม SAVE_VERSION และเขียน migrateSave ด้านล่าง
  */
 export const SAVE_VERSION = 1
 
@@ -28,6 +29,8 @@ export interface SaveData {
   position: [number, number]
   heading: number
   discoveredPlaceIds: string[]
+  /** เวลาเล่นสะสม (วินาที) */
+  playSeconds: number
 }
 
 export type Screen = 'title' | 'create' | 'house' | 'world'
@@ -36,20 +39,33 @@ export interface Toast {
   id: number
   title: string
   body?: string
-  tone?: 'info' | 'success' | 'discover'
+  tone?: 'info' | 'success' | 'discover' | 'warn'
 }
 
-export type SaveStatus = 'saved' | 'saving' | 'error'
+export type SaveStatus = 'idle' | 'saved' | 'error'
+
+/** ใช้ตรวจว่าเกมปิดไม่สมบูรณ์ (ไฟดับ/ปิดแท็บกะทันหัน) */
+const SESSION_FLAG = 'baan-paiboon-session-open'
+
+function migrateSave(data: SaveData): SaveData {
+  // v1 เป็นรุ่นแรก — เติมค่าเริ่มต้นให้ฟิลด์ที่อาจขาด
+  return { ...data, playSeconds: data.playSeconds ?? 0, version: SAVE_VERSION }
+}
 
 interface GameState {
   save: SaveData | null
-  /** สถานะการบันทึกล่าสุด (ไม่ถูกเซฟ) */
+  /** มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก */
+  dirty: boolean
   saveStatus: SaveStatus
   lastSavedAt: number | null
-  /** ฟังก์ชันที่ฉาก 3D ลงทะเบียนไว้ เพื่อส่งตำแหน่งล่าสุดเข้าเซฟ */
+  lastSeq: number
+  cloudStatus: CloudStatus
+  /** ครั้งก่อนเกมปิดไม่สมบูรณ์ → แสดงข้อความกู้คืนที่หน้าหลัก */
+  recoveredFrom: Envelope<SaveData> | null
+  /** ฉาก 3D ลงทะเบียนไว้ เพื่อส่งตำแหน่งล่าสุดเข้าเซฟก่อนบันทึก */
   flushWorld: (() => void) | null
+
   screen: Screen
-  /** ตัวละครที่กำลังสร้าง (ยังไม่ได้เซฟ) */
   draft: PlayerProfile | null
   toasts: Toast[]
   nearbyPlaceId: string | null
@@ -58,6 +74,7 @@ interface GameState {
   setDraft: (p: PlayerProfile) => void
   startNewLife: (houseDesignId: string) => void
   continueLife: () => void
+  loadBackup: (seq: number) => void
   deleteSave: () => void
   updatePosition: (pos: [number, number], heading: number) => void
   discoverPlace: (id: string) => boolean
@@ -65,26 +82,11 @@ interface GameState {
   toast: (t: Omit<Toast, 'id'>) => void
   dismissToast: (id: number) => void
   setFlushWorld: (fn: (() => void) | null) => void
-  /** บันทึกทันที คืนค่า true ถ้าสำเร็จ */
-  saveNow: () => boolean
+  /** บันทึกทันที (ตรวจสอบว่าสำเร็จจริง) คืนค่า true ถ้าสำเร็จ */
+  saveNow: (reason: SaveReason) => boolean
   /** บันทึกแล้วกลับหน้าหลัก คืนค่า false ถ้าบันทึกไม่สำเร็จ (ยังไม่ออก) */
   exitToTitle: (force?: boolean) => boolean
-}
-
-const SAVE_KEY = 'baan-paiboon-save'
-
-/** storage ที่รายงานผลการบันทึกกลับเข้า store (เพื่อแสดงสถานะ/ยืนยันก่อนออก) */
-const trackedStorage = {
-  getItem: (k: string) => localStorage.getItem(k),
-  setItem: (k: string, v: string) => {
-    try {
-      localStorage.setItem(k, v)
-      useGame.setState({ saveStatus: 'saved', lastSavedAt: Date.now() })
-    } catch {
-      useGame.setState({ saveStatus: 'error' })
-    }
-  },
-  removeItem: (k: string) => localStorage.removeItem(k),
+  syncCloud: () => Promise<void>
 }
 
 const STARTING_COINS = 200
@@ -92,106 +94,169 @@ const STARTING_MINUTE = 6 * 60 // ตื่นนอน 06:00
 
 let toastSeq = 1
 
-export const useGame = create<GameState>()(
-  persist(
-    (set, get) => ({
-      save: null,
-      saveStatus: 'saved',
-      lastSavedAt: null,
-      flushWorld: null,
-      screen: 'title',
-      draft: null,
-      toasts: [],
-      nearbyPlaceId: null,
+// ---------- โหลดเซฟตอนเปิดเกม ----------
+const initial = loadLatest<SaveData>()
+const crashed = localStorage.getItem(SESSION_FLAG) !== null && !!initial
+localStorage.removeItem(SESSION_FLAG)
 
-      goTo: (screen) => set({ screen }),
-      setDraft: (draft) => set({ draft }),
+export const useGame = create<GameState>()((set, get) => ({
+  save: initial ? migrateSave(initial.data) : null,
+  dirty: false,
+  saveStatus: initial ? 'saved' : 'idle',
+  lastSavedAt: initial?.savedAt ?? null,
+  lastSeq: initial?.seq ?? 0,
+  cloudStatus: cloudEnabled() ? 'pending' : 'disabled',
+  recoveredFrom: crashed ? initial : null,
+  flushWorld: null,
 
-      startNewLife: (houseDesignId) => {
-        const draft = get().draft
-        if (!draft) return
-        const save: SaveData = {
-          version: SAVE_VERSION,
-          createdAt: new Date().toISOString(),
-          player: draft,
-          home: { plotId: STARTING_PLOT_ID, houseDesignId },
-          ownedPlotIds: [STARTING_PLOT_ID],
-          coins: STARTING_COINS,
-          day: 1,
-          minuteOfDay: STARTING_MINUTE,
-          position: [...SPAWN],
-          heading: Math.PI,
-          discoveredPlaceIds: [],
-        }
-        set({ save, draft: null, screen: 'world', toasts: [] })
-        get().toast({
-          title: `ยินดีต้อนรับสู่หมู่บ้านไพบูลย์ ${draft.name}`,
-          body: 'บ้านใหม่ของคุณอยู่ทางตะวันออกเฉียงใต้ เดินตามซอยไปได้เลย',
-          tone: 'success',
-        })
-      },
+  screen: 'title',
+  draft: null,
+  toasts: [],
+  nearbyPlaceId: null,
 
-      continueLife: () => {
-        if (!get().save) return
-        set({ screen: 'world', toasts: [] })
-        get().toast({ title: `กลับมาแล้ว ${get().save!.player.name}`, body: 'หมู่บ้านไพบูลย์ยังคงรอคุณอยู่', tone: 'info' })
-      },
+  goTo: (screen) => set({ screen }),
+  setDraft: (draft) => set({ draft }),
 
-      deleteSave: () => set({ save: null, screen: 'title', draft: null }),
-
-      updatePosition: (position, heading) => {
-        const save = get().save
-        if (!save) return
-        set({ save: { ...save, position, heading } })
-      },
-
-      discoverPlace: (id) => {
-        const save = get().save
-        if (!save || save.discoveredPlaceIds.includes(id)) return false
-        set({ save: { ...save, discoveredPlaceIds: [...save.discoveredPlaceIds, id] } })
-        return true
-      },
-
-      setNearby: (nearbyPlaceId) => {
-        if (get().nearbyPlaceId !== nearbyPlaceId) set({ nearbyPlaceId })
-      },
-
-      toast: (t) => {
-        const id = toastSeq++
-        set({ toasts: [...get().toasts.slice(-3), { ...t, id }] })
-        setTimeout(() => get().dismissToast(id), 5000)
-      },
-      dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
-
-      setFlushWorld: (flushWorld) => set({ flushWorld }),
-
-      saveNow: () => {
-        set({ saveStatus: 'saving' })
-        // ส่งตำแหน่งล่าสุดจากฉาก 3D เข้า save → persist จะเขียนลง storage ทันที
-        get().flushWorld?.()
-        // บังคับเขียนอีกครั้ง แม้ไม่มีอะไรเปลี่ยน
-        trackedStorage.setItem(SAVE_KEY, JSON.stringify({ state: { save: get().save }, version: SAVE_VERSION }))
-        return get().saveStatus === 'saved'
-      },
-
-      exitToTitle: (force = false) => {
-        const ok = get().saveNow()
-        if (!ok && !force) return false
-        set({ screen: 'title', toasts: [], nearbyPlaceId: null, flushWorld: null })
-        return true
-      },
-    }),
-    {
-      name: SAVE_KEY,
+  startNewLife: (houseDesignId) => {
+    const draft = get().draft
+    if (!draft) return
+    const save: SaveData = {
       version: SAVE_VERSION,
-      storage: createJSONStorage(() => trackedStorage),
-      // เก็บเฉพาะเซฟ ไม่เก็บสถานะหน้าจอ/แจ้งเตือน
-      partialize: (s) => ({ save: s.save }),
-      migrate: (persisted) => persisted as { save: SaveData | null },
-    },
-  ),
-)
+      createdAt: new Date().toISOString(),
+      player: draft,
+      home: { plotId: STARTING_PLOT_ID, houseDesignId },
+      ownedPlotIds: [STARTING_PLOT_ID],
+      coins: STARTING_COINS,
+      day: 1,
+      minuteOfDay: STARTING_MINUTE,
+      position: [...SPAWN],
+      heading: Math.PI,
+      discoveredPlaceIds: [],
+      playSeconds: 0,
+    }
+    set({ save, draft: null, screen: 'world', toasts: [], dirty: true, recoveredFrom: null })
+    enterWorld()
+    get().saveNow('new')
+    get().toast({
+      title: `ยินดีต้อนรับสู่หมู่บ้านไพบูลย์ ${draft.name}`,
+      body: 'บ้านใหม่ของคุณอยู่ทางตะวันออกเฉียงใต้ เดินตามซอยไปได้เลย',
+      tone: 'success',
+    })
+  },
 
+  continueLife: () => {
+    const save = get().save
+    if (!save) return
+    set({ screen: 'world', toasts: [], recoveredFrom: null })
+    enterWorld()
+    get().toast({ title: `กลับมาแล้ว ${save.player.name}`, body: 'หมู่บ้านไพบูลย์ยังคงรอคุณอยู่', tone: 'info' })
+  },
+
+  loadBackup: (seq) => {
+    const env = listSaves<SaveData>().find((e) => e.seq === seq)
+    if (!env) return
+    // เขียนเป็นเซฟใหม่ล่าสุด เพื่อไม่ให้ช่องอื่นถูกลบ และเล่นต่อจากจุดนี้
+    set({ save: migrateSave(env.data), dirty: true })
+    get().saveNow('manual')
+    get().continueLife()
+  },
+
+  deleteSave: () => {
+    clearSaves()
+    set({ save: null, screen: 'title', draft: null, dirty: false, lastSavedAt: null, lastSeq: 0, saveStatus: 'idle', recoveredFrom: null })
+  },
+
+  updatePosition: (position, heading) => {
+    const save = get().save
+    if (!save) return
+    const [ox, oz] = save.position
+    if (Math.abs(ox - position[0]) < 0.01 && Math.abs(oz - position[1]) < 0.01 && Math.abs(save.heading - heading) < 0.01) return
+    set({ save: { ...save, position, heading }, dirty: true })
+  },
+
+  discoverPlace: (id) => {
+    const save = get().save
+    if (!save || save.discoveredPlaceIds.includes(id)) return false
+    set({ save: { ...save, discoveredPlaceIds: [...save.discoveredPlaceIds, id] }, dirty: true })
+    // เหตุการณ์สำคัญ: เปลี่ยนพื้นที่/ค้นพบสถานที่
+    get().saveNow('event')
+    return true
+  },
+
+  setNearby: (nearbyPlaceId) => {
+    if (get().nearbyPlaceId !== nearbyPlaceId) set({ nearbyPlaceId })
+  },
+
+  toast: (t) => {
+    const id = toastSeq++
+    set({ toasts: [...get().toasts.slice(-3), { ...t, id }] })
+    setTimeout(() => get().dismissToast(id), 5000)
+  },
+  dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
+
+  setFlushWorld: (flushWorld) => set({ flushWorld }),
+
+  saveNow: (reason) => {
+    get().flushWorld?.()
+    const save = get().save
+    if (!save) return false
+    const env = writeSave(save, reason)
+    if (!env) {
+      // เซฟเก่าที่สมบูรณ์ยังอยู่ในช่องอื่น ไม่ถูกเขียนทับ
+      set({ saveStatus: 'error' })
+      return false
+    }
+    set({ saveStatus: 'saved', lastSavedAt: env.savedAt, lastSeq: env.seq, dirty: false })
+    queueForUpload(env)
+    void get().syncCloud()
+    return true
+  },
+
+  exitToTitle: (force = false) => {
+    const ok = get().saveNow('exit')
+    if (!ok && !force) return false
+    leaveWorld()
+    set({ screen: 'title', toasts: [], nearbyPlaceId: null, flushWorld: null })
+    return true
+  },
+
+  syncCloud: async () => {
+    const status = await flushOutbox()
+    set({ cloudStatus: status })
+  },
+}))
+
+function enterWorld() {
+  try {
+    localStorage.setItem(SESSION_FLAG, String(Date.now()))
+  } catch {
+    /* ignore */
+  }
+}
+function leaveWorld() {
+  localStorage.removeItem(SESSION_FLAG)
+}
+
+/** ผู้เล่นกด "ออกจากเกม" และบันทึกสำเร็จแล้ว */
+export function markCleanExit() {
+  leaveWorld()
+}
+
+/** ปิดแท็บ/รีเฟรช: ถ้าบันทึกสำเร็จ ถือว่าออกอย่างปลอดภัย (ไม่ใช่เกมปิดกะทันหัน) */
+export function saveOnUnload(): boolean {
+  const ok = useGame.getState().saveNow('unload')
+  if (ok) leaveWorld()
+  return ok
+}
+
+// ---------- ซิงก์เมื่อกลับมาออนไลน์ ----------
+window.addEventListener('online', () => void useGame.getState().syncCloud())
+window.addEventListener('offline', () => {
+  if (cloudEnabled()) useGame.setState({ cloudStatus: 'offline' })
+})
+void useGame.getState().syncCloud()
+
+// ---------- helpers ----------
 export function formatClock(minuteOfDay: number) {
   const h = Math.floor(minuteOfDay / 60)
   const m = Math.floor(minuteOfDay % 60)
@@ -204,4 +269,18 @@ export function periodOfDay(minuteOfDay: number) {
   if (h >= 11 && h < 16) return 'กลางวัน'
   if (h >= 16 && h < 19) return 'เย็น'
   return 'กลางคืน'
+}
+
+export function formatSavedAt(ts: number | null) {
+  if (!ts) return '—'
+  return new Date(ts).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+export const SAVE_REASON_LABEL: Record<SaveReason, string> = {
+  new: 'เริ่มชีวิตใหม่',
+  manual: 'บันทึกเอง',
+  auto: 'บันทึกอัตโนมัติ',
+  event: 'เหตุการณ์สำคัญ',
+  exit: 'ออกจากเกม',
+  unload: 'ปิดหน้าต่าง',
 }

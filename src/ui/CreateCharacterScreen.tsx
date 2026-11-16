@@ -38,7 +38,7 @@ export function CreateCharacterScreen() {
   return (
     <div className="setup">
       <div className="setup-stage">
-        <PreviewStage camera={[0, 1.4, 4.2]} target={[0, 1, 0]} minDistance={2} maxDistance={6}>
+        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={2.5} maxDistance={7}>
           <Character appearance={look} />
         </PreviewStage>
       </div>

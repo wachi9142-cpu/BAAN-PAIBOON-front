@@ -154,8 +154,8 @@ function Hair({ style, color }: { style: Appearance['hairStyle']; color: string 
       return (
         <group>
           {cap}
-          <mesh position={[0, 1.4, -0.12]} castShadow>
-            <boxGeometry args={[0.36, 0.5, 0.1]} />
+          <mesh position={[0, 1.42, -0.15]} castShadow>
+            <boxGeometry args={[0.34, 0.46, 0.08]} />
             {mat}
           </mesh>
         </group>

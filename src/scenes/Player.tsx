@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
-import { useGame } from '../game/store'
+import { saveOnUnload, useGame } from '../game/store'
 import { useSettings } from '../game/settings'
 import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
@@ -187,7 +187,10 @@ export function Player() {
   useEffect(() => {
     const flush = () => updatePosition([...pos.current], heading.current)
     useGame.getState().setFlushWorld(flush)
-    const onUnload = () => useGame.getState().saveNow()
+    const onUnload = (e: BeforeUnloadEvent) => {
+      // บันทึกก่อนปิดแท็บ ถ้าไม่สำเร็จให้เบราว์เซอร์ถามยืนยันก่อนออก
+      if (!saveOnUnload()) e.preventDefault()
+    }
     window.addEventListener('beforeunload', onUnload)
     return () => {
       flush()
