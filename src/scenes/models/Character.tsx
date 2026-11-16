@@ -108,6 +108,19 @@ export function Character({ appearance, motion }: Props) {
         </mesh>
       ))}
 
+      {/* ปาก: ยิ้มเล็ก ๆ (ครึ่งวงแหวนหงายขึ้น) */}
+      <mesh position={[0, 1.515, 0.158]} rotation={[0.25, 0, Math.PI]}>
+        <torusGeometry args={[0.032, 0.009, 6, 14, Math.PI]} />
+        <meshStandardMaterial color="#8a3b2c" />
+      </mesh>
+      {/* แก้มอมชมพูจาง ๆ */}
+      {[-0.095, 0.095].map((x) => (
+        <mesh key={'c' + x} position={[x, 1.545, 0.135]} rotation={[0, x * 4, 0]} scale={[1, 0.6, 0.3]}>
+          <sphereGeometry args={[0.026, 8, 6]} />
+          <meshStandardMaterial color="#e48f86" transparent opacity={0.55} />
+        </mesh>
+      ))}
+
       <Hair style={appearance.hairStyle} color={hair} />
       {outfit.hat === 'straw' && <StrawHat />}
     </group>

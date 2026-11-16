@@ -446,3 +446,44 @@
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* QR สนับสนุน */
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.qr-box img {
+  width: min(240px, 70vw);
+  height: auto;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  border: 2px solid var(--line);
+}
+.qr-box p {
+  font-size: 14px;
+  text-align: center;
+}
+.qr-empty {
+  width: min(220px, 70vw);
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 16px;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  background: #fffaf0;
+}
+.qr-empty span {
+  font-family: 'Mitr', sans-serif;
+  font-size: 40px;
+  color: var(--line);
+}

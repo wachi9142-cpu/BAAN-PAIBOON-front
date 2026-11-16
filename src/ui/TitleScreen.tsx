@@ -167,8 +167,10 @@ export function TitleScreen() {
 
       {dialog === 'support' && (
         <Modal title="สนับสนุนเกม" onClose={() => setDialog(null)}>
-          <p>ช่องทางสนับสนุนการพัฒนาหมู่บ้านไพบูลย์จะเปิดเร็ว ๆ นี้</p>
-          <p className="hint">ทุกการสนับสนุนช่วยให้หมู่บ้านมีชีวิตชีวามากขึ้น ♥</p>
+          <SupportQr />
+          <p className="hint" style={{ textAlign: 'center' }}>
+            ทุกการสนับสนุนช่วยให้หมู่บ้านมีชีวิตชีวามากขึ้น ♥
+          </p>
         </Modal>
       )}
 
@@ -200,6 +202,27 @@ export function TitleScreen() {
           </div>
         </Modal>
       )}
+    </div>
+  )
+}
+
+/**
+ * QR code สนับสนุน — วางไฟล์ภาพที่ public/images/support-qr.png
+ * ถ้ายังไม่มีไฟล์ จะแสดงกรอบว่างพร้อมข้อความ "เร็ว ๆ นี้"
+ */
+function SupportQr() {
+  const [missing, setMissing] = useState(false)
+  return (
+    <div className="qr-box">
+      {missing ? (
+        <div className="qr-empty">
+          <span>QR</span>
+          ช่องทางสนับสนุนจะเปิดเร็ว ๆ นี้
+        </div>
+      ) : (
+        <img src="/images/support-qr.png" alt="QR code สำหรับสนับสนุนเกมบ้านไพบูลย์" onError={() => setMissing(true)} />
+      )}
+      {!missing && <p>สแกนเพื่อสนับสนุนการพัฒนาหมู่บ้านไพบูลย์</p>}
     </div>
   )
 }
