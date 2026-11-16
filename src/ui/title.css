@@ -1,313 +1,123 @@
 /* =========================================================
-   หน้าแรก (ตาม mockup): ป้ายกระดาษเก่า ป้ายไม้ เถาวัลย์
+   หน้าแรก: ภาพที่ออกแบบไว้ทั้งภาพ + จุดกดทับปุ่มในภาพ
    ========================================================= */
-.tt {
+.ts {
   position: absolute;
   inset: 0;
   z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: clamp(18px, 4vh, 48px) 16px 96px;
-  gap: clamp(14px, 3vh, 28px);
-  overflow-y: auto;
-  --parch: #f4e6c4;
-  --parch-dark: #e2cc9c;
-  --bark: #4a2f1a;
-  --bark-2: #6b4526;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #3a4a24;
 }
-
-/* ป้ายไม้แขวนมุมซ้ายบน */
-.tt-hang {
+.ts-fill {
   position: absolute;
-  top: 0;
-  left: clamp(12px, 3vw, 40px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform-origin: top center;
-  animation: sway 6s ease-in-out infinite alternate;
+  inset: -40px;
+  background: url('/images/title-screen.jpg') center / cover no-repeat;
+  filter: blur(24px) brightness(0.75) saturate(1.1);
 }
-.tt-hang-rope {
-  width: 150px;
-  height: 22px;
-  border-left: 3px solid #8a6a3e;
-  border-right: 3px solid #8a6a3e;
-}
-.tt-hang-board {
-  position: relative;
-  font-family: 'Mitr', sans-serif;
-  font-weight: 500;
-  font-size: 19px;
-  line-height: 1.45;
-  color: var(--bark);
-  text-align: center;
-  padding: 12px 22px 26px;
-  background: linear-gradient(180deg, #f2e1b8, #e3c992);
-  border: 4px solid #7a5530;
-  border-radius: 10px;
-  box-shadow: 0 6px 14px rgba(30, 18, 6, 0.35), inset 0 0 18px rgba(122, 85, 48, 0.25);
-}
-.tt-hang-leaf {
+/*
+ * กรอบภาพ: ขยายให้เต็มจอเสมอ (ไม่เว้นขอบซ้าย-ขวา) โดยรักษาสัดส่วน 1712:1152
+ * จอกว้างกว่าภาพ → ตัดบน-ล่างออกบางส่วน โดยเลื่อนให้ป้ายชื่อเกมและแถวปุ่มอยู่ในจอเสมอ
+ * (ตัดด้านบน 70% ด้านล่าง 30% ของส่วนที่เกิน)
+ */
+.ts-frame {
+  --ratio: 1.4861; /* 1712 / 1152 */
+  --w: max(100vw, calc(100vh * var(--ratio)));
+  --h: calc(var(--w) / var(--ratio));
   position: absolute;
-  left: 50%;
-  bottom: 6px;
-  width: 30px;
-  transform: translateX(-50%);
-  color: #5f8a35;
+  width: var(--w);
+  height: var(--h);
+  left: calc((100vw - var(--w)) / 2);
+  top: calc((100vh - var(--h)) * 0.7);
+  container-type: inline-size;
 }
-@keyframes sway {
-  from {
-    transform: rotate(-1.2deg);
-  }
-  to {
-    transform: rotate(1.2deg);
+/* จอแนวตั้ง (มือถือ): ถ้าขยายเต็มจะตัดปุ่มด้านข้างทิ้ง จึงแสดงทั้งภาพแทน */
+@media (max-aspect-ratio: 4/3) {
+  .ts-frame {
+    --w: min(100vw, calc(100vh * var(--ratio)));
+    top: calc((100vh - var(--h)) / 2);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
   }
 }
-
-/* ป้ายชื่อเกม */
-.tt-sign {
-  position: relative;
-  margin-top: clamp(40px, 9vh, 110px);
-  padding: clamp(18px, 3vh, 30px) clamp(28px, 5vw, 64px) clamp(16px, 2.6vh, 26px);
-  text-align: center;
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(255, 250, 235, 0.9), transparent 60%),
-    radial-gradient(ellipse at 80% 90%, rgba(196, 160, 100, 0.35), transparent 55%),
-    linear-gradient(180deg, var(--parch), var(--parch-dark));
-  border-radius: 18px 26px 16px 24px / 22px 16px 26px 18px;
-  box-shadow:
-    0 14px 30px rgba(30, 18, 6, 0.4),
-    inset 0 0 0 2px rgba(150, 110, 60, 0.35),
-    inset 0 0 40px rgba(150, 110, 60, 0.35);
-  max-width: min(720px, 100%);
+.ts-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
 }
-.tt-vine {
+.ts-hot {
   position: absolute;
-  width: clamp(70px, 10vw, 120px);
-  height: auto;
-  pointer-events: none;
-}
-.tt-vine.tl {
-  top: -10px;
-  left: -10px;
-}
-.tt-vine.br {
-  right: -10px;
-  bottom: -10px;
-  transform: rotate(180deg);
-}
-.tt-th {
-  font-family: 'Mitr', 'Prompt', sans-serif;
-  font-weight: 600;
-  font-size: clamp(46px, 10vw, 96px);
-  line-height: 1.12;
+  border: 0;
+  padding: 0;
   margin: 0;
-  color: var(--bark);
-  white-space: nowrap;
-  text-shadow:
-    0 2px 0 rgba(255, 245, 220, 0.9),
-    0 4px 10px rgba(74, 47, 26, 0.25);
-}
-.tt-en {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  font-size: clamp(18px, 3.4vw, 32px);
-  letter-spacing: 0.12em;
-  color: var(--bark-2);
-}
-.tt-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 6px 0 4px;
-  color: #8a6a3e;
-}
-.tt-dots span {
-  width: clamp(80px, 18vw, 200px);
-  border-top: 3px dotted #a2835a;
-}
-.tt-sub {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-family: 'Mitr', sans-serif;
-  font-weight: 500;
-  font-size: clamp(16px, 2.6vw, 24px);
-  color: var(--bark);
-}
-.ic-leaf {
-  width: 26px;
-  height: 13px;
-  color: #6b8f3a;
-  flex: none;
-}
-.ic-flower {
-  width: 20px;
-  height: 20px;
-  color: #a5774a;
-  flex: none;
-}
-
-.tt-notice {
-  max-width: 640px;
-  background: rgba(255, 244, 220, 0.95);
-  border: 2px solid var(--gold);
-  border-radius: 12px;
-  padding: 10px 16px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--bark);
-  box-shadow: var(--shadow);
-}
-
-/* ปุ่มเมนูหลัก (ป้ายไม้) */
-.tt-menu {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: stretch;
-  gap: clamp(10px, 1.6vw, 20px);
-  margin-top: auto;
-  max-width: 1200px;
-}
-.tt-btn {
-  --btn-bg: #f3e7cc;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-align: left;
+  background: transparent;
   cursor: pointer;
-  padding: 14px 22px;
-  min-height: 78px;
-  color: var(--bark);
-  background: linear-gradient(180deg, #f7ecd3, #e9d6ad);
-  border: 4px solid #8a6038;
-  border-radius: 14px;
-  box-shadow: 0 6px 0 #5c3d20, 0 12px 22px rgba(30, 18, 6, 0.35), inset 0 0 16px rgba(138, 96, 56, 0.2);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
 }
-.tt-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.04);
+.ts-hot:hover {
+  background: rgba(255, 244, 200, 0.16);
+  box-shadow: 0 0 0 3px rgba(255, 226, 140, 0.85), 0 0 24px rgba(255, 220, 120, 0.55);
 }
-.tt-btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 2px 0 #5c3d20, 0 6px 12px rgba(30, 18, 6, 0.3);
+.ts-hot:active {
+  transform: translateY(2px);
+  background: rgba(60, 30, 10, 0.12);
 }
-.tt-btn:focus-visible {
+.ts-hot:focus-visible {
   outline: 3px solid #f6c453;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
-.tt-btn strong {
-  display: block;
-  font-family: 'Mitr', sans-serif;
-  font-weight: 600;
-  font-size: clamp(18px, 2vw, 24px);
-  line-height: 1.25;
+
+.ts-continue {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
-.tt-btn small {
-  display: block;
-  font-family: 'Mitr', sans-serif;
-  font-size: 13px;
-  opacity: 0.85;
-}
-.tt-ic {
-  width: 38px;
-  height: 38px;
-  flex: none;
-}
-.tt-btn.primary {
-  --btn-bg: #3f6b2a;
+.ts-continue-btn {
+  font-family: 'Niramit', 'Mitr', sans-serif;
+  font-weight: 700;
+  font-size: max(10px, 1.45cqw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #fffbe8;
   background: linear-gradient(180deg, #4f7f33, #365c22);
-  border-color: #c7a76a;
-  box-shadow: 0 6px 0 #22391a, 0 12px 22px rgba(30, 18, 6, 0.4), inset 0 0 18px rgba(0, 0, 0, 0.2);
+  border: 2px solid #c7a76a;
+  border-radius: 12px;
+  padding: 0.45em 1em;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #22391a, 0 8px 18px rgba(0, 0, 0, 0.35);
 }
-.tt-btn.primary strong {
-  font-size: clamp(22px, 2.6vw, 30px);
+.ts-continue-btn:hover {
+  filter: brightness(1.08);
 }
-.tt-btn.primary small {
-  color: #f3dc8a;
-  opacity: 1;
-}
-.tt-btn.orange {
-  --btn-bg: #c4612b;
-  color: #fffbe8;
-  background: linear-gradient(180deg, #d27a3a, #b45a24);
-  border-color: #7a3f18;
-  box-shadow: 0 6px 0 #6a3412, 0 12px 22px rgba(30, 18, 6, 0.35);
-}
-.tt-btn.compact {
-  min-height: auto;
-  align-self: center;
-  background: linear-gradient(180deg, #eef0d6, #dfe2bc);
-}
-
-.tt-link {
+.ts-continue-link {
+  align-self: flex-start;
   border: 0;
-  background: rgba(40, 26, 12, 0.55);
+  background: rgba(40, 26, 12, 0.6);
   color: #f6ecd2;
-  font-family: 'Mitr', sans-serif;
-  font-size: 14px;
-  padding: 6px 16px;
+  font-family: 'Niramit', 'Mitr', sans-serif;
+  font-size: max(9px, 0.8cqw);
+  padding: 3px 12px;
   border-radius: 999px;
   cursor: pointer;
 }
-.tt-link:hover {
-  background: rgba(40, 26, 12, 0.75);
-}
-
-/* ป้ายเล็กมุมซ้ายล่าง */
-.tt-small-sign {
+.ts-notice {
   position: absolute;
-  left: clamp(12px, 3vw, 40px);
-  bottom: 22px;
-  font-family: 'Mitr', sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--bark);
-  text-align: center;
-  padding: 10px 18px;
-  background: linear-gradient(180deg, #f2e1b8, #e3c992);
-  border: 3px solid #7a5530;
-  border-radius: 8px;
-  transform: rotate(-3deg);
-  box-shadow: 0 6px 12px rgba(30, 18, 6, 0.35);
-}
-.tt-small-sign .heart {
-  color: #b5482a;
-}
-
-/* แถบคำขวัญด้านล่าง */
-.tt-banner {
-  position: absolute;
+  top: 12px;
   left: 50%;
-  bottom: 22px;
   transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  white-space: nowrap;
-  font-family: 'Mitr', sans-serif;
-  font-weight: 500;
-  font-size: clamp(15px, 1.8vw, 20px);
-  color: var(--bark);
-  padding: 10px 28px;
-  background: linear-gradient(180deg, #f4e6c4, #e2cc9c);
-  border: 3px solid #8a6038;
-  border-radius: 10px;
-  box-shadow: 0 6px 14px rgba(30, 18, 6, 0.35);
-}
-.tt-banner .ic-flower {
-  color: #fffaf0;
-  filter: drop-shadow(0 0 1px #8a6038);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  background: rgba(255, 244, 220, 0.96);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #4a2f1a;
+  box-shadow: var(--shadow);
 }
 
 .tt-modal p {
@@ -329,41 +139,4 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-}
-
-@media (max-width: 900px) {
-  .tt-small-sign {
-    display: none;
-  }
-}
-@media (max-width: 640px) {
-  .tt-hang {
-    display: none;
-  }
-  .tt-sign {
-    margin-top: 12px;
-  }
-  .tt-menu {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    margin-top: 8px;
-  }
-  .tt-btn.compact {
-    align-self: stretch;
-  }
-  .tt-banner {
-    position: static;
-    transform: none;
-    white-space: normal;
-    font-size: 14px;
-  }
-  .tt {
-    padding-bottom: 24px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tt-hang {
-    animation: none;
-  }
 }
