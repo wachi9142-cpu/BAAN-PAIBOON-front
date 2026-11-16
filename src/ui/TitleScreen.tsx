@@ -230,16 +230,20 @@ function FlowerIcon() {
 function Vine({ className }: { className: string }) {
   return (
     <svg className={className} viewBox="0 0 120 120" aria-hidden="true">
-      <path d="M4 116 C20 80, 30 50, 60 30 S110 8, 116 4" fill="none" stroke="#5b6e2e" strokeWidth="3" strokeLinecap="round" />
+      {/* เถาวัลย์โค้งตามมุมป้าย: ลงมาตามขอบซ้าย แล้วเลี้ยวไปตามขอบบน */}
+      <path d="M8 118 C6 70, 8 20, 30 10 S90 6, 118 8" fill="none" stroke="#5b6e2e" strokeWidth="3.5" strokeLinecap="round" />
       {[
-        [22, 86, -40],
-        [34, 60, -20],
-        [52, 38, 10],
-        [76, 24, 25],
-        [98, 12, 40],
-        [14, 100, 60],
-        [44, 48, 120],
-        [88, 18, 150],
+        [8, 100, -70],
+        [6, 76, -110],
+        [8, 52, -60],
+        [14, 28, -100],
+        [30, 10, -20],
+        [52, 6, 20],
+        [74, 6, -25],
+        [98, 7, 15],
+        [10, 64, 60],
+        [40, 8, 160],
+        [86, 8, 200],
       ].map(([x, y, r], i) => (
         <path
           key={i}

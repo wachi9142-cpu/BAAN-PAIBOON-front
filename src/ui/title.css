@@ -89,14 +89,13 @@
   pointer-events: none;
 }
 .tt-vine.tl {
-  top: -20px;
-  left: -20px;
-  transform: scaleY(-1);
+  top: -10px;
+  left: -10px;
 }
 .tt-vine.br {
-  right: -20px;
-  bottom: -20px;
-  transform: scaleX(-1);
+  right: -10px;
+  bottom: -10px;
+  transform: rotate(180deg);
 }
 .tt-th {
   font-family: 'Mitr', 'Prompt', sans-serif;
