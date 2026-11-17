@@ -17,6 +17,7 @@ export type PlaceKind =
   | 'garage'
   | 'eventground'
   | 'lake'
+  | 'grandhome'
 
 export interface Place {
   id: string
@@ -53,26 +54,33 @@ export interface Road {
   from: Vec2
   to: Vec2
   width: number
+  /** concrete = ถนนใหญ่คอนกรีต · dirt (ค่าเริ่มต้น) = ถนนดินแดงในซอย */
+  surface?: 'concrete' | 'dirt'
 }
 
 export const WORLD_HALF_SIZE = 90
 
-export const SPAWN: Vec2 = [0, 8]
+/** เริ่มเกมใหม่ที่หน้าประตูรั้วบ้านตารัง–ยายเลียน (บ้านฟ่าง) */
+export const SPAWN: Vec2 = [-24.5, 24.5]
 
 export const ROADS: Road[] = [
   // ถนนใหญ่ตัดผ่านหมู่บ้าน (ตะวันตก–ตะวันออก)
-  { from: [-88, 0], to: [88, 0], width: 7 },
+  { from: [-88, 0], to: [88, 0], width: 7, surface: 'concrete' },
   // สี่แยกกลางหมู่บ้าน: แยกเหนือไปทุ่งนา · แยกใต้ไปวัด
-  { from: [0, 3.5], to: [0, 27], width: 5 },
+  { from: [0, 3.5], to: [0, 55], width: 5 },
   { from: [0, -3.5], to: [0, -38], width: 5 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
   { from: [30, 3.5], to: [30, 60], width: 3.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
   { from: [-35, 3.5], to: [-35, 45], width: 3.5 }, // ซอย 2 ไปบ่อปลา · ร้านข้าวแกง
+  // ซอย 2 ช่วงที่ 2: สี่แยก — แยกขวา (ตะวันออก) เป็นถนนดินแดงเข้ากลุ่มบ้าน 4 หลังของตารัง–ยายเลียน · แยกซ้ายไปบ้านลุงเขียว
+  { from: [-33.25, 24], to: [-4, 24], width: 3.5 },
+  { from: [-36.75, 24], to: [-52, 24], width: 3 },
   { from: [66, -3.5], to: [66, -36], width: 3.5 }, // ซอย 3 · ร้านเครื่องมือช่าง
   { from: [-30, -3.5], to: [-30, -30], width: 3.5 }, // ซอย 4 · ร้านจักสาน
-  { from: [-60, 3.5], to: [-60, 40], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์
-  // ถนนเข้าโรงเรียนวัดบ้านไพบูลย์
-  { from: [-62, -3.5], to: [-62, -45], width: 4.5 },
+  { from: [-60, 3.5], to: [-60, 28], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์
+  // ถนนเข้าโรงเรียน + ถนนหน้าโรงเรียน (คอนกรีต 2 เลน วิ่งแนวนอนขนานหน้าโรงเรียน)
+  { from: [-62, -3.5], to: [-62, -37], width: 7, surface: 'concrete' },
+  { from: [-82, -40.5], to: [-21, -40.5], width: 7, surface: 'concrete' },
 ]
 
 export const PLACES: Place[] = [
@@ -177,11 +185,11 @@ export const PLACES: Place[] = [
     id: 'board-school',
     name: 'บอร์ดประกาศหน้าโรงเรียน',
     kind: 'questboard',
-    pos: [-57.5, -42],
+    pos: [-57.2, -44.4],
     size: [3, 1],
     rotation: 0,
     arriveText: 'ข่าวและกิจกรรมของโรงเรียน รับสมัครเข้าร่วมกิจกรรม',
-    solidRadius: 1.2,
+    solidRadius: 0.8,
   },
   {
     id: 'board-headman',
@@ -217,18 +225,31 @@ export const PLACES: Place[] = [
     id: 'ricefield',
     name: 'ทุ่งนา',
     kind: 'ricefield',
-    pos: [-5, 42],
+    pos: [-2, 69],
     size: [36, 28],
     arriveText: 'ทุ่งนากว้างสุดลูกหูลูกตา',
     comingSoon: 'ปลูกข้าวและต้อนเป็ด (Part 4)',
     solidRadius: 0,
   },
+  {
+    id: 'home-tarang',
+    name: 'บ้านตารัง–ยายเลียน (บ้านฟ่าง)',
+    kind: 'grandhome',
+    pos: [-18, 40],
+    size: [30, 26],
+    arriveText: 'บ้านไม้สองชั้นของตารังกับยายเลียน · สวนผัก สวนดอกไม้ สวนผลไม้ ยุ้งข้าว คอกควาย เล้าไก่ คอกหมู',
+    comingSoon: 'เดินเข้าไปสำรวจในบ้าน (กำลังสร้าง)',
+    solidRadius: 0,
+  },
   // บ้านชาวบ้าน (Part 6 จะใส่ชาวบ้านและกิจวัตร)
-  { id: 'house-khiao', name: 'บ้านลุงเขียว', kind: 'npchouse', pos: [-30, 18], size: [6, 5], color: '#7d5a3c', solidRadius: 4.2 },
+  { id: 'house-khiao', name: 'บ้านลุงเขียว', kind: 'npchouse', pos: [-46, 16], size: [6, 5], color: '#7d5a3c', solidRadius: 4.2 },
   { id: 'house-si', name: 'บ้านป้าศรี', kind: 'npchouse', pos: [22, -27], size: [6, 5], color: '#c9b79a', solidRadius: 4.2 },
   { id: 'house-mai', name: 'บ้านยายไหม', kind: 'npchouse', pos: [-46, -34], size: [6, 5], color: '#8f6a46', solidRadius: 4.2 },
   { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [80, -16], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
-  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-20, 10], size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
+  // กลุ่มบ้านเดียวกับบ้านตารัง–ยายเลียน (ฝั่งตรงข้ามถนนดินแดงที่ตัดเข้าไป) — ชื่อเปลี่ยนได้ภายหลัง
+  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-27, 17], size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
+  { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-18, 17], size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
+  { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-9, 17], size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
   { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [-71, -14], size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]

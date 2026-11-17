@@ -177,6 +177,64 @@ export function House({ design }: { design: HouseDesign }) {
         </group>
       )
     }
+    case 'wood2': {
+      // บ้านไม้สองชั้น (แบบที่พบมากในหมู่บ้าน): ชั้นล่างไม้มีประตูหน้าบ้าน · ชั้นบนไม้มีระเบียงยื่น หน้าต่างบานเปิด
+      const lowH = 2.5
+      const upH = 2.4
+      const z0 = d / 2 + 0.03
+      return (
+        <group>
+          <mesh position={[0, 0.08, 0.3]} receiveShadow>
+            <RBox args={[w + 0.4, 0.16, d + 0.8]} radius={0.06} />
+            <meshStandardMaterial color="#b3ab9c" />
+          </mesh>
+          <mesh position={[0, 0.16 + lowH / 2, 0]} castShadow receiveShadow>
+            <RBox args={[w, lowH, d]} radius={0.24} />
+            <meshStandardMaterial color={design.wall} />
+          </mesh>
+          {/* แนวตีไม้ฝาชั้นล่าง */}
+          {[0.7, 1.3, 1.9].map((y) => (
+            <mesh key={y} position={[0, y, z0 + 0.001]}>
+              <planeGeometry args={[w - 0.4, 0.03]} />
+              <meshBasicMaterial color="#00000033" transparent opacity={0.2} />
+            </mesh>
+          ))}
+          <Door x={-0.9} y={1.1} z={z0} color="#4a3020" />
+          <Window x={1.6} y={1.5} z={z0} frame={design.trim} />
+          <Window x={-2.4} y={1.5} z={z0} frame={design.trim} />
+          {/* พื้นชั้นสอง + ระเบียงยื่น */}
+          <mesh position={[0, 0.16 + lowH + 0.08, 0.35]} castShadow>
+            <RBox args={[w + 0.3, 0.16, d + 0.7]} radius={0.06} />
+            <meshStandardMaterial color="#6e4a30" />
+          </mesh>
+          {[-w / 2 + 0.1, w / 2 - 0.1].map((x) => (
+            <mesh key={x} position={[x, 0.16 + lowH + 0.55, d / 2 + 0.6]}>
+              <RBox args={[0.1, 0.9, 0.1]} radius={0.03} />
+              <meshStandardMaterial color="#5a3b26" />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.16 + lowH + 0.95, d / 2 + 0.62]}>
+            <RBox args={[w + 0.1, 0.08, 0.08]} radius={0.03} />
+            <meshStandardMaterial color="#5a3b26" />
+          </mesh>
+          <mesh position={[0, 0.32 + lowH + upH / 2, 0]} castShadow receiveShadow>
+            <RBox args={[w - 0.2, upH, d - 0.2]} radius={0.22} />
+            <meshStandardMaterial color={shadeHex(design.wall, 0.86)} />
+          </mesh>
+          <Door x={1.6} y={0.32 + lowH + 1} z={(d - 0.2) / 2 + 0.03} color="#5a3b26" />
+          <Window x={-1.2} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} />
+          <Window x={-2.5} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} />
+          {/* บันไดนอกบ้านขึ้นชั้นสอง (ด้านข้าง) */}
+          {Array.from({ length: 7 }).map((_, i) => (
+            <mesh key={'st' + i} position={[w / 2 + 0.55, 0.25 + i * 0.36, -1.4 + i * 0.4]} castShadow>
+              <RBox args={[0.9, 0.08, 0.34]} radius={0.03} />
+              <meshStandardMaterial color="#6e4a30" />
+            </mesh>
+          ))}
+          <GableRoof width={w - 0.2} depth={d - 0.2} height={1.7} y={0.32 + lowH + upH} color={design.roof} overhang={0.65} />
+        </group>
+      )
+    }
     case 'halfhalf': {
       const lowH = 2.6
       const upH = 2.4
@@ -206,17 +264,20 @@ export function House({ design }: { design: HouseDesign }) {
 }
 
 /** บ้านชาวบ้าน (ใช้แบบใต้ถุนสูงเรียบง่าย สีต่างกัน) */
-export function VillagerHouse({ color }: { color: string }) {
+export function VillagerHouse({ color, seed = 0 }: { color: string; seed?: number }) {
+  // บ้านไม้สองชั้นมีมากที่สุด · แซมด้วยครึ่งตึกครึ่งไม้ และใต้ถุนสูง
+  const styles = ['wood2', 'wood2', 'halfhalf', 'wood2', 'stilt', 'wood2', 'halfhalf'] as const
+  const style = styles[seed % styles.length]
   return (
     <House
       design={{
         id: 'npc',
         name: '',
         description: '',
-        style: 'stilt',
+        style,
         footprint: [6, 5],
-        wall: color,
-        roof: '#6b3a2a',
+        wall: style === 'halfhalf' ? '#d8cbb3' : color,
+        roof: ['#6b3a2a', '#7a4a2e', '#8b8f86', '#a24a2c'][seed % 4],
         trim: '#d9c29a',
         perks: [],
       }}

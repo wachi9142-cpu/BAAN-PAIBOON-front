@@ -1,3 +1,5 @@
+import { GrandHome } from './GrandHome'
+import { BigStore, Campus, EventGround, Garage, Lake, RoadSurface, Stall } from './VillageLayout'
 import { useGame } from '../game/store'
 import type { Group } from 'three'
 import { useRef } from 'react'
@@ -16,12 +18,11 @@ import {
   ROCKS,
   type Place,
   type Plot,
-  type Road,
   type TreeSpot,
 } from '../game/content/village'
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
-import { House, VillagerHouse, GableRoof, Bush, HouseYard, PicketFence } from './models/House'
+import { House, VillagerHouse, GableRoof, Bush, HouseYard } from './models/House'
 import { RBox } from './models/RBox'
 import { BigChedi, Temple } from './Temple'
 
@@ -31,7 +32,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
     <group>
       <Ground />
       {ROADS.map((r, i) => (
-        <RoadMesh key={i} road={r} />
+        <RoadSurface key={i} road={r} index={i} />
       ))}
       {PLACES.map((p) => (
         <PlaceMesh key={p.id} place={p} />
@@ -85,19 +86,6 @@ function Mountains() {
         </mesh>
       ))}
     </group>
-  )
-}
-
-function RoadMesh({ road }: { road: Road }) {
-  const [ax, az] = road.from
-  const [bx, bz] = road.to
-  const len = Math.hypot(bx - ax, bz - az)
-  const angle = Math.atan2(bx - ax, bz - az)
-  return (
-    <mesh position={[(ax + bx) / 2, 0.02, (az + bz) / 2]} rotation={[-Math.PI / 2, 0, angle]} receiveShadow>
-      <planeGeometry args={[road.width, len + road.width]} />
-      <meshStandardMaterial color="#c9b58e" />
-    </mesh>
   )
 }
 
@@ -187,33 +175,24 @@ function PlaceMesh({ place }: { place: Place }) {
       )
       break
     case 'shop':
-      body = (
-        <group>
-          <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-            <RBox args={[w, 3, d]} radius={0.32} />
-            <meshStandardMaterial color="#e8d9b8" />
-          </mesh>
-          <mesh position={[0, 2.9, d / 2 + 0.8]} rotation={[0.25, 0, 0]} castShadow>
-            <RBox args={[w + 0.4, 0.16, 1.8]} radius={0.07} />
-            <meshStandardMaterial color="#3f7a8c" />
-          </mesh>
-          <mesh position={[0, 1.2, d / 2 + 0.05]}>
-            <RBox args={[w * 0.6, 2.2, 0.1]} radius={0.045} />
-            <meshStandardMaterial color="#4a3a2a" />
-          </mesh>
-          {/* ตู้เย็นเครื่องดื่ม/ลังของหน้าร้าน */}
-          {[-2.2, 2.2].map((cx) => (
-            <mesh key={cx} position={[cx, 0.5, d / 2 + 0.8]} castShadow>
-              <RBox args={[0.9, 1, 0.7]} radius={0.16} />
-              <meshStandardMaterial color={cx < 0 ? '#c2412d' : '#d9a441'} />
-            </mesh>
-          ))}
-          <GableRoof width={w} depth={d} height={1.2} y={3} color="#8b8f86" overhang={0.3} />
-          <Bush x={-w / 2 - 0.6} z={d / 2 + 0.2} s={0.9} flowers="#f6c445" />
-          <Bush x={w / 2 + 0.6} z={d / 2 + 0.2} s={0.9} flowers="#f29ab8" />
-          <Bush x={w / 2 + 0.5} z={-d / 2 + 0.4} s={0.8} flowers={null} />
-        </group>
-      )
+      labelY = place.style === 'stall' ? 4.6 : 6
+      body = place.style === 'stall' ? <Stall w={w} d={d} color={place.color ?? '#3f7a8c'} name={place.name.replace(/ \(ซอย \d\)/, '')} /> : <BigStore w={w} d={d} />
+      break
+    case 'garage':
+      labelY = 5
+      body = <Garage w={w} d={d} />
+      break
+    case 'eventground':
+      labelY = 6.5
+      body = <EventGround w={w} d={d} />
+      break
+    case 'lake':
+      labelY = 3
+      body = <Lake w={w} d={d} />
+      break
+    case 'grandhome':
+      labelY = 9
+      body = <GrandHome />
       break
     case 'training':
       body = (
@@ -223,6 +202,16 @@ function PlaceMesh({ place }: { place: Place }) {
             <meshStandardMaterial color="#efe3c8" />
           </mesh>
           <GableRoof width={w} depth={d} height={2} y={3.2} color="#5c4a8a" overhang={0.6} />
+          <mesh position={[0, 1.15, d / 2 + 0.03]}>
+            <RBox args={[1.6, 2.2, 0.08]} radius={0.04} />
+            <meshStandardMaterial color="#6b4a2e" />
+          </mesh>
+          {[-3.6, -2, 2, 3.6].map((wx) => (
+            <mesh key={wx} position={[wx, 1.7, d / 2 + 0.03]}>
+              <RBox args={[1.1, 0.9, 0.06]} radius={0.03} />
+              <meshStandardMaterial color="#6d8fa8" />
+            </mesh>
+          ))}
           <Bush x={w / 2 - 0.4} z={d / 2 + 1} s={1} flowers="#c99af0" />
           <Bush x={-w / 2 + 0.4} z={-d / 2 - 0.6} s={0.9} flowers="#ffffff" />
           {/* กี่ทอผ้าหน้าอาคาร */}
@@ -280,8 +269,8 @@ function PlaceMesh({ place }: { place: Place }) {
       )
       break
     case 'school':
-      labelY = 8
-      body = <School w={w} d={d} />
+      labelY = 13
+      body = <Campus size={w} />
       break
     case 'ricefield':
       labelY = 3
@@ -291,7 +280,7 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 8
       body = (
         <group>
-          <VillagerHouse color={place.color ?? '#8a5a3b'} />
+          <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} />
           <HouseYard seed={place.id.length} />
         </group>
       )
@@ -498,84 +487,3 @@ function BoardBadge({ id }: { id: string }) {
   )
 }
 
-/** โรงเรียน: อาคารเรียน 2 ชั้น หลังคาสีส้ม ระเบียงทางเดิน เสาธง ลานหน้าเสาธง ประตูรั้ว */
-function School({ w, d }: { w: number; d: number }) {
-  const bz = -d / 2 + 2.3
-  return (
-    <group>
-      {/* ลานดินหน้าเสาธง */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 1.2]} receiveShadow>
-        <planeGeometry args={[w - 2, d - 4]} />
-        <meshStandardMaterial color="#d8c39a" roughness={1} />
-      </mesh>
-      {/* อาคารเรียน 2 ชั้น */}
-      <mesh position={[0, 1.6, bz]} castShadow receiveShadow>
-        <RBox args={[14, 3.2, 3.6]} radius={0.3} />
-        <meshStandardMaterial color="#f1e6cc" />
-      </mesh>
-      <mesh position={[0, 3.25, bz + 0.3]} castShadow>
-        <RBox args={[14.4, 0.2, 4.4]} radius={0.08} />
-        <meshStandardMaterial color="#c9b48c" />
-      </mesh>
-      <mesh position={[0, 4.75, bz]} castShadow receiveShadow>
-        <RBox args={[14, 2.8, 3.6]} radius={0.3} />
-        <meshStandardMaterial color="#f6edd8" />
-      </mesh>
-      <GableRoof width={14} depth={3.6} height={1.6} y={6.15} color="#d0703c" overhang={0.6} />
-      {/* หน้าต่างสองชั้น */}
-      {[-5.4, -3.2, -1, 1.2, 3.4, 5.6].flatMap((x) =>
-        [1.8, 4.9].map((y) => (
-          <mesh key={`${x}${y}`} position={[x, y, bz + 1.82]}>
-            <RBox args={[1.3, 1, 0.08]} radius={0.04} />
-            <meshStandardMaterial color="#6d8fa8" />
-          </mesh>
-        )),
-      )}
-      {/* ป้ายชื่อโรงเรียนเหนือประตู */}
-      <mesh position={[0, 3.6, bz + 2.55]}>
-        <RBox args={[4, 0.5, 0.1]} radius={0.05} />
-        <meshStandardMaterial color="#2f5f8a" />
-      </mesh>
-      {/* เสาธง */}
-      <group position={[0, 0, 2.6]}>
-        <mesh position={[0, 0.2, 0]} receiveShadow>
-          <cylinderGeometry args={[0.9, 1, 0.4, 20]} />
-          <meshStandardMaterial color="#e2dccd" />
-        </mesh>
-        <mesh position={[0, 3.6, 0]} castShadow>
-          <cylinderGeometry args={[0.05, 0.07, 7, 10]} />
-          <meshStandardMaterial color="#e8e8e8" metalness={0.4} roughness={0.4} />
-        </mesh>
-        {/* ธงชาติไทย */}
-        {(
-          [
-            ['#a51931', 0],
-            ['#f4f5f8', 1],
-            ['#2d2a4a', 2],
-            ['#2d2a4a', 3],
-            ['#f4f5f8', 4],
-            ['#a51931', 5],
-          ] as const
-        ).map(([c, i]) => (
-          <mesh key={i} position={[0.62, 6.75 - i * 0.12 - (i >= 3 ? 0 : 0), 0]}>
-            <planeGeometry args={[1.1, 0.12]} />
-            <meshStandardMaterial color={c} side={2} />
-          </mesh>
-        ))}
-      </group>
-      {/* ประตูรั้วโรงเรียน */}
-      {[-2, 2].map((x) => (
-        <mesh key={x} position={[x, 0.9, d / 2]} castShadow>
-          <RBox args={[0.45, 1.8, 0.45]} radius={0.1} />
-          <meshStandardMaterial color="#e9e1cf" />
-        </mesh>
-      ))}
-      <PicketFence x={-4.75} z={d / 2} len={5} />
-      <PicketFence x={4.75} z={d / 2} len={5} />
-      <Bush x={-6.5} z={bz + 2.6} s={1} flowers="#f6c445" />
-      <Bush x={6.5} z={bz + 2.6} s={1} flowers="#e86a5a" />
-      <Bush x={-3.5} z={bz + 2.4} s={0.8} flowers="#ffffff" />
-      <Bush x={3.5} z={bz + 2.4} s={0.8} flowers="#c99af0" />
-    </group>
-  )
-}

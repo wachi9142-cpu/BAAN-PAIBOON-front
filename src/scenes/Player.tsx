@@ -1,3 +1,4 @@
+import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
 import { TextSprite } from './TextSprite'
@@ -156,6 +157,16 @@ export function Player() {
     let mx = fx * f + rx * r
     let mz = fz * f + rz * r
     const len = Math.hypot(mx, mz)
+    // กำลังเล่นเครื่องเล่น: เดินเพื่อเลิกเล่น
+    let pp = playPose(performance.now())
+    if (pp && len > 0) {
+      stopPlay()
+      pp = null
+    }
+    if (pp) {
+      pos.current = [pp.x, pp.z]
+      heading.current = pp.heading
+    }
 
     // ยิงลำแสงจากคฑา: ยืนนิ่ง หันไปชี้ที่สัตว์
     wandCast.aiming = performance.now() < wandCast.until
@@ -194,7 +205,7 @@ export function Player() {
         mz = 0
       }
     }
-    if (len > 0 && swing.current < 0 && !wandCast.aiming) {
+    if (len > 0 && swing.current < 0 && !wandCast.aiming && !pp) {
       mx /= len
       mz /= len
       const age = AGE_RULES[save.player.appearance.age ?? 'adult']
@@ -227,8 +238,13 @@ export function Player() {
       // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
       const rideY = useGame.getState().riding ? rideHeight(save) : 0
       const targetY = gy + rideY
-      root.current.position.set(x, root.current.position.y + (targetY - root.current.position.y) * Math.min(1, dt * 12), z)
-      root.current.rotation.y = heading.current
+      if (pp) {
+        root.current.position.set(x, gy + pp.y, z)
+        root.current.rotation.set(pp.tilt, heading.current, 0)
+      } else {
+        root.current.position.set(x, root.current.position.y + (targetY - root.current.position.y) * Math.min(1, dt * 12), z)
+        root.current.rotation.set(0, heading.current, 0)
+      }
     }
     playerPose.x = x
     playerPose.z = z
@@ -276,6 +292,8 @@ export function Player() {
       setNearby(near)
       setGatherTarget(findGatherTarget(x, z))
       pickupNear(x, z)
+      const toy = findToy(x, z)
+      if (usePlay.getState().near !== toy) usePlay.setState({ near: toy })
       const chest = findChest(x, z)
       if (useChests.getState().near !== chest) useChests.setState({ near: chest })
       const bed = findBed(x, z)

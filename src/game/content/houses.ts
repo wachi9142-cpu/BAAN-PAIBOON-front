@@ -1,6 +1,6 @@
 // แบบบ้านที่ผู้เล่นเลือกสร้างได้ — เพิ่มแบบใหม่ได้ที่นี่ แล้วเพิ่มโมเดลใน src/scenes/models/House.tsx
 
-export type HouseStyle = 'stilt' | 'concrete' | 'halfhalf'
+export type HouseStyle = 'stilt' | 'concrete' | 'halfhalf' | 'wood2'
 
 export interface HouseDesign {
   id: string

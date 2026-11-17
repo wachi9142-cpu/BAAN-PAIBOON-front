@@ -1,3 +1,4 @@
+import { HOME_GATE, HOME_D, HOME_SOLIDS, HOME_W } from '../scenes/GrandHome'
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, WORLD_HALF_SIZE, type Vec2 } from './content/village'
@@ -24,6 +25,7 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
   }
   out.push(...templeWalls())
   out.push(...campusWalls())
+  out.push(...homeWalls())
   for (const s of structures) out.push(...structureColliders(s))
   // หีบสมบัติ: ชนเป็นวงกลมเล็ก ๆ
   for (const ch of CHEST_SPOTS) out.push({ x: ch.pos[0], z: ch.pos[1], r: 0.55 })
@@ -100,5 +102,23 @@ export function campusWalls(): Rect[] {
     out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz - 3.3 })
     out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - 0.7, maxZ: cz + d / 2 })
   }
+  return out
+}
+
+/** บ้านตารัง–ยายเลียน: สิ่งปลูกสร้างทึบ + รั้วรอบบ้าน (เว้นประตูหน้าบ้าน) */
+export function homeWalls(): Rect[] {
+  const hp = PLACES.find((p) => p.id === 'home-tarang')
+  if (!hp) return []
+  const [cx, cz] = hp.pos
+  const out: Rect[] = HOME_SOLIDS.map(([x, z, w, d]) => ({ minX: cx + x - w / 2, maxX: cx + x + w / 2, minZ: cz + z - d / 2, maxZ: cz + z + d / 2 }))
+  const h = HOME_W / 2
+  const d = HOME_D / 2
+  const t = 0.2
+  const gx = HOME_GATE[0]
+  out.push({ minX: cx - h, maxX: cx + gx - 2, minZ: cz - d - t, maxZ: cz - d + t })
+  out.push({ minX: cx + gx + 2, maxX: cx + h, minZ: cz - d - t, maxZ: cz - d + t })
+  out.push({ minX: cx - h, maxX: cx + h, minZ: cz + d - t, maxZ: cz + d + t })
+  out.push({ minX: cx - h - t, maxX: cx - h + t, minZ: cz - d, maxZ: cz + d })
+  out.push({ minX: cx + h - t, maxX: cx + h + t, minZ: cz - d, maxZ: cz + d })
   return out
 }

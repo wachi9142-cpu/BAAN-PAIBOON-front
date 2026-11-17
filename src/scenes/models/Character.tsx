@@ -69,6 +69,10 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
   ride: [-0.7, -0.1, -0.7, 0.1],
   // ผิวปาก: มือขวายกขึ้นป้องปาก มือซ้ายห้อยสบาย ๆ
   whistle: [0, 0.05, -2.3, 1.05],
+  // เครื่องเล่น: นั่ง (มือจับข้างหน้า) · ห้อยโหน (แขนชูขึ้น) · ทรงตัว (กางแขน)
+  sit: [-0.7, 0.12, -0.7, -0.12],
+  hang: [-3.05, 0.12, -3.05, -0.12],
+  balance: [0, -1.35, 0, 1.35],
 }
 
 /** กราบสามครั้ง: ช่วงคุกเข่าพนมมือ แล้วกราบลง-ขึ้น 3 รอบ (วินาที) */
@@ -242,6 +246,22 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
         armR.current.rotation.z = rz
       }
     }
+    if (pose === 'sit') {
+      // นั่ง: ขาเหยียดไปข้างหน้า (ชิงช้า สไลเดอร์ กระดานหก ม้าหมุน)
+      if (legL.current) {
+        legL.current.rotation.x = lerp(legL.current.rotation.x, -1.45)
+        legL.current.rotation.z = lerp(legL.current.rotation.z, 0)
+      }
+      if (legR.current) {
+        legR.current.rotation.x = lerp(legR.current.rotation.x, -1.45)
+        legR.current.rotation.z = lerp(legR.current.rotation.z, 0)
+      }
+    } else if (pose === 'hang') {
+      // ห้อยโหน: ขาแกว่งเบา ๆ
+      const sw = Math.sin(idle.current * 5) * 0.3
+      if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, sw)
+      if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, -sw)
+    }
     if (pose === 'ride') {
       // นั่งคร่อมหลังสัตว์: ขากางออกสองข้าง งอไปข้างหน้าเล็กน้อย (ไม่แกว่งตามก้าว)
       if (legL.current) {
@@ -266,7 +286,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     }
     if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + (kneel ? bow * 1.15 : 0))
     if (body.current) {
-      const down = kneel ? -0.62 * age.legScale : 0
+      const down = kneel ? -0.62 * age.legScale : pose === 'sit' && m === 0 ? -0.42 * age.legScale : 0
       body.current.position.y = m > 0 && pose !== 'ride' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
     }
   })

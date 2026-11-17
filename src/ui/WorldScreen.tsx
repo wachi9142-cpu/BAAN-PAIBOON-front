@@ -1,3 +1,4 @@
+import { startPlay, toyHint, usePlay } from '../game/play'
 import { isShop, SHOPS } from '../game/content/shops'
 import { isBoard, openBoard, useBoard } from '../game/noticeboard'
 import { NoticeBoardWindow } from './NoticeBoardWindow'
@@ -175,6 +176,7 @@ export function WorldScreen() {
           else if (sp === 'slips') takeSlip()
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
         }
+        else if (usePlay.getState().near && !usePlay.getState().playing) startPlay(usePlay.getState().near!)
         else if (useChests.getState().near) openChest(useChests.getState().near!)
         else if (useBuild.getState().near) {
           const uid = useBuild.getState().near!
@@ -662,6 +664,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const bedNear = useGarden((s) => s.near)
   const usableNear = useBuild((s) => s.near)
   const chestNear = useChests((s) => s.near)
+  const toyNear = usePlay((s) => s.near)
+  const playing = usePlay((s) => s.playing)
   useGame((s) => s.save?.chestsOpened)
   const building = useBuild((s) => s.active)
   const garden = useGame((s) => s.save?.garden)
@@ -757,7 +761,10 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                   : '🔔 ตีระฆัง'}
         </div>
       )}
-      {!building && !nearWorship && !npcNear && !meritSpot && chestNear && (
+      {!building && toyNear && (
+        <div className="gather-hint">{playing ? `😄 กำลังเล่น${playing.spot.name} · เดินเพื่อเลิกเล่น` : <><kbd>E</kbd> {toyHint(toyNear)}</>}</div>
+      )}
+      {!building && !toyNear && !nearWorship && !npcNear && !meritSpot && chestNear && (
         <div className="gather-hint">
           <kbd>E</kbd> {chestHint(chestNear)}
         </div>
