@@ -1,9 +1,10 @@
+import { editables, useLayoutEdit } from '../game/layoutEdit'
 import { FarmLand } from './FarmLand'
 import { GrandHome } from './GrandHome'
 import { BigStore, Campus, EventGround, Garage, Lake, RoadSurface, Stall } from './VillageLayout'
 import { useGame } from '../game/store'
 import type { Group } from 'three'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { BananaTree } from './models/BananaTree'
 import { Treasures } from './Treasure'
@@ -99,7 +100,13 @@ function Label({ text, y, color = '#2e2a24' }: { text: string; y: number; color?
 }
 
 function PlaceMesh({ place }: { place: Place }) {
-  const [x, z] = place.pos
+  // โหมดย้ายที่: แสดงตำแหน่งที่กำลังลากวาง (ยังไม่บันทึก) ทันที
+  const live = useLayoutEdit((st) => st.draft['place:' + place.id])
+  const [x, z] = live ? [live.x, live.z] : place.pos
+  const rotY = live ? live.rot : (place.rotation ?? 0)
+  useEffect(() => {
+    editables.set('place:' + place.id, { id: 'place:' + place.id, name: place.name, wx: x, wz: z, rot: rotY })
+  }, [place.id, place.name, x, z, rotY])
   const [w, d] = place.size
   let body: React.ReactNode = null
   let labelY = 5
@@ -294,7 +301,7 @@ function PlaceMesh({ place }: { place: Place }) {
   }
 
   return (
-    <group position={[x, 0, z]} rotation={[0, place.rotation ?? 0, 0]}>
+    <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {body}
       <Label text={place.name} y={labelY} />
     </group>

@@ -377,7 +377,7 @@ function GuideTab() {
       <h3>คู่มือการเล่น</h3>
       <ul className="howto">
         <li>
-          <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> หรือปุ่มลูกศร — เดิน · <kbd>Shift</kbd> ค้างไว้ — วิ่ง · <kbd>Enter</kbd> — กระโดดข้ามรั้ว/สิ่งกีดขวางเตี้ย ๆ
+          <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> หรือปุ่มลูกศร — เดิน · <kbd>V</kbd> — สลับเดินช้า/เดินเร็ว · <kbd>Shift</kbd> ค้างไว้ — วิ่ง · <kbd>Enter</kbd> — กระโดดข้ามรั้ว/สิ่งกีดขวางเตี้ย ๆ
         </li>
         <li>ลากเมาส์ — หมุนกล้อง · ล้อเมาส์ — ซูมเข้า/ออก</li>
         <li>

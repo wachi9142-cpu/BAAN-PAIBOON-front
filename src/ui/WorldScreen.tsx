@@ -5,6 +5,10 @@ import { startPlay, toyHint, usePlay } from '../game/play'
 import { isShop, SHOPS } from '../game/content/shops'
 import { isBoard, openBoard, useBoard } from '../game/noticeboard'
 import { NoticeBoardWindow } from './NoticeBoardWindow'
+import { toggleFastWalk, useMove } from '../game/movement'
+import { TouchControls } from './TouchControls'
+import { LayoutEditor } from './LayoutEditor'
+import { LayoutDragger } from '../scenes/LayoutDragger'
 import { SwimBar, WaterMenu } from './WaterMenu'
 import { useWater } from '../game/water'
 import { activateWater, waterHint } from '../game/waterTick'
@@ -162,6 +166,10 @@ export function WorldScreen() {
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
       if (e.code === 'KeyR' && !e.repeat) toggleRide()
       if (e.code === 'KeyQ' && !e.repeat) whistle()
+      if (e.code === 'KeyV' && !e.repeat && (e.target as HTMLElement)?.tagName !== 'INPUT') {
+        toggleFastWalk()
+        useGame.getState().toast({ title: useMove.getState().fastWalk ? 'เดินเร็ว' : 'เดินช้า (ปกติ)', body: 'กด V สลับเดินช้า/เดินเร็ว · Shift ค้าง = วิ่ง', tone: 'info' })
+      }
       if (e.code === 'KeyE' && !e.repeat) {
         const g = useGame.getState()
         if (g.paused) return
@@ -256,6 +264,7 @@ export function WorldScreen() {
         <Player />
         <HomeInterior />
         <WaterLife />
+        <LayoutDragger />
         {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
         <PlayClock />
         <PetBond />
@@ -271,6 +280,8 @@ export function WorldScreen() {
       <SeedPicker />
       <NoticeBoardWindow />
       <WaterMenu />
+      <TouchControls />
+      <LayoutEditor />
       <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
@@ -837,7 +848,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
 
       <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · <kbd>Enter</kbd> กระโดด · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
+        <kbd>W A S D</kbd> เดิน · <kbd>V</kbd> เดินช้า/เร็ว · <kbd>Shift</kbd> วิ่ง · <kbd>Enter</kbd> กระโดด · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
         {(
           [
             ['KeyP', 'P', 'พัก'],

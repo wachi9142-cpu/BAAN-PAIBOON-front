@@ -1,5 +1,9 @@
 import { useMemo, useRef } from 'react'
 import { RBox } from './models/RBox'
+import { CashewTree } from './models/CashewTree'
+import { Editable } from './Editable'
+import { SAVED_LAYOUT } from '../game/layoutEdit'
+import { PLACES } from '../game/content/village'
 import { Bush, GableRoof, PicketFence } from './models/House'
 import { BananaTree } from './models/BananaTree'
 import { Pet } from './models/Pet'
@@ -14,7 +18,11 @@ import type { PetChoice } from '../game/content/pets'
  * ขอบเขตรั้วบ้าน (พิกัดภายใน เทียบจุดกลางเดิม) — ขยายพื้นที่ไปทางตะวันออกและทางเหนือ (ผู้สร้าง 18 พ.ย. 2569: "บ้านฟ่างใหญ่กว่านี้")
  * ฝั่งตะวันตก (ติดซอย 2) และฝั่งใต้ (ติดถนนดินแดง/ประตู) อยู่ที่เดิม
  */
-export const HOME_BOX = { x0: -15, x1: 23, z0: -13, z1: 24 }
+export const HOME_BOX = { x0: -15, x1: 39, z0: -13, z1: 38 }
+/** ช่องทางเข้ารถยนต์ 1 คัน ที่รั้วฝั่งเหนือ (ติดถนนดินแดงแนวนอนหลังบ้าน): x กลางช่อง · ครึ่งความกว้าง */
+export const HOME_BACK_GATE = { x: 1.5, half: 4.5 }
+/** มุมรั้วด้านซอย 2 ฝั่งถนนหลังบ้าน (มุม x0, z1) ไม่มีรั้ว เป็นพื้นที่ว่างทางลัดเดินเข้าออก — เว้นกี่เมตรจากมุมทั้งสองด้าน */
+export const HOME_CORNER_GAP = 4
 export const HOME_W = HOME_BOX.x1 - HOME_BOX.x0
 export const HOME_D = HOME_BOX.z1 - HOME_BOX.z0
 const BOX_CX = (HOME_BOX.x0 + HOME_BOX.x1) / 2
@@ -23,19 +31,29 @@ const BOX_CZ = (HOME_BOX.z0 + HOME_BOX.z1) / 2
 export const HOME_GATE: [number, number] = [-6.5, -13]
 
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] */
-export const HOME_SOLIDS: [number, number, number, number][] = [
-  [-8, -5, 9, 7], // บ้านไม้สองชั้น
-  [-12, 9, 3, 3], // ยุ้งข้าว
-  [-6.5, 9, 5, 4], // บ้านหลังที่สอง (ครัว)
-  [-2, 10.2, 3, 2], // ห้องน้ำนอกบ้าน 2 ห้อง
-  [8, 10.5, 2.5, 2], // เล้าไก่
-  [11, 10.5, 2.5, 2.5], // คอกหมู
-  [13.5, 7, 2, 3], // ยุ้งฟาง
-  [2.5, -9, 4, 3], // เรือนกล้วยไม้
+const BASE_SOLIDS: [number, number, number, number, string][] = [
+  [-7.5, -6, 13, 9, 'main'], // บ้านไม้สองชั้น (ชั้นล่าง = ครัว)
+  [-12, 9, 3, 3, 'ricebarn'], // ยุ้งข้าว
+  [-6.5, 9, 5, 4, 'cookhouse'], // บ้านหลังที่สอง (ครัว)
+  [-2, 10.2, 3, 2, 'toilets'], // ห้องน้ำนอกบ้าน 2 ห้อง
+  [8, 10.5, 2.5, 2, 'coop'], // เล้าไก่
+  [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
+  [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
+  [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
 ]
+/** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
+export const HOME_SOLIDS: [number, number, number, number][] = BASE_SOLIDS.map(([x, z, w, d, id]) => {
+  const m = SAVED_LAYOUT['home:' + id]
+  if (!m) return [x, z, w, d]
+  const q = Math.abs(Math.sin(m.rot)) > 0.7
+  return [m.x, m.z, q ? d : w, q ? w : d]
+})
 
 export function GrandHome() {
   const { x0, x1, z0, z1 } = HOME_BOX
+  // จุดกลางบ้านในพิกัดโลก (สำหรับโหมดย้ายที่)
+  const hp = PLACES.find((p) => p.id === 'home-tarang')
+  const O: [number, number] = hp ? [hp.pos[0], hp.pos[1]] : [0, 0]
   return (
     <group>
       {/* พื้นดินบริเวณบ้าน + ลานปูนหน้าบ้าน */}
@@ -43,18 +61,34 @@ export function GrandHome() {
         <planeGeometry args={[HOME_W, HOME_D]} />
         <meshStandardMaterial color="#93ad62" />
       </mesh>
-      <mesh position={[-6.5, 0.03, -10.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[-6.5, 0.03, 0.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[11, 5]} />
         <meshStandardMaterial color="#c9c3b5" />
       </mesh>
-      <MainHouse />
+      <Editable id="home:main" name="บ้านไม้สองชั้น (บ้านหลัก)" x={-7.5} z={-6} origin={O}>
+        <MainHouse />
+      </Editable>
       {/* แคร่หน้าประตู = ที่นอนของน้องหมา + แคร่ใหญ่ 2 ตัวข้างครัว */}
-      <Bench x={-8} z={-9.6} w={2.2} d={1.2} />
-      <Bench x={-3.3} z={-2} w={1.8} d={1.1} />
-      <Bench x={-3.3} z={-3.4} w={1.8} d={1.1} />
-      <HousePets />
-      <Car x={-1.6} z={-10.2} />
-      <WaterFilter x={-12.5} z={-10.5} />
+      <Editable id="home:frontbench" name="แคร่หน้าประตู + น้องหมา" x={-4.4} z={-0.3} origin={O}>
+        <group position={[3.6, 0, 0.1]}>
+          <Bench x={-8} z={-0.4} w={2.2} d={1.2} />
+          <HousePets only="dog" />
+        </group>
+      </Editable>
+      <Editable id="home:sidebench" name="แคร่ใหญ่ข้างครัว + แมว" x={0.6} z={-3} origin={O}>
+        <group position={[3.9, 0, -0.3]}>
+          <Bench x={-3.3} z={-2} w={1.8} d={1.1} />
+          <Bench x={-3.3} z={-3.4} w={1.8} d={1.1} />
+          <HousePets only="cat" />
+        </group>
+      </Editable>
+      <Editable id="home:car" name="รถยนต์" x={-9.6} z={1.4} origin={O}>
+        {/* จอดรถ 1 คัน: ลานปูนหน้าประตูด้านเหนือ ฝั่งตะวันตกของประตู */}
+        <Car x={-9.6} z={1.4} />
+      </Editable>
+      <Editable id="home:filter" name="เครื่องกรองน้ำ" x={-13.4} z={-11.8} origin={O}>
+        <WaterFilter x={-13.4} z={-11.8} />
+      </Editable>
       {/* โอ่งใหญ่ใส่น้ำ + โอ่งรองน้ำฝน หลังครัว */}
       {[
         [-2.2, -0.4, 0.55],
@@ -71,22 +105,46 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
-      <VegFlowerGarden x={2.2} z={2.5} />
-      <OrchidHouse x={2.5} z={-9} />
-      <RiceBarn x={-12} z={9} />
-      <CookHouse x={-6.5} z={9} />
-      <OutdoorToilets x={-2} z={10.2} />
-      <BuffaloPen x={3} z={8.8} />
-      <ChickenCoop x={8} z={10.5} />
-      <PigPen x={11} z={10.5} />
-      <StrawBarn x={13.5} z={7} />
+      <Editable id="home:veggarden" name="สวนผักสวนดอกไม้" x={2.2} z={2.5} origin={O}>
+        <VegFlowerGarden x={2.2} z={2.5} />
+      </Editable>
+      <Editable id="home:orchid" name="เรือนกล้วยไม้" x={2.5} z={-9} origin={O}>
+        <OrchidHouse x={2.5} z={-9} />
+      </Editable>
+      <Editable id="home:ricebarn" name="ยุ้งข้าว" x={-12} z={9} origin={O}>
+        <RiceBarn x={-12} z={9} />
+      </Editable>
+      <Editable id="home:cookhouse" name="บ้านหลังที่สอง (ครัว)" x={-6.5} z={9} origin={O}>
+        <CookHouse x={-6.5} z={9} />
+      </Editable>
+      <Editable id="home:toilets" name="ห้องน้ำนอกบ้าน" x={-2} z={10.2} origin={O}>
+        <OutdoorToilets x={-2} z={10.2} />
+      </Editable>
+      <Editable id="home:buffalo" name="คอกควาย" x={3} z={8.8} origin={O}>
+        <BuffaloPen x={3} z={8.8} />
+      </Editable>
+      <Editable id="home:coop" name="เล้าไก่" x={8} z={10.5} origin={O}>
+        <ChickenCoop x={8} z={10.5} />
+      </Editable>
+      <Editable id="home:pigpen" name="คอกหมู" x={11} z={10.5} origin={O}>
+        <PigPen x={11} z={10.5} />
+      </Editable>
+      <Editable id="home:strawbarn" name="ยุ้งฟาง" x={13.5} z={7} origin={O}>
+        <StrawBarn x={13.5} z={7} />
+      </Editable>
       <Orchard />
       <Surroundings />
       {/* รั้วไม้รอบบ้าน (เว้นประตูหน้าบ้าน) */}
       <PicketFence x={(x0 + HOME_GATE[0] - 2) / 2} z={z0} len={HOME_GATE[0] - 2 - x0} />
       <PicketFence x={(HOME_GATE[0] + 2 + x1) / 2} z={z0} len={x1 - HOME_GATE[0] - 2} />
-      <PicketFence x={BOX_CX} z={z1} len={HOME_W} />
-      <PicketFence x={x0} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
+      <PicketFence x={(x0 + HOME_CORNER_GAP + HOME_BACK_GATE.x - HOME_BACK_GATE.half) / 2} z={z1} len={HOME_BACK_GATE.x - HOME_BACK_GATE.half - x0 - HOME_CORNER_GAP} />
+      <PicketFence x={(HOME_BACK_GATE.x + HOME_BACK_GATE.half + x1) / 2} z={z1} len={x1 - HOME_BACK_GATE.x - HOME_BACK_GATE.half} />
+      {/* ทางรถเข้าออกด้านหลัง (ดินอัด) */}
+      <mesh position={[HOME_BACK_GATE.x, 0.028, z1 - 3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[HOME_BACK_GATE.half * 2 - 1, 6]} />
+        <meshStandardMaterial color="#b8865a" roughness={1} />
+      </mesh>
+      <PicketFence x={x0} z={(z0 + z1 - HOME_CORNER_GAP) / 2} len={HOME_D - HOME_CORNER_GAP} rot={Math.PI / 2} />
       <PicketFence x={x1} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
       {/* ป้ายหน้าบ้าน */}
       <group position={[HOME_GATE[0] + 2.6, 0, z0 - 0.3]}>
@@ -106,13 +164,15 @@ export function GrandHome() {
 
 // ---------------------------------------------------------------------------
 /** บ้านไม้สองชั้น พื้นปูน: ชั้นล่างก่อปูน หน้าต่างสแตนเลสมุ้งลวดยาว ประตูบ้านสีน้ำเงินบานใหญ่ · ชั้นบนไม้ หน้าต่างคู่ 8 บาน */
+/** บ้านหลัก: ใหญ่ขึ้น (ผู้สร้าง 18 พ.ย. 2569) · ชั้นล่างทั้งชั้นเป็นห้องครัว ประตูน้ำเงินด้าน +z */
+export const MAIN_HOUSE = { x: -7.5, z: -6, W: 13, D: 9 }
 function MainHouse() {
-  const W = 9
-  const D = 7
+  const W = MAIN_HOUSE.W
+  const D = MAIN_HOUSE.D
   const low = 2.8
   const up = 2.6
   return (
-    <group position={[-8, 0, -5]}>
+    <group position={[MAIN_HOUSE.x, 0, MAIN_HOUSE.z]}>
       {/* พื้นปูน */}
       <mesh position={[0, 0.1, 0]} receiveShadow>
         <RBox args={[W + 0.6, 0.2, D + 0.6]} radius={0.08} />
@@ -123,8 +183,8 @@ function MainHouse() {
         <RBox args={[W, low, D]} radius={0.25} />
         <meshStandardMaterial color="#eadfc8" />
       </mesh>
-      {/* ประตูบ้านสีน้ำเงินบานใหญ่ (หน้าบ้าน) */}
-      <mesh position={[1.4, 1.25, -D / 2 - 0.03]}>
+      {/* ประตูบ้านสีน้ำเงินบานใหญ่ — ด้านเหนือ (หันเข้าลานในบ้าน ฝั่งครัว) ตามที่ผู้สร้างกำหนด 18 พ.ย. 2569 */}
+      <mesh position={[1.4, 1.25, D / 2 + 0.03]}>
         <RBox args={[1.6, 2.1, 0.08]} radius={0.04} />
         <meshStandardMaterial color="#2f5f9a" />
       </mesh>
@@ -169,8 +229,8 @@ function MainHouse() {
         </mesh>
       ))}
       {/* หน้าต่างคู่ชั้นบน 8 บาน (ด้านซ้าย = หน้าบ้าน) */}
-      {Array.from({ length: 8 }).map((_, i) => (
-        <group key={i} position={[-W / 2 + 0.85 + i * 1.05, 0.36 + low + up * 0.55, -(D - 0.3) / 2 - 0.04]}>
+      {Array.from({ length: 11 }).map((_, i) => (
+        <group key={i} position={[-W / 2 + 1.25 + i * 1.05, 0.36 + low + up * 0.55, -(D - 0.3) / 2 - 0.04]}>
           {[-0.2, 0.2].map((dx) => (
             <mesh key={dx} position={[dx, 0, 0]}>
               <RBox args={[0.36, 0.9, 0.05]} radius={0.02} />
@@ -219,19 +279,19 @@ function Bench({ x, z, w, d }: { x: number; z: number; w: number; d: number }) {
 
 /** หมา 6 ตัวนอนที่แคร่หน้าประตู + แมวแต้ม (นอนนิ่ง ๆ) */
 const HOME_PETS: { pet: PetChoice; pos: [number, number, number]; rot: number }[] = [
-  { pet: { species: 'dog', name: 'ถุงเงิน', color: '#c99a4a', pattern: 'patches', patternColor: '#f3ead8', fur: 'long', size: 'large' } as PetChoice, pos: [-8.6, 0.5, -9.6], rot: 0.4 },
-  { pet: { species: 'dog', name: 'โซดา', color: '#f4efe6', pattern: 'plain', patternColor: '#ffffff', fur: 'long' } as PetChoice, pos: [-7.4, 0.5, -9.5], rot: -0.6 },
-  { pet: { species: 'dog', name: 'เสือ', color: '#8a5a32', pattern: 'stripes', patternColor: '#2b2a2c' } as PetChoice, pos: [-9.6, 0, -10.6], rot: 1.2 },
-  { pet: { species: 'dog', name: 'เบอร์ดี้', color: '#9a6a3e', pattern: 'blacktan', patternColor: '#2b2a2c' } as PetChoice, pos: [-6.4, 0, -10.9], rot: -1.4 },
-  { pet: { species: 'dog', name: 'ฟีโน่', color: '#2b2a2c', pattern: 'tuxedo', patternColor: '#f4efe6' } as PetChoice, pos: [-5.6, 0, -9.2], rot: 2.4 },
-  { pet: { species: 'dog', name: 'ตัวที่ 5', color: '#c99a4a', pattern: 'plain', patternColor: '#f3ead8' } as PetChoice, pos: [-10.4, 0, -9.4], rot: -0.2 },
+  { pet: { species: 'dog', name: 'ถุงเงิน', color: '#c99a4a', pattern: 'patches', patternColor: '#f3ead8', fur: 'long', size: 'large' } as PetChoice, pos: [-8.6, 0.5, -0.4], rot: Math.PI - 0.4 },
+  { pet: { species: 'dog', name: 'โซดา', color: '#f4efe6', pattern: 'plain', patternColor: '#ffffff', fur: 'long' } as PetChoice, pos: [-7.4, 0.5, -0.5], rot: Math.PI + 0.6 },
+  { pet: { species: 'dog', name: 'เสือ', color: '#8a5a32', pattern: 'stripes', patternColor: '#2b2a2c' } as PetChoice, pos: [-9.6, 0, 0.6], rot: Math.PI - 1.2 },
+  { pet: { species: 'dog', name: 'เบอร์ดี้', color: '#9a6a3e', pattern: 'blacktan', patternColor: '#2b2a2c' } as PetChoice, pos: [-6.4, 0, 0.9], rot: Math.PI + 1.4 },
+  { pet: { species: 'dog', name: 'ฟีโน่', color: '#2b2a2c', pattern: 'tuxedo', patternColor: '#f4efe6' } as PetChoice, pos: [-5.6, 0, -0.8], rot: Math.PI - 2.4 },
+  { pet: { species: 'dog', name: 'ตัวที่ 5', color: '#c99a4a', pattern: 'plain', patternColor: '#f3ead8' } as PetChoice, pos: [-10.4, 0, -0.6], rot: Math.PI + 0.2 },
   { pet: { species: 'cat', name: 'แต้ม', color: '#2b2a2c', pattern: 'tuxedo', patternColor: '#f4efe6' } as PetChoice, pos: [-3.3, 0.5, -2.2], rot: 0.8 },
 ]
 
-function HousePets() {
+function HousePets({ only }: { only?: 'dog' | 'cat' }) {
   return (
     <group>
-      {HOME_PETS.map((p, i) => (
+      {HOME_PETS.filter((p) => !only || p.pet.species === only).map((p, i) => (
         <RestingPet key={i} pet={p.pet} pos={p.pos} rot={p.rot} />
       ))}
     </group>
@@ -749,18 +809,18 @@ function Surroundings() {
   return (
     <group>
       {/* แนวมะพร้าวรอบบ้าน (หลังแนวมะพร้าวคือรั้วไม้) */}
-      {[-13, -9, -5, -1, 3, 7, 11, 15, 19].map((x, i) => (
+      {[-13, -9, -5, 8, 11, 15, 19, 23, 27, 31, 35].map((x, i) => (
         <Palm key={'cn' + x} x={x} z={d} h={5 + (i % 3) * 0.6} />
       ))}
-      {[-8, -3, 2, 7, 12, 17, 21].map((z, i) => (
-        <Palm key={'cw' + z} x={-h} z={z} h={5.4 + (i % 2) * 0.5} />
+      {[-8, -3, 2, 7, 12, 17, 21, 26, 31, 35].map((z, i) => (
+        <Palm key={'cw' + z} x={-h - 0.4} z={z} h={5.4 + (i % 2) * 0.5} />
       ))}
-      {[-6, 0, 6, 12, 18].map((z, i) => (
+      {[-6, 0, 6, 12, 18, 24, 30, 35].map((z, i) => (
         <Palm key={'ce' + z} x={east} z={z} h={5.2 + (i % 2) * 0.5} />
       ))}
       {/* หมาก: พื้นที่หญ้าฝั่งตะวันตก-เหนือ */}
       {Array.from({ length: 14 }).map((_, i) => (
-        <Palm key={'ar' + i} x={-13.6 + (i % 2) * 1.1} z={-11 + Math.floor(i / 2) * 1.6} h={4.2 + (i % 3) * 0.4} areca />
+        <Palm key={'ar' + i} x={24 + (i % 2) * 1.1} z={-9 + Math.floor(i / 2) * 1.6} h={4.2 + (i % 3) * 0.4} areca />
       ))}
       {Array.from({ length: 8 }).map((_, i) => (
         <Palm key={'ar2' + i} x={0.5 + i * 1.6} z={12} h={4 + (i % 2) * 0.5} areca />
@@ -772,6 +832,16 @@ function Surroundings() {
       <TrunkTree x={0} z={-11.8} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-3.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-0.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
+      {/* มะม่วงหิมพานต์ 3 ต้น: มุมสนามหญ้าตะวันตกเฉียงเหนือ (ผู้สร้างกำหนดจุด 18 พ.ย. 2569) · ผลสีส้มแดง */}
+      {[
+        [-11.5, 15],
+        [-8.5, 18],
+        [-12, 19.8],
+      ].map(([x, z], i) => (
+        <group key={'cashew' + i} position={[x, 0, z]}>
+          <CashewTree seed={i + 3} scale={1 + (i % 2) * 0.12} />
+        </group>
+      ))}
       {/* มะม่วงเขียวใหญ่ */}
       <TrunkTree x={-13} z={6} h={2.6} r={1.5} color="#3f6e33" fruit={5} fruitColor="#8ac040" fruitR={0.1} />
     </group>

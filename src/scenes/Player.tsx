@@ -1,4 +1,6 @@
 import { playerPose } from '../game/playerPose'
+import { useLayoutEdit } from '../game/layoutEdit'
+import { GAIT_MOTION, GAIT_SPEED, jumpReq, stepTick, stick, surfaceAt, useMove, type Gait } from '../game/movement'
 import { useWater, waterRt } from '../game/water'
 import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
 import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, outsideDoor, useInterior } from '../game/interior'
@@ -42,8 +44,6 @@ function rideHeight(save: SaveData) {
 }
 
 /** เก็บปุ่มที่กดค้าง (ใช้ e.code จึงใช้ได้แม้คีย์บอร์ดเป็นภาษาไทย) */
-/** คำขอกระโดดล่าสุด (กด Enter) */
-const jumpReq = { at: -1e9 }
 /** กระโดด: ทั้งหมด 0.8 วิ (ย่อตัว → ลอย → ลงพื้นรับแรง) สูงสุด 0.85 ม. · ลอยอยู่ = ข้ามรั้ว/สิ่งกีดขวางเตี้ยได้ */
 const JUMP_DUR = 0.8
 const JUMP_H = 0.85
@@ -80,7 +80,8 @@ function useKeys() {
 /** มุมกล้อง: ลากเมาส์เพื่อหมุน, ล้อเมาส์เพื่อซูม */
 function useOrbit() {
   const gl = useThree((s) => s.gl)
-  const orbit = useRef({ yaw: Math.PI, pitch: 0.42, dist: 9 })
+  // กล้องเริ่มห่างขึ้น มองกว้าง (ผู้สร้างขอ 18 พ.ย. 2569) · ซูมออกได้ถึง 32 ม.
+  const orbit = useRef({ yaw: Math.PI, pitch: 0.5, dist: 14 })
   useEffect(() => {
     const el = gl.domElement
     let dragging = false
@@ -93,6 +94,12 @@ function useOrbit() {
       el.setPointerCapture(e.pointerId)
     }
     const move = (e: PointerEvent) => {
+      // โหมดย้ายที่: กำลังลากของอยู่ ไม่หมุนกล้อง
+      if (useLayoutEdit.getState().dragging) {
+        lx = e.clientX
+        ly = e.clientY
+        return
+      }
       if (!dragging) return
       const s = useSettings.getState().mouseSensitivity
       orbit.current.yaw -= (e.clientX - lx) * 0.006 * s
@@ -103,7 +110,8 @@ function useOrbit() {
     const up = () => (dragging = false)
     const wheel = (e: WheelEvent) => {
       e.preventDefault()
-      orbit.current.dist = Math.min(22, Math.max(4, orbit.current.dist + e.deltaY * 0.01))
+      if (useLayoutEdit.getState().dragging) return
+      orbit.current.dist = Math.min(32, Math.max(4, orbit.current.dist + e.deltaY * 0.01))
     }
     el.addEventListener('pointerdown', down)
     el.addEventListener('pointermove', move)
@@ -143,6 +151,10 @@ export function Player() {
   const wfx = useRef<WaterFx>({ sink: 0, tilt: 0, speedK: 1, canRun: true })
   const tilt = useRef(0)
   const jumpT = useRef(-1)
+  /** ความเร็วปัจจุบัน (ค่อย ๆ เร่ง/ชะลอ) และทิศที่กำลังไป */
+  const curSpeed = useRef(0)
+  const moveDir = useRef<[number, number]>([0, 1])
+  const gaitRef = useRef<Gait>('stand')
   const baseY = useRef(0)
   const toast = useGame((s) => s.toast)
 
@@ -172,6 +184,7 @@ export function Player() {
       warp: (x: number, z: number, h = 0) => (warp.pending = { x, z, heading: h, y: 0 }),
       water: () => ({ ...useWater.getState(), depth: waterRt.depth, pos: [...pos.current], jumpT: jumpT.current, y: root.current?.position.y, gesture: useGame.getState().gesture, riding: useGame.getState().riding, play: !!playPose(performance.now()) }),
       useWater,
+      jumpReq,
     }
   }, [])
 
@@ -185,9 +198,18 @@ export function Player() {
     if (useGame.getState().paused) return
     const dt = Math.min(rawDt, 0.05)
     const k = keys.current
-    const f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
-    const r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
-    const running = (k.has('ShiftLeft') || k.has('ShiftRight')) && wfx.current.canRun
+    let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
+    let r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
+    // จอยสติกบนจอสัมผัส: ดันนิดเดียว = เดินช้า · ดันสุด = เดินเร็ว
+    let stickMag = 0
+    if (stick.active && !f && !r) {
+      stickMag = Math.min(1, Math.hypot(stick.x, stick.y))
+      if (stickMag > 0.15) {
+        f = -stick.y
+        r = stick.x
+      } else stickMag = 0
+    }
+    const running = (k.has('ShiftLeft') || k.has('ShiftRight') || stick.run) && wfx.current.canRun
 
     // ทิศทางอิงมุมกล้อง: กล้องอยู่ที่ yaw มองเข้าหาตัวละคร
     const yaw = orbit.current.yaw
@@ -206,15 +228,16 @@ export function Player() {
       heading.current = w.heading
       orbit.current.yaw = w.heading + Math.PI
       // ในบ้าน: มองจากด้านบน (บ้านตุ๊กตา) · ออกนอกบ้าน: มุมปกติ
-      orbit.current.pitch = useInterior.getState().inside ? 1.05 : 0.42
-      orbit.current.dist = useInterior.getState().inside ? 8 : 9
+      orbit.current.pitch = useInterior.getState().inside ? 1.05 : 0.5
+      orbit.current.dist = useInterior.getState().inside ? 8 : 14
       if (root.current) root.current.position.set(w.x, w.y, w.z)
       baseY.current = w.y
       state.camera.position.set(w.x, 2, w.z + 3)
     }
     const prevP: [number, number] = [pos.current[0], pos.current[1]]
     // กระโดด: เฉพาะบนบก/น้ำตื้น ไม่ได้ขี่สัตว์ ไม่ได้อยู่ในบ้าน ไม่ได้เล่นเครื่องเล่น
-    if (performance.now() - jumpReq.at < 400 && jumpT.current < 0) {
+    // ใช้คำขอในเฟรมถัดไปเสมอ (ไม่หมดอายุตามเวลา เผื่อเฟรมกระตุก)
+    if (jumpReq.at > 0 && jumpT.current < 0) {
       jumpReq.at = -1e9
       const wm = useWater.getState().mode
       const g0 = useGame.getState()
@@ -289,16 +312,47 @@ export function Player() {
       const caneK = look.age === 'elder' && look.cane && look.cane !== 'none' ? CANE_WALK : 1
       // ขี่สัตว์: ใช้ความเร็วของสัตว์ (ไม่นับไม้เท้า/วัย)
       const ride = useGame.getState().riding ? RIDEABLE[save.player.pet?.species ?? 'dog'] : undefined
-      const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK * wfx.current.speedK
-      const insideNow = useInterior.getState().inside
-      const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
-      pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
+      // ท่าเดิน: เดินช้า (ปกติ) · เดินเร็ว (กด V หรือดันจอยสุด) · วิ่ง (Shift ค้าง)
+      const gait: Gait = running ? 'run' : useMove.getState().fastWalk || stickMag > 0.7 ? 'fast' : 'slow'
+      const want = ride
+        ? running
+          ? RUN * 1.2
+          : WALK * ride.speed
+        : GAIT_SPEED[gait] * (gait === 'run' ? age.runSpeed : age.walkSpeed) * caneK * wfx.current.speedK
+      // เร่งความเร็วนุ่ม ๆ ไม่กระชาก
+      curSpeed.current += Math.sign(want - curSpeed.current) * Math.min(Math.abs(want - curSpeed.current), dt * 16)
+      moveDir.current = [mx, mz]
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current
       diff = Math.atan2(Math.sin(diff), Math.cos(diff))
       heading.current += diff * Math.min(1, dt * 12)
-      motion.current = running ? 2 : 1
+    } else if (swing.current >= 0 || wandCast.aiming || pp || waterRt.rescue) {
+      curSpeed.current = 0
     } else {
+      // ปล่อยปุ่ม: ค่อย ๆ ชะลอแล้วหยุด (ไม่หยุดแข็งทื่อ)
+      curSpeed.current = Math.max(0, curSpeed.current - dt * 14)
+    }
+    if (curSpeed.current > 0.02) {
+      const sp = curSpeed.current
+      const insideNow = useInterior.getState().inside
+      const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
+      const before = pos.current
+      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
+      // ท่าตามความเร็วจริง (ตอนชะลอจะเปลี่ยนจากวิ่ง → เดินเร็ว → เดินช้า → หยุด)
+      const ageK = AGE_RULES[save.player.appearance.age ?? 'adult'].walkSpeed
+      const g: Gait = sp < 0.35 ? 'stand' : sp > 6 * ageK ? 'run' : sp > 3.9 * ageK ? 'fast' : 'slow'
+      gaitRef.current = g
+      motion.current = GAIT_MOTION[g]
+      // เสียงฝีเท้าตามจังหวะก้าวและพื้น (ไม่ดังตอนลอยตัว ขี่สัตว์ หรืออยู่ในน้ำ)
+      if (jumpT.current < 0 && !useGame.getState().riding && useWater.getState().mode === 'land') {
+        stepTick(Math.hypot(pos.current[0] - before[0], pos.current[1] - before[1]), g, surfaceAt(pos.current[0], pos.current[1], insideNow))
+      }
+    } else {
+      curSpeed.current = 0
+      gaitRef.current = 'stand'
+    }
+    if (useMove.getState().gait !== gaitRef.current) useMove.setState({ gait: gaitRef.current })
+    if (curSpeed.current <= 0.02) {
       motion.current = 0
       // ทำท่าในโบสถ์ (กราบ แปะทอง เขย่าเซียมซี): หันหน้าเข้าหาพระประธาน
       const gst = useGame.getState().gesture

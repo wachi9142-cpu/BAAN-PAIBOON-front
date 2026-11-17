@@ -2662,3 +2662,46 @@ button.save-ind:hover {
 .status .coins {
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
 }
+
+/* ---------- ปุ่มบนจอสัมผัส ---------- */
+.touch-ctl { position: absolute; inset: auto 0 96px 0; height: 0; pointer-events: none; z-index: 30; }
+.touch-stick {
+  position: absolute; left: 28px; bottom: 0; width: 132px; height: 132px; border-radius: 50%;
+  background: rgba(255, 252, 244, 0.28); border: 2px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px); pointer-events: auto; touch-action: none; display: grid; place-items: center;
+}
+.touch-knob {
+  width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18); pointer-events: none;
+}
+.touch-btns { position: absolute; right: 28px; bottom: 0; display: flex; gap: 14px; align-items: flex-end; pointer-events: auto; }
+.touch-btn {
+  width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 252, 244, 0.45); font: 600 15px 'Mitr', sans-serif; color: #2f4a2a;
+  touch-action: none; backdrop-filter: blur(4px);
+}
+.touch-btn.jump { width: 86px; height: 86px; background: rgba(214, 238, 200, 0.6); }
+.touch-btn:active { transform: scale(0.94); }
+
+/* ---------- โหมดย้ายที่ ---------- */
+.layout-toggle {
+  position: absolute; right: 18px; top: 84px; z-index: 40; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6); background: rgba(255, 250, 238, 0.75); backdrop-filter: blur(6px);
+  font: 600 14px 'Mitr', sans-serif; color: #3f5a2e; cursor: pointer; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+}
+.layout-toggle.on { background: #ffd23a; color: #4a3a10; }
+.layout-panel {
+  position: absolute; right: 18px; top: 130px; z-index: 40; width: 300px; padding: 12px 14px; border-radius: 16px;
+  background: rgba(255, 250, 238, 0.88); backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  font: 13px 'Mitr', sans-serif; color: #3a3a2a; display: flex; flex-direction: column; gap: 8px;
+}
+.layout-panel p { margin: 0; line-height: 1.45; color: #55553f; }
+.layout-sel { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; background: rgba(255, 210, 58, 0.18); }
+.layout-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.layout-row button {
+  padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(80, 90, 60, 0.25); background: #fffdf6;
+  font: inherit; cursor: pointer;
+}
+.layout-row button.primary { background: #4f7a3a; color: #fff; border-color: transparent; }
+.layout-row button:disabled { opacity: 0.5; cursor: default; }
+.layout-hint { color: #7a7a62; font-size: 12px; }

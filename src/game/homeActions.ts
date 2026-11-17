@@ -38,7 +38,8 @@ export function enterHome() {
 
 export function exitHome() {
   const [x, z] = outsideDoor()
-  warp.pending = { x, z, heading: Math.PI, y: 0 }
+  // ออกจากบ้านทางประตูด้านเหนือ: หันหน้าไปทางเหนือ (ลานในบ้าน)
+  warp.pending = { x, z, heading: 0, y: 0 }
   useInterior.setState({ inside: false })
 }
 

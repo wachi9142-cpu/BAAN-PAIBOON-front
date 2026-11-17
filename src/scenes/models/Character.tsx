@@ -151,9 +151,11 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
 
   useFrame((_, dt) => {
     const m = motion?.current ?? 0
-    phase.current += dt * (m === 2 ? 13 : 8) * (m > 0 ? 1 : 0) * (m === 2 ? age.runSpeed : age.walkSpeed) * (cane !== 'none' ? CANE_WALK : 1)
+    // ก้าวถี่ขึ้นตามความเร็ว: เดินช้า 7 · เดินเร็ว 10 · วิ่ง 13
+    phase.current += dt * (m >= 2 ? 13 : m >= 1.5 ? 10 : 7) * (m > 0 ? 1 : 0) * (m >= 2 ? age.runSpeed : age.walkSpeed) * (cane !== 'none' ? CANE_WALK : 1)
     idle.current += dt
-    const swing = m > 0 ? Math.sin(phase.current) * (m === 2 ? 0.8 : 0.5) : 0
+    // ก้าวยาวและแกว่งแขนมากขึ้นตามความเร็ว
+    const swing = m > 0 ? Math.sin(phase.current) * (m >= 2 ? 0.85 : m >= 1.5 ? 0.62 : 0.42) : 0
     const k = Math.min(1, dt * 10)
     const lerp = (cur: number, to: number) => cur + (to - cur) * k
     if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, swing)
@@ -336,10 +338,12 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       if (armL.current) armL.current.rotation.x = -0.95 + sh
       if (armR.current) armR.current.rotation.x = -0.95 + sh
     }
-    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + (kneel ? bow * 1.15 : 0))
+    // วิ่ง = โน้มตัวไปข้างหน้า · เดินเร็ว = โน้มเล็กน้อย
+    const lean = pose === 'ride' || pose === 'swim' || pose === 'paddle' ? 0 : m >= 2 ? 0.16 : m >= 1.5 ? 0.06 : 0
+    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + lean + (kneel ? bow * 1.15 : 0))
     if (body.current) {
       const down = kneel ? -0.62 * age.legScale : (pose === 'sit' && m === 0) || pose === 'paddle' ? -0.42 * age.legScale : 0
-      body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
+      body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * (m >= 2 ? 0.09 : m >= 1.5 ? 0.06 : 0.035) : lerp(body.current.position.y, down)
     }
     // ---- กระโดด: ย่อตัว → ดีดตัวลอย (แขนเหวี่ยงขึ้น ขางอเก็บ) → ลงพื้นย่อเข่ารับแรง ----
     const jt = jump?.current ?? -1

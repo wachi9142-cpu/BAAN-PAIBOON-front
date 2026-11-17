@@ -1,4 +1,4 @@
-import { HOME_BOX, HOME_GATE, HOME_SOLIDS } from '../scenes/GrandHome'
+import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, HOME_SOLIDS } from '../scenes/GrandHome'
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
@@ -127,8 +127,11 @@ export function homeWalls(): Rect[] {
   const gx = HOME_GATE[0]
   out.push({ minX: cx + x0, maxX: cx + gx - 2, minZ: cz + z0 - t, maxZ: cz + z0 + t })
   out.push({ minX: cx + gx + 2, maxX: cx + x1, minZ: cz + z0 - t, maxZ: cz + z0 + t })
-  out.push({ minX: cx + x0, maxX: cx + x1, minZ: cz + z1 - t, maxZ: cz + z1 + t })
-  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + z0, maxZ: cz + z1 })
+  // รั้วเหนือ เว้นช่องทางรถ
+  // มุม (x0, z1) เว้นเป็นทางลัดไม่มีรั้ว
+  out.push({ minX: cx + x0 + HOME_CORNER_GAP, maxX: cx + HOME_BACK_GATE.x - HOME_BACK_GATE.half, minZ: cz + z1 - t, maxZ: cz + z1 + t })
+  out.push({ minX: cx + HOME_BACK_GATE.x + HOME_BACK_GATE.half, maxX: cx + x1, minZ: cz + z1 - t, maxZ: cz + z1 + t })
+  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + z0, maxZ: cz + z1 - HOME_CORNER_GAP })
   out.push({ minX: cx + x1 - t, maxX: cx + x1 + t, minZ: cz + z0, maxZ: cz + z1 })
   return out
 }
