@@ -2030,3 +2030,236 @@ button.save-ind:hover {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ---------- โหมดสร้าง ---------- */
+.build-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(920px, calc(100vw - 32px));
+  background: var(--glass);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  font-family: 'Mitr', sans-serif;
+  z-index: 20;
+}
+.build-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.build-tip {
+  flex: 1;
+  font-size: 14px;
+  min-width: 200px;
+}
+.build-items {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.build-item {
+  flex: 0 0 auto;
+  width: 118px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.build-item:hover {
+  background: #fff;
+}
+.build-item.on {
+  border-color: #3f9b55;
+  background: #eaf8ec;
+}
+.build-item.poor {
+  opacity: 0.6;
+}
+.build-icon {
+  font-size: 26px;
+}
+.build-name {
+  font-size: 14px;
+}
+.build-item small {
+  font-size: 11px;
+  opacity: 0.75;
+  text-align: center;
+  line-height: 1.25;
+}
+.btn.on {
+  outline: 2px solid #e0443a;
+}
+.chest-win {
+  width: min(640px, calc(100vw - 32px));
+}
+.chest-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.chest-cols h4 {
+  margin: 0 0 6px;
+}
+.chest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.chest-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.chest-row:hover {
+  background: #fff;
+}
+.chest-arrow {
+  margin-left: auto;
+  opacity: 0.6;
+}
+.bag-slot.edible {
+  cursor: pointer;
+}
+.bag-slot.edible:hover {
+  outline: 2px solid #8bc34a;
+}
+
+/* ---------- เมนู Esc: แถบสีม่วงลาเวนเดอร์โปร่งแสงคลุมเต็มจอ (ยังเห็นฉากเกมด้านหลัง) ---------- */
+.menu-backdrop.gm-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(139, 92, 246, var(--ov-a, 0.7));
+  backdrop-filter: blur(3px) saturate(1.1);
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
+  place-items: stretch;
+  animation: ov-in 0.18s ease-out;
+}
+@keyframes ov-in {
+  from {
+    opacity: 0;
+  }
+}
+.gm-overlay .gm {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  gap: 22px;
+  padding: 28px 32px;
+  box-sizing: border-box;
+}
+.gm-overlay .gm-tabs {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  gap: 6px;
+  overflow-y: auto;
+}
+.gm-overlay .gm-title {
+  color: #fff;
+  font-family: 'Mitr', sans-serif;
+  font-size: 24px;
+  margin: 0 0 8px 4px;
+  text-shadow: 0 2px 8px rgba(40, 10, 90, 0.4);
+}
+.gm-overlay .gm-tab {
+  justify-content: flex-start;
+  color: #fff;
+  background: rgba(59, 22, 120, 0.45);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 16px;
+  text-align: left;
+}
+.gm-overlay .gm-tab:hover:not([aria-selected='true']) {
+  background: rgba(59, 22, 120, 0.7);
+}
+.gm-overlay .gm-tab[aria-selected='true'] {
+  background: rgba(255, 255, 255, 0.92);
+  color: #4c1d95;
+}
+.gm-overlay .gm-tab.resume {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.gm-overlay .gm-tab.ghost {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(59, 22, 120, 0.3);
+}
+.gm-overlay .gm-ov-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fff;
+  font-size: 13px;
+  padding: 8px 6px 0;
+  font-family: 'Mitr', sans-serif;
+}
+.gm-overlay .gm-ov-slider input {
+  accent-color: #fff;
+}
+/* เนื้อหาแต่ละแท็บ: การ์ดสีอ่อนโปร่งแสง อ่านง่าย มองทะลุเห็นฉากได้ลาง ๆ */
+.gm-overlay .gm-body {
+  background: rgba(250, 246, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(40, 10, 90, 0.3);
+}
+.gm-overlay .gm-body h3 {
+  color: #4c1d95;
+}
+.gm-overlay .gm-char-actions {
+  background: rgba(250, 246, 255, 0.96);
+}
+@media (max-width: 760px) {
+  .gm-overlay .gm {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    padding: 12px;
+    gap: 10px;
+  }
+  .gm-overlay .gm-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .gm-overlay .gm-title {
+    width: 100%;
+    font-size: 18px;
+    margin: 0;
+  }
+}

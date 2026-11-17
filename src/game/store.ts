@@ -1,3 +1,4 @@
+import type { PlacedStructure } from './content/structures'
 import { bagSlots, slotsUsed, type ItemId } from './content/items'
 import { emptyBed, GARDEN_BEDS, type BedState } from './content/garden'
 import { create } from 'zustand'
@@ -58,6 +59,10 @@ export interface SaveData {
   questsDone?: number
   /** แปลงผักสวนครัวหน้าบ้าน (ลำดับตาม GARDEN_BEDS) */
   garden: BedState[]
+  /** สิ่งปลูกสร้างที่วางเองในที่ดิน */
+  structures: PlacedStructure[]
+  /** ของในกล่องเก็บของ (ตาม uid ของกล่อง) */
+  chests: Record<string, Partial<Record<ItemId, number>>>
 }
 
 export interface QuestState {
@@ -136,6 +141,8 @@ function migrateSave(data: SaveData): SaveData {
     collection: data.collection ?? [],
     quests: data.quests ?? [],
     ...withGarden(data),
+    structures: data.structures ?? [],
+    chests: data.chests ?? {},
     homePet: data.homePet !== undefined ? data.homePet : (data.player.pet ?? null),
     version: SAVE_VERSION,
   }
@@ -274,6 +281,8 @@ export const useGame = create<GameState>()((set, get) => ({
       collection: [],
       quests: [],
       garden: GARDEN_BEDS.map(emptyBed),
+      structures: [],
+      chests: {},
       homePet: draft.pet ?? null,
       day: 1,
       minuteOfDay: STARTING_MINUTE,

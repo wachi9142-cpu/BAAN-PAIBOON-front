@@ -1,3 +1,4 @@
+import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, WORLD_HALF_SIZE, type Vec2 } from './content/village'
 import { getHouse } from './content/houses'
 import { templeWalls, type Rect } from './content/temple'
@@ -9,7 +10,7 @@ export interface Circle {
 }
 
 /** วงชนของสิ่งปลูกสร้าง (คำนวณจากข้อมูลหมู่บ้าน) */
-export function buildColliders(playerHouseId?: string): (Circle | Rect)[] {
+export function buildColliders(playerHouseId?: string, structures: PlacedStructure[] = []): (Circle | Rect)[] {
   const out: (Circle | Rect)[] = PLACES.filter((p) => (p.solidRadius ?? 0) > 0).map((p) => ({
     x: p.pos[0],
     z: p.pos[1],
@@ -21,6 +22,7 @@ export function buildColliders(playerHouseId?: string): (Circle | Rect)[] {
     out.push({ x: plot.center[0] + plot.houseOffset[0], z: plot.center[1] + plot.houseOffset[1], r: Math.max(w, d) * 0.62 })
   }
   out.push(...templeWalls())
+  for (const s of structures) out.push(...structureColliders(s))
   return out
 }
 

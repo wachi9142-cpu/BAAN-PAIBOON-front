@@ -18,7 +18,7 @@ import { ReportPanel } from './ReportPanel'
 import { useUnreadReports } from '../game/feedback/reports'
 import { ItemIcon } from './ItemIcon'
 
-type Tab = 'character' | 'bag' | 'craft' | 'animals' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
+export type Tab = 'character' | 'bag' | 'craft' | 'animals' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
 type Confirm = null | 'confirm-exit' | 'confirm-title' | 'exited'
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
@@ -34,11 +34,13 @@ const TABS: { id: Tab; icon: string; label: string }[] = [
 ]
 
 /** เมนูเกม (กด Esc): แท็บ ตัวละคร · กระเป๋า · คู่มือ · บันทึก · ตั้งค่า */
-export function GameMenu({ onClose }: { onClose: () => void }) {
+export function GameMenu({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
   const save = useGame((s) => s.save)!
   const exitToTitle = useGame((s) => s.exitToTitle)
   const lastSavedAt = useGame((s) => s.lastSavedAt)
-  const [tab, setTab] = useState<Tab>('character')
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'character')
+  const overlayOpacity = useSettings((s) => s.overlayOpacity)
+  const setSettings = useSettings((s) => s.set)
   const unread = useUnreadReports()
   const [confirm, setConfirm] = useState<Confirm>(null)
 
@@ -95,9 +97,13 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="menu-backdrop" onClick={onClose}>
+    <div className="menu-backdrop gm-overlay" style={{ '--ov-a': overlayOpacity } as React.CSSProperties} onClick={onClose}>
       <div className="gm" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="เมนูเกม">
         <nav className="gm-tabs" role="tablist">
+          <div className="gm-title">⏸ พักเกม · เมนู</div>
+          <button className="gm-tab resume" onClick={onClose}>
+            ▶ เล่นต่อ (Esc)
+          </button>
           {TABS.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} className="gm-tab" onClick={() => setTab(t.id)}>
               <span aria-hidden="true">{t.icon}</span>
@@ -112,6 +118,17 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
           <button className="gm-tab ghost" onClick={() => tryLeave('exit')}>
             🚪 ออกจากเกม
           </button>
+          <label className="gm-ov-slider" title="ปรับความเข้มของแถบสีม่วง">
+            <span>🎨 ความเข้มสีพื้นหลัง</span>
+            <input
+              type="range"
+              min={0.4}
+              max={0.9}
+              step={0.05}
+              value={overlayOpacity}
+              onChange={(e) => setSettings({ overlayOpacity: Number(e.target.value) })}
+            />
+          </label>
         </nav>
 
         <div className="gm-body">
@@ -136,11 +153,6 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
           {tab === 'settings' && <SettingsTab />}
         </div>
 
-        <div className="gm-foot">
-          <button className="btn" onClick={onClose}>
-            ▶ เล่นต่อ (Esc)
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -480,6 +492,11 @@ function SettingsTab() {
         ))}
       </div>
       <p className="hint" style={{ margin: 0 }}>เหมาะกับคอมพิวเตอร์ โน้ตบุ๊ก และไอแพด · กด Esc ในโหมดเต็มจอจะออกจากเต็มจอก่อน</p>
+
+      <label className="setting">
+        <span>ความเข้มสีพื้นหลังเมนู (Esc)</span>
+        <input type="range" min={0.4} max={0.9} step={0.05} value={settings.overlayOpacity} onChange={(e) => settings.set({ overlayOpacity: Number(e.target.value) })} />
+      </label>
 
       <div className="setting-group">เสียงและดนตรี</div>
       <label className="setting">

@@ -1,3 +1,6 @@
+import { useBuild, toggleBuild, rotateTool } from '../game/building'
+import { BuildBar, ChestWindow } from './BuildBar'
+import { STRUCTURES } from '../game/content/structures'
 import { bedHint, plant, seedsInBag, tendBed, useGarden } from '../game/garden'
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -9,7 +12,7 @@ import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
 import { PetFollower } from '../scenes/PetFollower'
 import { Villagers } from '../scenes/Villagers'
-import { GameMenu } from './GameMenu'
+import { GameMenu, type Tab } from './GameMenu'
 import { takePhoto } from '../game/photo'
 import { countOf, gather, gatherHint } from '../game/inventory'
 import { ItemIcon } from './ItemIcon'
@@ -90,6 +93,7 @@ export function WorldScreen() {
   const exitToTitle = useGame((s) => s.exitToTitle)
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
+  const [menuTab, setMenuTab] = useState<Tab | undefined>(undefined)
   const [shop, setShop] = useState(false)
   const [temple, setTemple] = useState(false)
   const nearWorshipNow = useGame((s) => s.nearWorship)
@@ -104,8 +108,24 @@ export function WorldScreen() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+      // โหมดสร้าง: B เปิด/ปิด · R หมุน · Esc ออก
+      if (e.code === 'KeyB' && !e.repeat) {
+        toggleBuild()
+        return
+      }
+      if (useBuild.getState().active) {
+        if (e.code === 'Escape') toggleBuild(false)
+        if (e.code === 'KeyR' && !e.repeat) rotateTool()
+        if (e.code === 'Escape' || e.code === 'KeyR' || e.code === 'KeyE') return
+      }
       if (e.code === 'Escape') {
         setPauseOpen(false)
+        if (useBuild.getState().chestOpen) {
+          useBuild.setState({ chestOpen: null })
+          return
+        }
+        setMenuTab(undefined)
         setMenu((m) => !m)
       }
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
@@ -125,6 +145,14 @@ export function WorldScreen() {
           else if (sp === 'water') pourWater()
           else if (sp === 'shoes') toggleShoes()
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
+        }
+        else if (useBuild.getState().near) {
+          const uid = useBuild.getState().near!
+          const st = g.save?.structures.find((s) => s.uid === uid)
+          if (st && STRUCTURES[st.id].use === 'craft') {
+            setMenuTab('craft')
+            setMenu(true)
+          } else if (st) useBuild.setState({ chestOpen: uid })
         }
         else if (useGarden.getState().near !== null) tendBed(useGarden.getState().near!)
         else if (g.wildTarget) tryCatch(g.wildTarget)
@@ -205,7 +233,9 @@ export function WorldScreen() {
           </div>
         </div>
       )}
-      {menu && <GameMenu onClose={() => setMenu(false)} />}
+      {menu && <GameMenu initialTab={menuTab} onClose={() => setMenu(false)} />}
+      <BuildBar />
+      <ChestWindow />
     </>
   )
 }
@@ -544,6 +574,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const nearWorship = useGame((s) => s.nearWorship)
   const meritSpot = useMerit((s) => s.spot)
   const bedNear = useGarden((s) => s.near)
+  const usableNear = useBuild((s) => s.near)
+  const building = useBuild((s) => s.active)
   const garden = useGame((s) => s.save?.garden)
   useClock((s) => s.minute)
   const shoesOff = useMerit((s) => s.shoesOff)
@@ -631,7 +663,16 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                   : '🔔 ตีระฆัง'}
         </div>
       )}
-      {!nearWorship && !npcNear && !meritSpot && bedNear !== null && garden && (
+      {!building && !nearWorship && !npcNear && !meritSpot && usableNear && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {(() => {
+            const st = save.structures.find((s) => s.uid === usableNear)
+            if (!st) return ''
+            return STRUCTURES[st.id].use === 'craft' ? '🛠️ ประดิษฐ์ของที่โต๊ะ' : '📦 เปิดกล่องเก็บของ'
+          })()}
+        </div>
+      )}
+      {!nearWorship && !npcNear && !meritSpot && !usableNear && bedNear !== null && garden && (
         <div className="gather-hint">
           <kbd>E</kbd> {bedHint(bedNear)}
         </div>
@@ -651,8 +692,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       {plot && (
         <div className="interact">
           <h3>ที่ดินของคุณ</h3>
-          <p>รั้วไม้ไผ่คือขอบเขตที่ดิน · มีแปลงผักสวนครัว 8 แปลงหน้าบ้าน เดินไปที่แปลงแล้วกด E เพื่อปลูก รดน้ำ และเก็บผัก</p>
-          <div className="soon">เร็ว ๆ นี้: ตกแต่งบ้านและซื้อที่ดินเพิ่ม (Part 5)</div>
+          <p>รั้วไม้ไผ่คือขอบเขตที่ดิน · แปลงผัก 8 แปลงหน้าบ้าน (กด E ที่แปลง) · กด <kbd>B</kbd> เพื่อสร้างโต๊ะประดิษฐ์ กล่องเก็บของ รั้ว โรงเก็บของ คอกสัตว์</p>
+          <div className="soon">เร็ว ๆ นี้: ซื้อที่ดินเพิ่มและต่อเติมบ้าน</div>
         </div>
       )}
 
@@ -665,6 +706,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
             ['KeyE', 'E', 'เก็บของ/เข้าร้าน'],
             ['KeyC', 'C', 'ถ่ายภาพ'],
             ['KeyR', 'R', 'ขี่สัตว์'],
+            ['KeyB', 'B', 'สร้าง'],
             ['Escape', 'Esc', 'เมนู'],
           ] as const
         ).map(([code, k, label]) => (

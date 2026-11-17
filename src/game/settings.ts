@@ -18,6 +18,8 @@ interface Settings {
   soundPreview: 'auto' | SoundPeriod['id']
   /** ขนาดหน้าจอเกม: ใหญ่ = เต็มหน้าต่าง, กลาง = กรอบกลางจอ (เต็มจอจริงใช้ Fullscreen API แยก) */
   displaySize: 'large' | 'medium'
+  /** ความเข้มของแถบสีม่วงโปร่งแสงตอนเปิดเมนู Esc (0.4–0.9) */
+  overlayOpacity: number
   set: (p: Partial<Omit<Settings, 'set'>>) => void
 }
 
@@ -36,6 +38,7 @@ export const useSettings = create<Settings>()(
       sfxVolume: 1,
       soundPreview: 'auto',
       displaySize: 'large',
+      overlayOpacity: 0.7,
       set: (p) => set(p),
     }),
     {

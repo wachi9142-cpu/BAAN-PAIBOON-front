@@ -1,3 +1,4 @@
+import { findUsable, useBuild } from '../game/building'
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
@@ -123,7 +124,7 @@ export function Player() {
   const camTarget = useMemo(() => new Vector3(), [])
   const camPos = useMemo(() => new Vector3(), [])
 
-  const colliders = useMemo(() => buildColliders(save.home.houseDesignId), [save.home.houseDesignId])
+  const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures])
 
   // เริ่มกล้องด้านหลังตัวละคร
   useEffect(() => {
@@ -232,6 +233,8 @@ export function Player() {
       setGatherTarget(findGatherTarget(x, z))
       const bed = findBed(x, z)
       if (useGarden.getState().near !== bed) useGarden.setState({ near: bed })
+      const usable = findUsable(x, z)
+      if (useBuild.getState().near !== usable) useBuild.setState({ near: usable })
       setNearWorship(Math.hypot(x - WORSHIP_SPOT[0], z - WORSHIP_SPOT[1]) < 2.6)
       // จุดทำบุญรอบโบสถ์ / อยู่ในโบสถ์ (ถอดรองเท้า) / เดินออกจากวัด
       let spot: string | null = null

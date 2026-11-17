@@ -1,3 +1,4 @@
+import { Structures } from './Structures'
 import { Garden } from './Garden'
 import { useMemo } from 'react'
 import { TextSprite } from './TextSprite'
@@ -35,6 +36,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
       <Trees />
       <Rocks />
       <Garden />
+      <Structures />
       <Mountains />
     </group>
   )
