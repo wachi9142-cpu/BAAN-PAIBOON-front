@@ -29,6 +29,13 @@ export type HairStyleId =
   | 'twinbraids'
   | 'sidebraid'
   | 'topknot'
+  | 'highbun'
+  | 'bobbles'
+  | 'shaggy'
+  | 'fluffy'
+  | 'crownbraid'
+  | 'hime'
+  | 'sideponytail'
 
 export const HAIR_STYLES: (Option & { id: HairStyleId })[] = [
   { id: 'short', label: 'ผมสั้น' },
@@ -47,6 +54,13 @@ export const HAIR_STYLES: (Option & { id: HairStyleId })[] = [
   { id: 'halfup', label: 'รวบครึ่งหัว' },
   { id: 'twintails', label: 'แกละสองข้าง' },
   { id: 'braid', label: 'เปียหลัง' },
+  { id: 'highbun', label: 'มวยสูง' },
+  { id: 'bobbles', label: 'แกละลูกบอล' },
+  { id: 'shaggy', label: 'ผมสั้นซอย' },
+  { id: 'fluffy', label: 'ผมหยิกฟู' },
+  { id: 'crownbraid', label: 'เปียมงกุฎ' },
+  { id: 'hime', label: 'ผมยาวหน้าม้าตรง' },
+  { id: 'sideponytail', label: 'หางม้าข้าง' },
 ]
 
 export const HAIR_COLORS: (Option & { color: string })[] = [

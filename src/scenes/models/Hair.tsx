@@ -220,6 +220,153 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
           </mesh>
         </group>
       )
+    case 'highbun':
+      // มวยสูงกลางหัว + ยางรัดผมสีชมพู
+      return (
+        <group>
+          {cap}
+          {bangs}
+          <mesh position={[0, 1.82, -0.03]} castShadow>
+            <sphereGeometry args={[0.085, 10, 8]} />
+            {mat}
+          </mesh>
+          <mesh position={[0, 1.76, -0.03]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.05, 0.016, 6, 12]} />
+            <meshStandardMaterial color="#e58fa0" />
+          </mesh>
+        </group>
+      )
+    case 'bobbles':
+      // แกละสองข้าง ผูกลูกบอลสีแดง ปลายผมยาวลอน
+      return (
+        <group>
+          {cap}
+          {bangs}
+          {[-1, 1].map((s) => (
+            <group key={s}>
+              <mesh position={[s * 0.15, 1.7, -0.02]}>
+                <sphereGeometry args={[0.035, 8, 6]} />
+                <meshStandardMaterial color="#d9473a" />
+              </mesh>
+              {[0, 1, 2, 3].map((j) => (
+                <mesh key={j} position={[s * (0.2 + (j % 2) * 0.025), 1.64 - j * 0.08, -0.02]} castShadow>
+                  <sphereGeometry args={[0.055 - j * 0.004, 7, 6]} />
+                  {mat}
+                </mesh>
+              ))}
+            </group>
+          ))}
+        </group>
+      )
+    case 'shaggy':
+      // ผมสั้นซอยยุ่ง ๆ: ปอยแหลมรอบหัว
+      return (
+        <group>
+          {cap}
+          {Array.from({ length: 11 }).map((_, i) => {
+            const a = (i / 11) * Math.PI * 2
+            return (
+              <mesh
+                key={i}
+                position={[Math.sin(a) * 0.15, 1.7 + Math.cos(i * 1.7) * 0.03, Math.cos(a) * 0.15 - 0.01]}
+                rotation={[Math.cos(a) * 0.9, 0, -Math.sin(a) * 0.9]}
+              >
+                <coneGeometry args={[0.04, 0.12, 4]} />
+                {mat}
+              </mesh>
+            )
+          })}
+          <mesh position={[0.03, 1.7, 0.14]} rotation={[0.6, 0, -0.4]}>
+            <coneGeometry args={[0.04, 0.14, 4]} />
+            {mat}
+          </mesh>
+        </group>
+      )
+    case 'fluffy':
+      // ผมหยิกฟูยาวประบ่า: ก้อนกลมใหญ่รอบหัว
+      return (
+        <group>
+          {cap}
+          {Array.from({ length: 12 }).map((_, i) => {
+            const a = (i / 12) * Math.PI * 2
+            if (Math.cos(a) > 0.75) return null
+            return (
+              <mesh key={i} position={[Math.sin(a) * 0.19, 1.62, Math.cos(a) * 0.17 - 0.03]} castShadow>
+                <sphereGeometry args={[0.075, 7, 6]} />
+                {mat}
+              </mesh>
+            )
+          })}
+          {[-1, 0, 1].flatMap((x) =>
+            [0, 1].map((j) => (
+              <mesh key={x + 's' + j} position={[x * 0.12, 1.47 - j * 0.09, -0.12 + Math.abs(x) * 0.05]} castShadow>
+                <sphereGeometry args={[0.07, 7, 6]} />
+                {mat}
+              </mesh>
+            )),
+          )}
+        </group>
+      )
+    case 'crownbraid':
+      // เปียมงกุฎ: เปียวงรอบหัว + โบว์แดงด้านบน
+      return (
+        <group>
+          {cap}
+          {bangs}
+          {Array.from({ length: 14 }).map((_, i) => {
+            const a = (i / 14) * Math.PI * 2
+            return (
+              <mesh key={i} position={[Math.sin(a) * 0.165, 1.69, Math.cos(a) * 0.155 - 0.01]}>
+                <sphereGeometry args={[0.038, 7, 6]} />
+                {mat}
+              </mesh>
+            )
+          })}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.05, 1.79, 0.02]} rotation={[0, 0, s * 0.5]}>
+              <boxGeometry args={[0.07, 0.045, 0.03]} />
+              <meshStandardMaterial color="#c0392b" />
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'hime':
+      // ผมยาวตรง หน้าม้าตรง + ปอยข้างแก้มตัดเสมอ
+      return (
+        <group>
+          {cap}
+          <mesh position={[0, 1.68, 0.13]} rotation={[0.25, 0, 0]}>
+            <boxGeometry args={[0.32, 0.09, 0.06]} />
+            {mat}
+          </mesh>
+          {longBack(0.6)}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.165, 1.5, 0.05]}>
+              <boxGeometry args={[0.05, 0.24, 0.08]} />
+              {mat}
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'sideponytail':
+      // หางม้าข้าง: รวบต่ำด้านขวา พาดลงมาด้านหน้าไหล่
+      return (
+        <group>
+          {cap}
+          <mesh position={[0, 1.66, 0.12]} rotation={[0.3, 0.5, 0.2]}>
+            <boxGeometry args={[0.24, 0.07, 0.06]} />
+            {mat}
+          </mesh>
+          <mesh position={[0.15, 1.53, -0.04]}>
+            <sphereGeometry args={[0.03, 6, 5]} />
+            <meshStandardMaterial color="#f6d36b" />
+          </mesh>
+          <mesh position={[0.17, 1.36, 0.02]} rotation={[Math.PI + 0.15, 0, -0.1]} castShadow>
+            <coneGeometry args={[0.06, 0.34, 8]} />
+            {mat}
+          </mesh>
+        </group>
+      )
     case 'twinbraids':
       return (
         <group>
