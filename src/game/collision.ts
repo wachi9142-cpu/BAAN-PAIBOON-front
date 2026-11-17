@@ -1,3 +1,4 @@
+import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, WORLD_HALF_SIZE, type Vec2 } from './content/village'
 import { getHouse } from './content/houses'
@@ -23,6 +24,8 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
   }
   out.push(...templeWalls())
   for (const s of structures) out.push(...structureColliders(s))
+  // หีบสมบัติ: ชนเป็นวงกลมเล็ก ๆ
+  for (const ch of CHEST_SPOTS) out.push({ x: ch.pos[0], z: ch.pos[1], r: 0.55 })
   return out
 }
 

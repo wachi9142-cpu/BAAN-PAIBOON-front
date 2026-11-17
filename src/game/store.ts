@@ -1,3 +1,4 @@
+import type { TreeState, GroundDrop } from './treeTypes'
 import type { PlacedStructure } from './content/structures'
 import { bagSlots, slotsUsed, type ItemId } from './content/items'
 import { emptyBed, GARDEN_BEDS, type BedState } from './content/garden'
@@ -63,6 +64,14 @@ export interface SaveData {
   structures: PlacedStructure[]
   /** ของในกล่องเก็บของ (ตาม uid ของกล่อง) */
   chests: Record<string, Partial<Record<ItemId, number>>>
+  /** ต้นไม้ที่ถูกฟัน/โค่น (ตามลำดับใน TREES) */
+  trees: Record<string, TreeState>
+  /** ของที่ร่วงอยู่บนพื้น รอเดินไปเก็บ */
+  drops: GroundDrop[]
+  /** สีอัญมณีบนคฑา (ตกแต่ง) */
+  wandGem?: 'green' | 'yellow' | 'red' | 'purple'
+  /** หีบสมบัติที่เปิดแล้ว (id → นาทีสัมบูรณ์ในเกมที่เปิด) */
+  chestsOpened?: Record<string, number>
 }
 
 export interface QuestState {
@@ -83,7 +92,7 @@ export interface CaughtAnimal {
 }
 
 /** ท่าทางชั่วคราวของผู้เล่น (ในวัด) */
-export type Gesture = 'wai' | 'prostrate' | 'shake' | 'offer'
+export type Gesture = 'wai' | 'prostrate' | 'shake' | 'offer' | 'whistle'
 
 export interface GatherTarget {
   kind: 'tree' | 'rock'
@@ -143,6 +152,8 @@ function migrateSave(data: SaveData): SaveData {
     ...withGarden(data),
     structures: data.structures ?? [],
     chests: data.chests ?? {},
+    trees: data.trees ?? {},
+    drops: data.drops ?? [],
     homePet: data.homePet !== undefined ? data.homePet : (data.player.pet ?? null),
     version: SAVE_VERSION,
   }
@@ -283,6 +294,8 @@ export const useGame = create<GameState>()((set, get) => ({
       garden: GARDEN_BEDS.map(emptyBed),
       structures: [],
       chests: {},
+      trees: {},
+      drops: [],
       homePet: draft.pet ?? null,
       day: 1,
       minuteOfDay: STARTING_MINUTE,

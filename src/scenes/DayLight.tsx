@@ -83,7 +83,7 @@ export function DayLight() {
         position={[60, 60, 30]}
         color="#ffe2b8"
         intensity={1.15}
-        shadow-intensity={0.55}
+        shadow-intensity={0.4}
         shadow-radius={6}
         shadow-bias={-0.0008}
         shadow-normalBias={0.06}

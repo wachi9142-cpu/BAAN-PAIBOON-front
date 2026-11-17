@@ -1,3 +1,4 @@
+import { tendTree, treeHint } from './trees'
 /**
  * กระเป๋า เก็บของ คราฟ ซื้อ-ขาย — ทำงานกับเซฟใน useGame
  * ทุกครั้งที่ของในกระเป๋าเปลี่ยน = เหตุการณ์สำคัญ → บันทึกทันที
@@ -150,12 +151,17 @@ function takeFrom(key: string) {
 /** คำแนะนำที่ขึ้นบนจอเมื่อยืนใกล้ */
 export function gatherHint(t: GatherTarget) {
   if (t.kind === 'rock') return 'กด E — เก็บก้อนหิน'
+  return 'กด E — ' + treeHint(t.index)
   const tree = TREES[t.index]
   if (tree.kind === 'banana') return 'กด E — ลอกเชือกกล้วย'
   return hasTool('axe') ? 'กด E — ตัดต้นไม้ด้วยขวาน' : 'กด E — เก็บกิ่งไม้'
 }
 
 export function gather(t: GatherTarget) {
+  if (t.kind === 'tree') {
+    tendTree(t.index)
+    return
+  }
   const key = `${t.kind}:${t.index}`
   if (!takeFrom(key)) {
     toast(t.kind === 'rock' ? 'กองหินนี้หมดแล้ว' : 'ต้นนี้เก็บหมดแล้ว', 'รอสักพักแล้วค่อยกลับมาใหม่ หรือไปหาจุดอื่น', 'info')

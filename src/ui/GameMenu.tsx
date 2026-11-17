@@ -1,7 +1,8 @@
+import { equip } from '../game/trees'
 import { eat } from '../game/garden'
 import { useEffect, useState } from 'react'
 import { formatSavedAt, markCleanExit, useGame } from '../game/store'
-import { AUTO_SAVE_CHOICES, useSettings } from '../game/settings'
+import { AUTO_SAVE_CHOICES, MENU_COLORS, useSettings, type MenuColor } from '../game/settings'
 import { SOUND_PERIODS } from '../game/content/soundscape'
 import type { Appearance } from '../game/content/appearance'
 import { PreviewStage } from '../scenes/PreviewStage'
@@ -40,6 +41,7 @@ export function GameMenu({ onClose, initialTab }: { onClose: () => void; initial
   const lastSavedAt = useGame((s) => s.lastSavedAt)
   const [tab, setTab] = useState<Tab>(initialTab ?? 'character')
   const overlayOpacity = useSettings((s) => s.overlayOpacity)
+  const menuColor = MENU_COLORS[useSettings((s) => s.menuColor) ?? 'purple'] ?? MENU_COLORS.purple
   const setSettings = useSettings((s) => s.set)
   const unread = useUnreadReports()
   const [confirm, setConfirm] = useState<Confirm>(null)
@@ -97,7 +99,7 @@ export function GameMenu({ onClose, initialTab }: { onClose: () => void; initial
   }
 
   return (
-    <div className="menu-backdrop gm-overlay" style={{ '--ov-a': overlayOpacity } as React.CSSProperties} onClick={onClose}>
+    <div className="menu-backdrop gm-overlay" style={{ '--ov-a': overlayOpacity, '--ov-main': menuColor.main, '--ov-dark': menuColor.dark, '--ov-ink': menuColor.ink } as React.CSSProperties} onClick={onClose}>
       <div className="gm" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="เมนูเกม">
         <nav className="gm-tabs" role="tablist">
           <div className="gm-title">⏸ พักเกม · เมนู</div>
@@ -218,10 +220,10 @@ function BagTab({ onCraft }: { onCraft: () => void }) {
           return (
             <div
               key={k}
-              className={`bag-slot filled${def.food ? ' edible' : ''}`}
+              className={`bag-slot filled${def.food || it.id === 'axe' || it.id === 'axe2' || it.id === 'wand' ? ' edible' : ''}`}
               title={`${def.name} — ${def.note}${def.food ? ' · คลิกเพื่อกิน' : ''}`}
-              onClick={def.food ? () => eat(it.id) : undefined}
-              role={def.food ? 'button' : undefined}
+              onClick={def.food ? () => eat(it.id) : it.id === 'axe' || it.id === 'axe2' || it.id === 'wand' ? () => equip(it.id as 'axe' | 'axe2' | 'wand') : undefined}
+              role={def.food || it.id === 'axe' || it.id === 'axe2' || it.id === 'wand' ? 'button' : undefined}
             >
               <span className="bag-icon"><ItemIcon icon={def.icon} /></span>
               <span className="bag-name">{def.name}</span>
@@ -231,7 +233,7 @@ function BagTab({ onCraft }: { onCraft: () => void }) {
         })}
       </div>
       <p className="hint">
-        💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท · เดินไปใกล้ต้นไม้หรือกองหินแล้วกด <kbd>E</kbd> เพื่อเก็บของ · คลิกผักเพื่อกิน
+        💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท · เดินไปใกล้ต้นไม้หรือกองหินแล้วกด <kbd>E</kbd> เพื่อเก็บของ · คลิกผักเพื่อกิน · คลิกขวานเพื่อถือ
       </p>
       <button type="button" className="btn small" onClick={onCraft}>
         🔨 ไปคราฟของ
@@ -493,6 +495,24 @@ function SettingsTab() {
       </div>
       <p className="hint" style={{ margin: 0 }}>เหมาะกับคอมพิวเตอร์ โน้ตบุ๊ก และไอแพด · กด Esc ในโหมดเต็มจอจะออกจากเต็มจอก่อน</p>
 
+      <div className="setting">
+        <span>สีแถบเมนู (Esc)</span>
+        <div className="menu-colors" role="radiogroup" aria-label="สีแถบเมนู">
+          {(Object.keys(MENU_COLORS) as MenuColor[]).map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={(settings.menuColor ?? 'purple') === c}
+              className="menu-color"
+              style={{ background: MENU_COLORS[c].swatch }}
+              onClick={() => settings.set({ menuColor: c })}
+            >
+              {MENU_COLORS[c].label}
+            </button>
+          ))}
+        </div>
+      </div>
       <label className="setting">
         <span>ความเข้มสีพื้นหลังเมนู (Esc)</span>
         <input type="range" min={0.4} max={0.9} step={0.05} value={settings.overlayOpacity} onChange={(e) => settings.set({ overlayOpacity: Number(e.target.value) })} />

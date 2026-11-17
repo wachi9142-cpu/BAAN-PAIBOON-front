@@ -1,3 +1,8 @@
+import { findChest, useChests } from '../game/treasure'
+import { wandCast } from '../game/wand'
+import { TextSprite } from './TextSprite'
+import { hitTree, IMPACT, pickupNear, swing, tendTree, useTools } from '../game/trees'
+import { TREES } from '../game/content/village'
 import { findUsable, useBuild } from '../game/building'
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -110,6 +115,8 @@ export function Player() {
   const wasInTemple = useRef(false)
   const barefoot = useMerit((s) => s.shoesOff)
   const riding = useGame((s) => s.riding)
+  const equipped = useTools((s) => s.equipped)
+  const wandGem = useGame((s) => s.save?.wandGem) ?? 'purple'
   const gesture = useGame((s) => s.gesture)
   const toast = useGame((s) => s.toast)
 
@@ -150,7 +157,44 @@ export function Player() {
     let mz = fz * f + rz * r
     const len = Math.hypot(mx, mz)
 
-    if (len > 0) {
+    // ยิงลำแสงจากคฑา: ยืนนิ่ง หันไปชี้ที่สัตว์
+    wandCast.aiming = performance.now() < wandCast.until
+    if (wandCast.aiming) {
+      const want = Math.atan2(wandCast.x - pos.current[0], wandCast.z - pos.current[1])
+      let diff = want - heading.current
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+      heading.current += diff * Math.min(1, dt * 12)
+      mx = 0
+      mz = 0
+    }
+    // กำลังฟันต้นไม้: ยืนนิ่ง หันหน้าเข้าหาต้นไม้ เดินแล้วยกเลิก
+    if (swing.current >= 0) {
+      if (len > 0 && swing.current > IMPACT) {
+        swing.current = -1
+        swing.queued = false
+      } else {
+        const tr = TREES[swing.tree]
+        const want = Math.atan2(tr.pos[0] - pos.current[0], tr.pos[1] - pos.current[1])
+        let diff = want - heading.current
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+        heading.current += diff * Math.min(1, dt * 14)
+        swing.current += dt / swing.dur
+        if (!swing.hit && swing.current >= IMPACT) {
+          swing.hit = true
+          hitTree(swing.tree, Math.atan2(pos.current[0] - tr.pos[0], pos.current[1] - tr.pos[1]))
+        }
+        if (swing.current >= 1) {
+          swing.current = -1
+          if (swing.queued) {
+            swing.queued = false
+            tendTree(swing.tree)
+          }
+        }
+        mx = 0
+        mz = 0
+      }
+    }
+    if (len > 0 && swing.current < 0 && !wandCast.aiming) {
       mx /= len
       mz /= len
       const age = AGE_RULES[save.player.appearance.age ?? 'adult']
@@ -231,6 +275,9 @@ export function Player() {
       }
       setNearby(near)
       setGatherTarget(findGatherTarget(x, z))
+      pickupNear(x, z)
+      const chest = findChest(x, z)
+      if (useChests.getState().near !== chest) useChests.setState({ near: chest })
       const bed = findBed(x, z)
       if (useGarden.getState().near !== bed) useGarden.setState({ near: bed })
       const usable = findUsable(x, z)
@@ -292,8 +339,39 @@ export function Player() {
         appearance={riding ? { ...save.player.appearance, pose: 'ride' } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
+        tool={riding || gesture || equipped === 'hand' ? undefined : equipped}
+        chop={swing}
+        wandGem={wandGem}
+        aim={wandCast}
       />
       <Aura />
+      {gesture === 'whistle' && <WhistleNotes />}
+    </group>
+  )
+}
+
+/** โน้ตดนตรีลอยขึ้นจากปากตอนผิวปาก */
+function WhistleNotes() {
+  const refs = useRef<(Group | null)[]>([])
+  const start = useRef(performance.now())
+  useFrame(() => {
+    const e = (performance.now() - start.current) / 1000
+    refs.current.forEach((g, i) => {
+      if (!g) return
+      const t = (e - i * 0.35) % 1.4
+      const on = e - i * 0.35 > 0
+      g.visible = on
+      g.position.set(0.25 + Math.sin(t * 4 + i) * 0.12 + i * 0.08, 1.75 + t * 0.9, 0.2)
+      g.scale.setScalar(on ? Math.max(0.01, 1 - t / 1.4) : 0.01)
+    })
+  })
+  return (
+    <group>
+      {['♪', '♫', '♪'].map((n, i) => (
+        <group key={i} ref={(el) => (refs.current[i] = el)}>
+          <TextSprite text={n} color={i === 1 ? '#7a4fd0' : '#3f6b3a'} height={0.28} position={[0, 0, 0]} />
+        </group>
+      ))}
     </group>
   )
 }

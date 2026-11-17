@@ -1,3 +1,4 @@
+import { whistleState } from '../game/whistle'
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Quaternion, Vector3, type Group, type Mesh } from 'three'
@@ -33,6 +34,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
   const idle = useRef(0)
   const play = useRef({ until: 0, next: 6 + Math.random() * 6, angle: 0, dir: 1 })
   const nextIdleSound = useRef(8 + Math.random() * 15)
+  const heardRef = useRef(-1)
   const tmp = useMemo(() => ({ a: new Vector3(), b: new Vector3(), up: new Vector3(0, 1, 0), q: new Quaternion() }), [])
   const anchor = PET_ANCHORS[pet.species]
   const scale = petScale(pet)
@@ -77,7 +79,15 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
     const dz = tz - z
     const dist = Math.hypot(dx, dz)
     // ถ้ากำลังนั่ง/นอน ให้ผู้เล่นเดินห่างออกไปพอสมควรก่อนค่อยลุก (ไม่ลุก ๆ นั่ง ๆ)
-    const wakeDist = pose.current > 0 ? 0.9 : 0.25
+    let wakeDist = pose.current > 0 ? 0.9 : 0.25
+    // ได้ยินเจ้าของผิวปาก: ลุกขึ้นทันที ส่งเสียงตอบ แล้ววิ่งมาหา
+    const heard = performance.now() - whistleState.at
+    if (heard > 600 && heard < 5000 && heardRef.current !== whistleState.at) {
+      heardRef.current = whistleState.at
+      playPetSound(pet, 0.85)
+      idle.current = 0
+      wakeDist = 0
+    }
 
     if (dist > 25) {
       x = tx

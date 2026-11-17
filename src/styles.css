@@ -2156,7 +2156,7 @@ button.save-ind:hover {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(139, 92, 246, var(--ov-a, 0.7));
+  background: rgba(var(--ov-main, 139, 92, 246), var(--ov-a, 0.7));
   backdrop-filter: blur(3px) saturate(1.1);
   -webkit-backdrop-filter: blur(3px) saturate(1.1);
   place-items: stretch;
@@ -2193,23 +2193,23 @@ button.save-ind:hover {
   font-family: 'Mitr', sans-serif;
   font-size: 24px;
   margin: 0 0 8px 4px;
-  text-shadow: 0 2px 8px rgba(40, 10, 90, 0.4);
+  text-shadow: 0 2px 8px rgba(var(--ov-dark, 59, 22, 120), 0.4);
 }
 .gm-overlay .gm-tab {
   justify-content: flex-start;
   color: #fff;
-  background: rgba(59, 22, 120, 0.45);
+  background: rgba(var(--ov-dark, 59, 22, 120), 0.45);
   border-radius: 12px;
   padding: 10px 16px;
   font-size: 16px;
   text-align: left;
 }
 .gm-overlay .gm-tab:hover:not([aria-selected='true']) {
-  background: rgba(59, 22, 120, 0.7);
+  background: rgba(var(--ov-dark, 59, 22, 120), 0.7);
 }
 .gm-overlay .gm-tab[aria-selected='true'] {
   background: rgba(255, 255, 255, 0.92);
-  color: #4c1d95;
+  color: var(--ov-ink, #4c1d95);
 }
 .gm-overlay .gm-tab.resume {
   background: rgba(255, 255, 255, 0.22);
@@ -2220,7 +2220,7 @@ button.save-ind:hover {
 .gm-overlay .gm-tab.ghost {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.9);
-  background: rgba(59, 22, 120, 0.3);
+  background: rgba(var(--ov-dark, 59, 22, 120), 0.3);
 }
 .gm-overlay .gm-ov-slider {
   display: flex;
@@ -2238,10 +2238,10 @@ button.save-ind:hover {
 .gm-overlay .gm-body {
   background: rgba(250, 246, 255, 0.9);
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(40, 10, 90, 0.3);
+  box-shadow: 0 10px 40px rgba(var(--ov-dark, 59, 22, 120), 0.3);
 }
 .gm-overlay .gm-body h3 {
-  color: #4c1d95;
+  color: var(--ov-ink, #4c1d95);
 }
 .gm-overlay .gm-char-actions {
   background: rgba(250, 246, 255, 0.96);
@@ -2262,4 +2262,117 @@ button.save-ind:hover {
     font-size: 18px;
     margin: 0;
   }
+}
+
+/* ---------- แถบเครื่องมือในมือ ---------- */
+.tool-bar {
+  position: absolute;
+  left: 16px;
+  bottom: 64px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 20;
+  font-family: 'Mitr', sans-serif;
+}
+.tool-slot {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+.tool-slot.on {
+  border-color: #3f9b55;
+  background: #eaf8ec;
+}
+.tool-key {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.tool-icon {
+  font-size: 24px;
+  line-height: 1.1;
+}
+.tool-icon.steel {
+  filter: saturate(0.2) brightness(1.15);
+}
+.tool-name {
+  font-size: 11px;
+}
+.tool-tip {
+  font-size: 12px;
+  background: var(--glass);
+  border-radius: 999px;
+  padding: 4px 10px;
+  box-shadow: var(--shadow);
+}
+
+.whistle-btn {
+  margin-top: 6px;
+}
+
+/* ปุ่มเลือกสีแถบเมนู */
+.menu-colors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.menu-color {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  color: #fff;
+  font-family: 'Mitr', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.menu-color[aria-checked='true'] {
+  border-color: #fff;
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+}
+
+.tool-gem {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+}
+.gem-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--glass);
+  border-radius: 999px;
+  padding: 6px 10px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+.gem-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+  padding: 0;
+}
+.gem-dot[aria-checked='true'] {
+  outline: 2px solid #2e2a24;
 }

@@ -1,3 +1,5 @@
+import { Treasures } from './Treasure'
+import { ChoppableTrees } from './ChoppableTrees'
 import { Structures } from './Structures'
 import { Garden } from './Garden'
 import { useMemo } from 'react'
@@ -6,7 +8,6 @@ import {
   PLACES,
   PLOTS,
   ROADS,
-  TREES,
   ROCKS,
   type Place,
   type Plot,
@@ -15,7 +16,7 @@ import {
 } from '../game/content/village'
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
-import { House, VillagerHouse, GableRoof } from './models/House'
+import { House, VillagerHouse, GableRoof, Bush, HouseYard } from './models/House'
 import { RBox } from './models/RBox'
 import { BigChedi, Temple } from './Temple'
 
@@ -37,6 +38,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
       <Rocks />
       <Garden />
       <Structures />
+      <Treasures />
       <Mountains />
     </group>
   )
@@ -121,7 +123,7 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 0.25, 0]} receiveShadow castShadow>
-            <RBox args={[w, 0.5, d]} />
+            <RBox args={[w, 0.5, d]} radius={0.18} />
             <meshStandardMaterial color="#c8b48f" />
           </mesh>
           {[-1, 1].flatMap((sx) =>
@@ -133,6 +135,8 @@ function PlaceMesh({ place }: { place: Place }) {
             )),
           )}
           <GableRoof width={w} depth={d} height={1.8} y={3.6} color="#a24a2c" overhang={0.6} />
+          <Bush x={-w / 2 - 0.7} z={0} s={0.9} flowers="#e86a5a" />
+          <Bush x={w / 2 + 0.7} z={0} s={0.9} flowers="#f6c445" />
           {/* ม้านั่ง */}
           {[-1.5, 0, 1.5].map((bz) => (
             <mesh key={bz} position={[0, 0.85, bz]} castShadow>
@@ -154,7 +158,7 @@ function PlaceMesh({ place }: { place: Place }) {
             </mesh>
           ))}
           <mesh position={[0, 1.7, 0]} castShadow>
-            <RBox args={[2.6, 1.4, 0.12]} />
+            <RBox args={[2.6, 1.4, 0.14]} radius={0.06} />
             <meshStandardMaterial color="#8a6340" />
           </mesh>
           {[
@@ -168,7 +172,7 @@ function PlaceMesh({ place }: { place: Place }) {
             </mesh>
           ))}
           <mesh position={[0, 2.55, 0]} castShadow>
-            <RBox args={[3, 0.12, 0.5]} />
+            <RBox args={[3, 0.16, 0.5]} radius={0.07} />
             <meshStandardMaterial color="#7b3b2a" />
           </mesh>
         </group>
@@ -178,25 +182,28 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-            <RBox args={[w, 3, d]} />
+            <RBox args={[w, 3, d]} radius={0.32} />
             <meshStandardMaterial color="#e8d9b8" />
           </mesh>
           <mesh position={[0, 2.9, d / 2 + 0.8]} rotation={[0.25, 0, 0]} castShadow>
-            <RBox args={[w + 0.4, 0.1, 1.8]} />
+            <RBox args={[w + 0.4, 0.16, 1.8]} radius={0.07} />
             <meshStandardMaterial color="#3f7a8c" />
           </mesh>
           <mesh position={[0, 1.2, d / 2 + 0.05]}>
-            <RBox args={[w * 0.6, 2.2, 0.1]} />
+            <RBox args={[w * 0.6, 2.2, 0.1]} radius={0.045} />
             <meshStandardMaterial color="#4a3a2a" />
           </mesh>
           {/* ตู้เย็นเครื่องดื่ม/ลังของหน้าร้าน */}
           {[-2.2, 2.2].map((cx) => (
             <mesh key={cx} position={[cx, 0.5, d / 2 + 0.8]} castShadow>
-              <RBox args={[0.9, 1, 0.7]} />
+              <RBox args={[0.9, 1, 0.7]} radius={0.16} />
               <meshStandardMaterial color={cx < 0 ? '#c2412d' : '#d9a441'} />
             </mesh>
           ))}
           <GableRoof width={w} depth={d} height={1.2} y={3} color="#8b8f86" overhang={0.3} />
+          <Bush x={-w / 2 - 0.6} z={d / 2 + 0.2} s={0.9} flowers="#f6c445" />
+          <Bush x={w / 2 + 0.6} z={d / 2 + 0.2} s={0.9} flowers="#f29ab8" />
+          <Bush x={w / 2 + 0.5} z={-d / 2 + 0.4} s={0.8} flowers={null} />
         </group>
       )
       break
@@ -204,10 +211,12 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
-            <RBox args={[w, 3.2, d]} />
+            <RBox args={[w, 3.2, d]} radius={0.32} />
             <meshStandardMaterial color="#efe3c8" />
           </mesh>
           <GableRoof width={w} depth={d} height={2} y={3.2} color="#5c4a8a" overhang={0.6} />
+          <Bush x={w / 2 - 0.4} z={d / 2 + 1} s={1} flowers="#c99af0" />
+          <Bush x={-w / 2 + 0.4} z={-d / 2 - 0.6} s={0.9} flowers="#ffffff" />
           {/* กี่ทอผ้าหน้าอาคาร */}
           <group position={[-3, 0, d / 2 + 2]}>
             <mesh position={[0, 0.9, 0]} castShadow>
@@ -268,7 +277,12 @@ function PlaceMesh({ place }: { place: Place }) {
       break
     case 'npchouse':
       labelY = 8
-      body = <VillagerHouse color={place.color ?? '#8a5a3b'} />
+      body = (
+        <group>
+          <VillagerHouse color={place.color ?? '#8a5a3b'} />
+          <HouseYard seed={place.id.length} />
+        </group>
+      )
       break
   }
 
@@ -393,13 +407,7 @@ function Rocks() {
 }
 
 function Trees() {
-  return (
-    <group>
-      {TREES.map((t, i) => (
-        <Tree key={i} tree={t} />
-      ))}
-    </group>
-  )
+  return <ChoppableTrees Tree={Tree} />
 }
 
 export function Tree({ tree }: { tree: TreeSpot }) {

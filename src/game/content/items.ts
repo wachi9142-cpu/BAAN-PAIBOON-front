@@ -14,6 +14,11 @@ export type ItemId =
   | 'feed'
   | 'treat'
   | 'wand'
+  | 'axe2'
+  | 'leaf'
+  | 'hardwood'
+  | 'sapling'
+  | 'oldkey'
   | 'seed_morningglory'
   | 'morningglory'
   | 'seed_scallion'
@@ -75,6 +80,11 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   tomato: { id: 'tomato', name: 'มะเขือเทศ', icon: '🍅', kind: 'food', stack: 20, sell: 12, note: 'มะเขือเทศสุกแดง หวานอมเปรี้ยว', food: 8 },
   seed_pumpkin: { id: 'seed_pumpkin', name: 'เมล็ดฟักทอง', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
   pumpkin: { id: 'pumpkin', name: 'ฟักทอง', icon: '🎃', kind: 'food', stack: 20, sell: 35, note: 'ฟักทองลูกโต ขายได้ราคาดี นึ่งกินอิ่มนาน', food: 18 },
+  axe2: { id: 'axe2', name: 'ขวานเหล็ก', icon: '🪓', kind: 'tool', stack: 1, sell: 120, note: 'ฟันแรงและเร็วกว่าขวานธรรมดา ได้ไม้มากขึ้น' },
+  leaf: { id: 'leaf', name: 'ใบไม้', icon: '🍂', kind: 'material', stack: 40, sell: 1, note: 'ใบไม้ ใบตอง ทางมะพร้าว — ทำปุ๋ยหมัก อาหารสัตว์บางชนิด (เร็ว ๆ นี้)' },
+  hardwood: { id: 'hardwood', name: 'ไม้เนื้อแข็ง', icon: '🪵', kind: 'material', stack: 20, sell: 30, note: 'ได้จากการโค่นต้นไม้ใหญ่ด้วยขวาน ใช้ทำเครื่องเรือนระดับสูง' },
+  sapling: { id: 'sapling', name: 'ต้นกล้าไม้', icon: '🌱', kind: 'material', stack: 20, sell: 3, note: 'ปลูกแทนที่ตอไม้ (เดินไปที่ตอไม้แล้วกด E) โตเป็นต้นไม้ใน 1 วัน' },
+  oldkey: { id: 'oldkey', name: 'กุญแจโบราณ', icon: '🗝️', kind: 'material', stack: 5, sell: 0, note: 'ไขหีบโบราณได้หนึ่งใบ (ได้จากหีบลับที่ซ่อนอยู่ในป่า)' },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 
@@ -134,6 +144,8 @@ export const SHOP: ShopEntry[] = [
   { id: 'saw', name: 'เลื่อย', icon: '🪚', price: 180, gives: { item: 'saw', qty: 1 } },
   { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', price: 25, gives: { item: 'feed', qty: 4 } },
   { id: 'treat3', name: 'กล้วยสุก ×3', icon: '🍌', price: 45, gives: { item: 'treat', qty: 3 } },
+  { id: 'axe2', name: 'ขวานเหล็ก', icon: '🪓', price: 350, gives: { item: 'axe2', qty: 1 } },
+  { id: 'sapling', name: 'ต้นกล้าไม้ ×2', icon: '🌱', price: 20, gives: { item: 'sapling', qty: 2 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', price: 500, gives: { item: 'wand', qty: 1 } },
   { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง ×3', icon: '🌱', price: 10, gives: { item: 'seed_morningglory', qty: 3 } },
   { id: 'seed_scallion', name: 'เมล็ดต้นหอม ×3', icon: '🌱', price: 12, gives: { item: 'seed_scallion', qty: 3 } },

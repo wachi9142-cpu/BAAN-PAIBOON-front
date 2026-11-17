@@ -1,3 +1,4 @@
+import { GEMS, type GemColor } from '../../game/wand'
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
@@ -41,10 +42,16 @@ interface Props {
   tool?: ToolId
   /** ถอดรองเท้า (ในโบสถ์) */
   barefoot?: boolean
+  /** จังหวะเหวี่ยงขวาน/ทุบ 0→1 (-1 = ไม่ได้ทำ) */
+  chop?: { current: number }
+  /** สีอัญมณีบนคฑา */
+  wandGem?: GemColor
+  /** กำลังชี้คฑายิงลำแสง */
+  aim?: { aiming: boolean }
 }
 
 export type CharacterAction = 'sweep' | 'hoe' | 'talk'
-export type ToolId = 'broom' | 'hoe' | 'pole'
+export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -60,6 +67,8 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
   offer: [-1.5, -0.25, -1.5, 0.25],
   // ขี่: มือจับหลังสัตว์ข้างหน้า
   ride: [-0.7, -0.1, -0.7, 0.1],
+  // ผิวปาก: มือขวายกขึ้นป้องปาก มือซ้ายห้อยสบาย ๆ
+  whistle: [0, 0.05, -2.3, 1.05],
 }
 
 /** กราบสามครั้ง: ช่วงคุกเข่าพนมมือ แล้วกราบลง-ขึ้น 3 รอบ (วินาที) */
@@ -79,7 +88,7 @@ function bowAmount(t: number) {
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion, action, tool, barefoot }: Props) {
+export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -139,6 +148,8 @@ export function Character({ appearance, motion, action, tool, barefoot }: Props)
     // แขน: เดิน = แกว่ง, ยืน = ตามท่าที่เลือก
     let [lx, lz, rx, rz] = m > 0 ? [-swing * 0.8, 0.05, swing * 0.8, -0.05] : POSE_ARMS[pose]
     if (m === 0 && pose === 'wave') rz += Math.sin(idle.current * 7) * 0.25
+    // ผิวปาก: มือขยับเบา ๆ ตามจังหวะเสียง
+    if (m === 0 && pose === 'whistle') rx += Math.sin(idle.current * 9) * 0.05
     // งานของชาวบ้าน (ยืนทำอยู่กับที่)
     if (m === 0 && action === 'sweep') {
       // กวาด: แขนสองข้างยื่นไปข้างหน้า แกว่งซ้าย-ขวาพร้อมกัน
@@ -169,6 +180,35 @@ export function Character({ appearance, motion, action, tool, barefoot }: Props)
       const b = Math.sin(idle.current * 5) * 0.12
       lz -= b
       rz += b
+    }
+    // ฟันขวาน (สองมือ) / ทุบด้วยมือ (มือขวา): ยกขึ้นเหนือหัวช้า ๆ แล้วฟาดลงเร็ว
+    const cp = chop?.current ?? -1
+    const axeHeld = tool === 'axe' || tool === 'axe2'
+    if (axeHeld && m === 0 && cp < 0) [lx, lz, rx, rz] = [-0.55, 0.35, -0.55, -0.35]
+    // ถือคฑา: ยืน = ถือคฑาเอียงขึ้นข้างตัว · ยิงลำแสง = เหยียดแขนชี้ไปข้างหน้า (คฑาสั่นเบา ๆ ตามพลัง)
+    if (tool === 'wand' && cp < 0) {
+      if (aim?.aiming) {
+        rx = -1.5 + Math.sin(idle.current * 30) * 0.03
+        rz = -0.05
+        if (m === 0) [lx, lz] = [-0.6, -0.15]
+      } else if (m === 0) {
+        rx = -0.75
+        rz = -0.1
+      }
+    }
+    if (cp >= 0) {
+      const up = cp < 0.45 ? cp / 0.45 : cp < 0.58 ? 1 - (cp - 0.45) / 0.13 : 0
+      const x = -0.45 - up * 2.4
+      if (axeHeld) [lx, lz, rx, rz] = [x, 0.3, x, -0.3]
+      else [rx, rz] = [x + 0.1, -0.15]
+      if (armL.current && axeHeld) {
+        armL.current.rotation.x = x
+        armL.current.rotation.z = 0.3
+      }
+      if (armR.current) {
+        armR.current.rotation.x = axeHeld ? x : x + 0.1
+        armR.current.rotation.z = axeHeld ? -0.3 : -0.15
+      }
     }
     if (armL.current) {
       armL.current.rotation.x = lerp(armL.current.rotation.x, lx)
@@ -408,7 +448,8 @@ export function Character({ appearance, motion, action, tool, barefoot }: Props)
           </mesh>
           </group>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
-          {i === 1 && tool && tool !== 'pole' && <Tool kind={tool} />}
+          {i === 1 && tool === 'wand' && <WandModel gem={wandGem ?? 'purple'} />}
+          {i === 1 && tool && tool !== 'pole' && tool !== 'wand' && <Tool kind={tool} />}
           {i === 0 && cane !== 'none' && <Cane kind={cane} />}
           {i === 1 && elder && appearance.basket && !tool && bag !== 'handbag' && <Basket />}
           {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && (
@@ -484,7 +525,8 @@ export function Character({ appearance, motion, action, tool, barefoot }: Props)
       ))}
       {/* ปาก: รูปแบบที่เลือก (ยิ้ม/เขี้ยวใช้จุดเดิม · แบบแผ่นวางต่ำลงมาบนผิวหน้า) */}
       {(() => {
-        const ms = appearance.mouthStyle ?? 'smile'
+        // ผิวปาก = ห่อปากกลมเล็ก
+        const ms = pose === 'whistle' ? 'o' : (appearance.mouthStyle ?? 'smile')
         const arc = ms === 'smile' || ms === 'fang'
         return (
           <group position={arc ? [0, 1.503, faceZ(0, 1.503) - 0.006] : [0, 1.487, faceZ(0, 1.487) - 0.004]} rotation={[arc ? 0.3 : 0.5, 0, 0]}>
@@ -559,6 +601,28 @@ function StrawHat() {
 
 /** เครื่องมือในมือขวา (จุดกำเนิด = มือ, ด้ามยาวต่อลงไปตามแนวแขน) */
 function Tool({ kind }: { kind: ToolId }) {
+  if (kind === 'axe' || kind === 'axe2') {
+    // ขวาน: ด้ามไม้ยื่นไปข้างหน้าจากมือ หัวเหล็กที่ปลาย (ขวานเหล็กหัวใหญ่ สีเงินกว่า)
+    const big = kind === 'axe2'
+    return (
+      <group position={[0, -0.55, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <cylinderGeometry args={[0.022, 0.026, 0.72, 10]} />
+          <meshStandardMaterial color="#8a5a32" roughness={0.8} />
+        </mesh>
+        <group position={[0, 0.6, 0]}>
+          <mesh position={[0, 0, 0.08]} castShadow>
+            <RBox args={[0.05, big ? 0.2 : 0.16, big ? 0.2 : 0.16]} />
+            <meshStandardMaterial color={big ? '#b9c0c6' : '#7d8186'} metalness={0.6} roughness={0.35} />
+          </mesh>
+          <mesh position={[0, 0, 0.17]} castShadow>
+            <boxGeometry args={[0.02, big ? 0.24 : 0.19, 0.03]} />
+            <meshStandardMaterial color="#e2e6ea" metalness={0.8} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+    )
+  }
   if (kind === 'broom') {
     // ไม้กวาดทางมะพร้าวด้ามยาว
     return (
@@ -817,6 +881,93 @@ function CarryPole() {
       </mesh>
       {basket(0.95, '#a8d060')}
       {basket(-0.95, '#e8a040')}
+    </group>
+  )
+}
+
+/**
+ * คฑาจับสัตว์ (ชื่อเดียวทุกสี) — ด้ามไม้แกะลาย ปลอกทองเหลือง หัวกรงเล็บทองประคองคริสตัลเรืองแสง
+ * แต่ละสีหน้าตาต่างกันเล็กน้อยตามแบบของผู้สร้าง: เหลือง = หัวกลีบบัวไม้ · ม่วง = จี้อัญมณีห้อยปลายด้าม · แดง = เม็ดทับทิมที่ปลอก
+ */
+function WandModel({ gem }: { gem: GemColor }) {
+  const g = GEMS[gem]
+  const gemRef = useRef<Group>(null)
+  useFrame(({ clock }) => {
+    if (!gemRef.current) return
+    gemRef.current.rotation.y = clock.elapsedTime * 1.2
+    const s = 1 + Math.sin(clock.elapsedTime * 3) * 0.06
+    gemRef.current.scale.set(s, s, s)
+  })
+  const WOOD = '#7a4f2e'
+  const BRASS = '#c9a24a'
+  const lotus = gem === 'yellow'
+  return (
+    // ถือในมือ ด้ามชี้ไปข้างหน้า (เหมือนขวาน)
+    <group position={[0, -0.55, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+      {/* ด้ามไม้: โคนกลม ปลายเรียว */}
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <cylinderGeometry args={[0.024, 0.032, 0.62, 10]} />
+        <meshStandardMaterial color={WOOD} roughness={0.75} />
+      </mesh>
+      <mesh position={[0, -0.2, 0]} castShadow>
+        <sphereGeometry args={[0.04, 10, 8]} />
+        <meshStandardMaterial color={WOOD} roughness={0.75} />
+      </mesh>
+      {/* ลายแกะ (วงนูนเล็ก ๆ) */}
+      {[-0.08, 0.02].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.03, 0.006, 6, 14]} />
+          <meshStandardMaterial color="#5e3a20" />
+        </mesh>
+      ))}
+      {/* ปลอกทองเหลือง */}
+      {[0.3, 0.4].map((y) => (
+        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.027, 0.009, 6, 16]} />
+          <meshStandardMaterial color={lotus ? '#a0703e' : BRASS} metalness={lotus ? 0 : 0.7} roughness={0.35} />
+        </mesh>
+      ))}
+      {gem === 'red' && (
+        <mesh position={[0, 0.35, 0.03]}>
+          <octahedronGeometry args={[0.014, 0]} />
+          <meshStandardMaterial color={g.color} emissive={g.color} emissiveIntensity={0.8} />
+        </mesh>
+      )}
+      {/* หัวคฑา: กรงเล็บทอง 3 แฉก หรือกลีบบัวไม้ 5 กลีบ (สีเหลือง) */}
+      <group position={[0, 0.46, 0]}>
+        {Array.from({ length: lotus ? 5 : 3 }).map((_, k, arr) => (
+          <group key={k} rotation={[0, (k / arr.length) * Math.PI * 2, 0]}>
+            <mesh position={[0.035, 0.05, 0]} rotation={[0, 0, -0.45]} castShadow>
+              <coneGeometry args={[lotus ? 0.02 : 0.012, lotus ? 0.11 : 0.13, 6]} />
+              <meshStandardMaterial color={lotus ? '#a8763f' : BRASS} metalness={lotus ? 0 : 0.7} roughness={0.35} />
+            </mesh>
+          </group>
+        ))}
+        {/* คริสตัลเรืองแสง (แท่งยาวปลายแหลม) */}
+        <group ref={gemRef} position={[0, 0.1, 0]}>
+          <mesh scale={[0.6, 1.5, 0.6]}>
+            <octahedronGeometry args={[0.055, 0]} />
+            <meshStandardMaterial color={g.color} emissive={g.color} emissiveIntensity={1.4} transparent opacity={0.9} roughness={0.15} />
+          </mesh>
+          <mesh scale={1.9}>
+            <sphereGeometry args={[0.05, 12, 10]} />
+            <meshBasicMaterial color={g.glow} transparent opacity={0.18} depthWrite={false} />
+          </mesh>
+        </group>
+      </group>
+      {/* สีม่วง: จี้อัญมณีห้อยปลายด้าม */}
+      {gem === 'purple' && (
+        <group position={[0, -0.26, 0]}>
+          <mesh position={[0, -0.02, 0]}>
+            <torusGeometry args={[0.012, 0.004, 6, 10]} />
+            <meshStandardMaterial color={BRASS} metalness={0.7} />
+          </mesh>
+          <mesh position={[0, -0.05, 0]} scale={[0.7, 1.2, 0.7]}>
+            <octahedronGeometry args={[0.022, 0]} />
+            <meshStandardMaterial color={g.color} emissive={g.color} emissiveIntensity={0.9} />
+          </mesh>
+        </group>
+      )}
     </group>
   )
 }

@@ -1,4 +1,5 @@
-import { Shape } from 'three'
+import { useMemo } from 'react'
+import { ExtrudeGeometry, Shape } from 'three'
 import type { HouseDesign } from '../../game/content/houses'
 import { RBox } from './RBox'
 
@@ -31,19 +32,40 @@ export function GableRoof({
           castShadow
           receiveShadow
         >
-          <RBox args={[width + overhang * 2, 0.12, slope]} />
-          <meshStandardMaterial color={color} />
+          <RBox args={[width + overhang * 2, 0.22, slope + 0.1]} radius={0.1} />
+          <meshStandardMaterial color={color} roughness={0.85} />
         </mesh>
       ))}
-      {/* หน้าจั่ว */}
+      {/* อกไก่ (สันหลังคา) กลมมน */}
+      <mesh position={[0, height + 0.06, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <capsuleGeometry args={[0.13, width + overhang * 2 - 0.2, 4, 12]} />
+        <meshStandardMaterial color={shadeHex(color, 0.82)} roughness={0.85} />
+      </mesh>
+      {/* หน้าจั่ว: ขอบโค้งมน ไม่เป็นแผ่นบางคม */}
       {[1, -1].map((s) => (
-        <mesh key={'g' + s} position={[(s * width) / 2, 0, 0]} rotation={[0, (s * Math.PI) / 2, 0]}>
-          <shapeGeometry args={[triangle(depth / 2, height)]} />
-          <meshStandardMaterial color={color} side={2} />
+        <mesh key={'g' + s} position={[(s * width) / 2 - s * 0.06, 0, 0]} rotation={[0, (s * Math.PI) / 2, 0]} castShadow>
+          <Gable half={depth / 2} h={height} />
+          <meshStandardMaterial color={shadeHex(color, 1.12)} roughness={0.9} />
         </mesh>
       ))}
     </group>
   )
+}
+
+function Gable({ half, h }: { half: number; h: number }) {
+  const geom = useMemo(() => {
+    const g = new ExtrudeGeometry(triangle(half - 0.08, h - 0.08), { depth: 0.04, bevelEnabled: true, bevelSize: 0.07, bevelThickness: 0.06, bevelSegments: 4, steps: 1 })
+    g.translate(0, 0.02, -0.02)
+    return g
+  }, [half, h])
+  return <primitive object={geom} attach="geometry" />
+}
+
+/** ทำสีอ่อน/เข้มขึ้น (k > 1 = อ่อน) */
+function shadeHex(hex: string, k: number) {
+  const n = parseInt(hex.slice(1), 16)
+  const c = (v: number) => Math.round(Math.min(255, k > 1 ? v + (255 - v) * (k - 1) : v * k)).toString(16).padStart(2, '0')
+  return '#' + c((n >> 16) & 255) + c((n >> 8) & 255) + c(n & 255)
 }
 
 function triangle(half: number, h: number) {
@@ -58,7 +80,7 @@ function triangle(half: number, h: number) {
 function Door({ x = 0, y, z, color = '#4a3020' }: { x?: number; y: number; z: number; color?: string }) {
   return (
     <mesh position={[x, y, z]}>
-      <RBox args={[0.9, 1.9, 0.08]} />
+      <RBox args={[0.9, 1.9, 0.08]} radius={0.035} />
       <meshStandardMaterial color={color} />
     </mesh>
   )
@@ -68,7 +90,7 @@ function Window({ x, y, z, frame }: { x: number; y: number; z: number; frame: st
   return (
     <group position={[x, y, z]}>
       <mesh>
-        <RBox args={[1, 0.8, 0.06]} />
+        <RBox args={[1, 0.8, 0.08]} radius={0.035} />
         <meshStandardMaterial color={frame} />
       </mesh>
       <mesh position={[0, 0, 0.02]}>
@@ -91,7 +113,7 @@ export function House({ design }: { design: HouseDesign }) {
           {[-1, 0, 1].flatMap((ix) =>
             [-1, 1].map((iz) => (
               <mesh key={`${ix}${iz}`} position={[(ix * (w - 0.4)) / 2, floorY / 2, (iz * (d - 0.4)) / 2]} castShadow>
-                <RBox args={[0.25, floorY, 0.25]} />
+                <RBox args={[0.25, floorY, 0.25]} radius={0.1} />
                 <meshStandardMaterial color="#5a3b26" />
               </mesh>
             )),
@@ -103,12 +125,12 @@ export function House({ design }: { design: HouseDesign }) {
           </mesh>
           {/* พื้น */}
           <mesh position={[0, floorY, 0.4]} castShadow receiveShadow>
-            <RBox args={[w + 0.2, 0.2, d + 0.8]} />
+            <RBox args={[w + 0.2, 0.2, d + 0.8]} radius={0.09} />
             <meshStandardMaterial color="#6e4a30" />
           </mesh>
           {/* ผนัง */}
           <mesh position={[0, floorY + wallH / 2, -0.2]} castShadow receiveShadow>
-            <RBox args={[w, wallH, d - 0.8]} />
+            <RBox args={[w, wallH, d - 0.8]} radius={0.28} />
             <meshStandardMaterial color={design.wall} />
           </mesh>
           <Door y={floorY + 1.05} z={(d - 0.8) / 2 - 0.2 + 0.03} />
@@ -130,11 +152,11 @@ export function House({ design }: { design: HouseDesign }) {
       return (
         <group>
           <mesh position={[0, 0.15, 0.6]} receiveShadow>
-            <RBox args={[w + 0.6, 0.3, d + 1.6]} />
+            <RBox args={[w + 0.6, 0.3, d + 1.6]} radius={0.14} />
             <meshStandardMaterial color="#a9a196" />
           </mesh>
           <mesh position={[0, 0.3 + wallH / 2, 0]} castShadow receiveShadow>
-            <RBox args={[w, wallH, d]} />
+            <RBox args={[w, wallH, d]} radius={0.3} />
             <meshStandardMaterial color={design.wall} />
           </mesh>
           <Door y={1.25} z={d / 2 + 0.03} color="#6b4a2e" />
@@ -148,7 +170,7 @@ export function House({ design }: { design: HouseDesign }) {
             </mesh>
           ))}
           <mesh position={[0, 0.3 + wallH + 0.05, d / 2 + 0.7]} castShadow>
-            <RBox args={[w + 0.4, 0.12, 1.6]} />
+            <RBox args={[w + 0.4, 0.18, 1.6]} radius={0.08} />
             <meshStandardMaterial color={design.roof} />
           </mesh>
           <GableRoof width={w} depth={d} height={1.5} y={0.3 + wallH} color={design.roof} overhang={0.4} />
@@ -161,15 +183,15 @@ export function House({ design }: { design: HouseDesign }) {
       return (
         <group>
           <mesh position={[0, lowH / 2, 0]} castShadow receiveShadow>
-            <RBox args={[w, lowH, d]} />
+            <RBox args={[w, lowH, d]} radius={0.3} />
             <meshStandardMaterial color={design.wall} />
           </mesh>
           <mesh position={[0, lowH + 0.08, 0.2]} castShadow>
-            <RBox args={[w + 0.3, 0.16, d + 0.7]} />
+            <RBox args={[w + 0.3, 0.18, d + 0.7]} radius={0.08} />
             <meshStandardMaterial color={design.trim} />
           </mesh>
           <mesh position={[0, lowH + 0.16 + upH / 2, 0]} castShadow receiveShadow>
-            <RBox args={[w - 0.2, upH, d - 0.2]} />
+            <RBox args={[w - 0.2, upH, d - 0.2]} radius={0.26} />
             <meshStandardMaterial color="#9a6a42" />
           </mesh>
           <Door y={1.0} z={d / 2 + 0.03} color="#5a3b26" />
@@ -199,5 +221,91 @@ export function VillagerHouse({ color }: { color: string }) {
         perks: [],
       }}
     />
+  )
+}
+
+/** พุ่มไม้กลมนุ่ม + ดอกไม้หลากสี (แต่งรอบบ้าน/อาคารให้ละมุน) */
+export function Bush({ x, z, s = 1, flowers = '#f29ab8' }: { x: number; z: number; s?: number; flowers?: string | null }) {
+  const blobs: [number, number, number, number][] = [
+    [0, 0.32, 0, 0.42],
+    [0.34, 0.26, 0.1, 0.32],
+    [-0.3, 0.24, -0.08, 0.3],
+    [0.05, 0.5, -0.12, 0.28],
+  ]
+  return (
+    <group position={[x, 0, z]} scale={s}>
+      {blobs.map(([bx, by, bz, r], i) => (
+        <mesh key={i} position={[bx, by, bz]} castShadow receiveShadow>
+          <icosahedronGeometry args={[r, 2]} />
+          <meshStandardMaterial color={i % 2 ? '#5e9a48' : '#4f8a3e'} roughness={0.95} />
+        </mesh>
+      ))}
+      {flowers &&
+        [0, 1, 2, 3, 4, 5].map((k) => (
+          <mesh key={'f' + k} position={[Math.cos(k * 1.1) * 0.38, 0.42 + (k % 3) * 0.1, Math.sin(k * 1.1) * 0.32]}>
+            <sphereGeometry args={[0.06, 10, 8]} />
+            <meshStandardMaterial color={k % 2 ? flowers : '#fff3c4'} roughness={0.6} />
+          </mesh>
+        ))}
+    </group>
+  )
+}
+
+/** รั้วไม้เตี้ยหัวมน (ยาว len ตามแกน x) */
+export function PicketFence({ x, z, len, rot = 0 }: { x: number; z: number; len: number; rot?: number }) {
+  const n = Math.max(2, Math.round(len / 0.45))
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      {Array.from({ length: n }).map((_, i) => {
+        const px = -len / 2 + (i / (n - 1)) * len
+        return (
+          <mesh key={i} position={[px, 0.36, 0]} castShadow>
+            <capsuleGeometry args={[0.055, 0.6, 4, 8]} />
+            <meshStandardMaterial color="#d8c39a" roughness={0.9} />
+          </mesh>
+        )
+      })}
+      {[0.25, 0.5].map((y) => (
+        <mesh key={y} position={[0, y, -0.05]} castShadow>
+          <RBox args={[len + 0.1, 0.07, 0.05]} radius={0.025} />
+          <meshStandardMaterial color="#c8b088" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** สวนหน้าบ้านชาวบ้าน: พุ่มดอกไม้ กระถาง รั้วไม้เตี้ยสองข้างทางเข้า */
+export function HouseYard({ seed = 0 }: { seed?: number }) {
+  const colors = ['#f29ab8', '#f6c445', '#e86a5a', '#c99af0', '#ffffff']
+  const c = (k: number) => colors[(seed + k) % colors.length]
+  return (
+    <group>
+      <Bush x={-3.6} z={3.4} s={1.1} flowers={c(0)} />
+      <Bush x={3.7} z={2.6} s={0.9} flowers={c(1)} />
+      <Bush x={-3.8} z={-2.2} s={0.8} flowers={null} />
+      <Bush x={3.6} z={-2.4} s={1} flowers={c(2)} />
+      <PicketFence x={-2.3} z={4.6} len={2.6} />
+      <PicketFence x={3.9} z={4.6} len={1.6} />
+      {/* กระถางดอกไม้ข้างบันได */}
+      {[1.2, 3.2].map((px, i) => (
+        <group key={px} position={[px, 0, 4.2]}>
+          <mesh position={[0, 0.18, 0]} castShadow>
+            <cylinderGeometry args={[0.22, 0.17, 0.36, 14]} />
+            <meshStandardMaterial color="#b4583a" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.45, 0]}>
+            <icosahedronGeometry args={[0.24, 2]} />
+            <meshStandardMaterial color="#5e9a48" roughness={0.95} />
+          </mesh>
+          {[0, 1, 2].map((k) => (
+            <mesh key={k} position={[Math.cos(k * 2.1) * 0.15, 0.6, Math.sin(k * 2.1) * 0.15]}>
+              <sphereGeometry args={[0.055, 10, 8]} />
+              <meshStandardMaterial color={c(3 + i + k)} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
   )
 }

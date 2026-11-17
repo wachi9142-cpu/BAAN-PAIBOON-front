@@ -1,3 +1,7 @@
+import { chestHint, openChest, useChests } from '../game/treasure'
+import { whistle } from '../game/whistle'
+import { ToolBar } from './ToolBar'
+import { equip, toolChoices } from '../game/trees'
 import { useBuild, toggleBuild, rotateTool } from '../game/building'
 import { BuildBar, ChestWindow } from './BuildBar'
 import { STRUCTURES } from '../game/content/structures'
@@ -109,6 +113,11 @@ export function WorldScreen() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+      // เลือกเครื่องมือในมือ: 1 มือเปล่า · 2 ขวาน · 3 ขวานเหล็ก
+      if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code) && !e.repeat) {
+        const t = toolChoices()[Number(e.code.slice(5)) - 1]
+        if (t) equip(t)
+      }
       // โหมดสร้าง: B เปิด/ปิด · R หมุน · Esc ออก
       if (e.code === 'KeyB' && !e.repeat) {
         toggleBuild()
@@ -130,6 +139,7 @@ export function WorldScreen() {
       }
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
       if (e.code === 'KeyR' && !e.repeat) toggleRide()
+      if (e.code === 'KeyQ' && !e.repeat) whistle()
       if (e.code === 'KeyE' && !e.repeat) {
         const g = useGame.getState()
         if (g.paused) return
@@ -146,6 +156,7 @@ export function WorldScreen() {
           else if (sp === 'shoes') toggleShoes()
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
         }
+        else if (useChests.getState().near) openChest(useChests.getState().near!)
         else if (useBuild.getState().near) {
           const uid = useBuild.getState().near!
           const st = g.save?.structures.find((s) => s.uid === uid)
@@ -235,6 +246,7 @@ export function WorldScreen() {
       )}
       {menu && <GameMenu initialTab={menuTab} onClose={() => setMenu(false)} />}
       <BuildBar />
+      {!menu && <ToolBar />}
       <ChestWindow />
     </>
   )
@@ -298,6 +310,9 @@ function StatusPanel() {
         ))}
       </div>
       <AnimalButton />
+      <button type="button" className="animal-btn whistle-btn" onClick={whistle} title="ผิวปากเรียกสัตว์ (Q)">
+        🎵 ผิวปากเรียกสัตว์ (Q)
+      </button>
       {pet && (
         <div className="pet-row">
           <span className="pet-hearts" title={`ความผูกพันกับ${pet.name} ${save.petHearts}/${MAX_PET_HEARTS}`}>
@@ -575,6 +590,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const meritSpot = useMerit((s) => s.spot)
   const bedNear = useGarden((s) => s.near)
   const usableNear = useBuild((s) => s.near)
+  const chestNear = useChests((s) => s.near)
+  useGame((s) => s.save?.chestsOpened)
   const building = useBuild((s) => s.active)
   const garden = useGame((s) => s.save?.garden)
   useClock((s) => s.minute)
@@ -663,7 +680,12 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                   : '🔔 ตีระฆัง'}
         </div>
       )}
-      {!building && !nearWorship && !npcNear && !meritSpot && usableNear && (
+      {!building && !nearWorship && !npcNear && !meritSpot && chestNear && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {chestHint(chestNear)}
+        </div>
+      )}
+      {!building && !nearWorship && !npcNear && !meritSpot && !chestNear && usableNear && (
         <div className="gather-hint">
           <kbd>E</kbd> {(() => {
             const st = save.structures.find((s) => s.uid === usableNear)
@@ -689,7 +711,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           <kbd>E</kbd> {gatherHint(gatherTarget).replace('กด E — ', '')}
         </div>
       )}
-      {plot && (
+      {plot && !building && (
         <div className="interact">
           <h3>ที่ดินของคุณ</h3>
           <p>รั้วไม้ไผ่คือขอบเขตที่ดิน · แปลงผัก 8 แปลงหน้าบ้าน (กด E ที่แปลง) · กด <kbd>B</kbd> เพื่อสร้างโต๊ะประดิษฐ์ กล่องเก็บของ รั้ว โรงเก็บของ คอกสัตว์</p>
@@ -707,6 +729,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
             ['KeyC', 'C', 'ถ่ายภาพ'],
             ['KeyR', 'R', 'ขี่สัตว์'],
             ['KeyB', 'B', 'สร้าง'],
+            ['KeyQ', 'Q', 'ผิวปาก'],
+            ['Digit1', '1–4', 'เครื่องมือ'],
             ['Escape', 'Esc', 'เมนู'],
           ] as const
         ).map(([code, k, label]) => (

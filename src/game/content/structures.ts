@@ -2,7 +2,7 @@
 // แล้วเพิ่มโมเดลใน src/scenes/Structures.tsx
 import type { Cost } from './items'
 import type { Rect } from './temple'
-import { GARDEN_BEDS, BED_SIZE } from './garden'
+import { GARDEN_BEDS, GARDEN_JAR, BED_SIZE } from './garden'
 import { PLOTS, type Vec2 } from './village'
 
 export type StructureId = 'workbench' | 'chest' | 'fence' | 'scarecrow' | 'shed' | 'pen' | 'greenhouse'
@@ -25,8 +25,8 @@ export const STRUCTURES: Record<StructureId, StructureDef> = {
   workbench: { id: 'workbench', name: 'โต๊ะประดิษฐ์', icon: '🛠️', size: [1.6, 0.8], cost: { log: 2, branch: 4 }, solid: 'box', use: 'craft', note: 'กด E ที่โต๊ะเพื่อประดิษฐ์ของ' },
   chest: { id: 'chest', name: 'กล่องเก็บของ', icon: '📦', size: [0.9, 0.6], cost: { log: 2, vine: 2 }, solid: 'box', use: 'storage', note: 'ฝากของไว้ที่บ้าน กระเป๋าจะได้ไม่เต็ม (กล่องละ 20 ช่อง)' },
   fence: { id: 'fence', name: 'รั้วไม้ไผ่ (2 เมตร)', icon: '🎋', size: [2, 0.25], cost: { branch: 3, vine: 1 }, solid: 'box', note: 'กั้นแนวเขต แบ่งพื้นที่ในบ้าน' },
-  scarecrow: { id: 'scarecrow', name: 'หุ่นไล่กา', icon: '🧑‍🌾', size: [0.6, 0.6], cost: { branch: 3, vine: 2 }, solid: 'box', note: 'ไล่นกไม่ให้มากินผักในแปลง (ของประดับ)' },
-  shed: { id: 'shed', name: 'โรงเก็บของ', icon: '🛖', size: [3, 2.4], cost: { log: 6, plank: 4, stone: 4 }, solid: 'box', note: 'เก็บเครื่องมือและฟืน (ระบบเก็บเครื่องมือเร็ว ๆ นี้)' },
+  scarecrow: { id: 'scarecrow', name: 'หุ่นไล่กา', icon: '👒', size: [0.6, 0.6], cost: { branch: 3, vine: 2 }, solid: 'box', note: 'ไล่นกไม่ให้มากินผักในแปลง (ของประดับ)' },
+  shed: { id: 'shed', name: 'โรงเก็บของ', icon: '🏚️', size: [3, 2.4], cost: { log: 6, plank: 4, stone: 4 }, solid: 'box', note: 'เก็บเครื่องมือและฟืน (ระบบเก็บเครื่องมือเร็ว ๆ นี้)' },
   pen: { id: 'pen', name: 'คอกสัตว์', icon: '🐄', size: [4, 4], cost: { log: 4, branch: 8, vine: 4 }, solid: 'ring', note: 'คอกล้อมรั้ว มีประตูด้านหน้า (เลี้ยงสัตว์ในคอกเร็ว ๆ นี้)' },
   greenhouse: { id: 'greenhouse', name: 'โรงเรือนเพาะชำ', icon: '🌿', size: [4, 3], cost: { log: 4, plank: 4, vine: 6 }, solid: 'none', note: 'หลังคาตาข่ายพรางแสง เดินเข้าไปได้ (ปลูกต้นกล้าเร็ว ๆ นี้)' },
 }
@@ -109,6 +109,7 @@ export function blockedZones(): Rect[] {
     // ทางเดินจากประตูรั้วถึงหน้าบ้าน
     { minX: p.center[0] - p.size[0] / 2, maxX: hx - 3, minZ: p.center[1] - 1.6, maxZ: p.center[1] + 1.6 },
   ]
+  out.push({ minX: GARDEN_JAR[0] - 0.6, maxX: GARDEN_JAR[0] + 0.6, minZ: GARDEN_JAR[1] - 0.6, maxZ: GARDEN_JAR[1] + 0.6 })
   for (const [bx, bz] of GARDEN_BEDS) {
     const h = BED_SIZE / 2 + 0.25
     out.push({ minX: bx - h, maxX: bx + h, minZ: bz - h, maxZ: bz + h })

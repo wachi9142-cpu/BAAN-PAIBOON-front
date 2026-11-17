@@ -20,7 +20,17 @@ interface Settings {
   displaySize: 'large' | 'medium'
   /** ความเข้มของแถบสีม่วงโปร่งแสงตอนเปิดเมนู Esc (0.4–0.9) */
   overlayOpacity: number
+  /** สีแถบเมนู Esc ที่ผู้เล่นชอบ */
+  menuColor: MenuColor
   set: (p: Partial<Omit<Settings, 'set'>>) => void
+}
+
+export type MenuColor = 'purple' | 'blue' | 'pink'
+/** สีแถบเมนู: [สีหลัก rgb, ปุ่มเข้ม rgb, สีตัวอักษรบนปุ่มที่เลือก] */
+export const MENU_COLORS: Record<MenuColor, { label: string; main: string; dark: string; ink: string; swatch: string }> = {
+  purple: { label: 'ม่วงลาเวนเดอร์', main: '139, 92, 246', dark: '59, 22, 120', ink: '#4c1d95', swatch: '#8B5CF6' },
+  blue: { label: 'ฟ้า', main: '56, 152, 236', dark: '14, 64, 120', ink: '#0c4a8a', swatch: '#3898EC' },
+  pink: { label: 'ชมพู', main: '236, 102, 170', dark: '128, 24, 84', ink: '#9d1d63', swatch: '#EC66AA' },
 }
 
 export const AUTO_SAVE_CHOICES = [1, 2, 5, 10]
@@ -39,6 +49,7 @@ export const useSettings = create<Settings>()(
       soundPreview: 'auto',
       displaySize: 'large',
       overlayOpacity: 0.7,
+      menuColor: 'purple',
       set: (p) => set(p),
     }),
     {

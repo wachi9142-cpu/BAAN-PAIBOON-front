@@ -78,13 +78,13 @@ function BuildLayer({ placed }: { placed: PlacedStructure[] }) {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {areas.map((a, i) => (
-        <ZoneRect key={'a' + i} r={a} color="#5fd37a" opacity={0.22} y={0.04} />
+        <ZoneRect key={'a' + i} r={a} color="#5fd37a" opacity={0.3} y={0.04} />
       ))}
       {blocked.map((b, i) => (
-        <ZoneRect key={'b' + i} r={b} color="#e05a4a" opacity={0.28} y={0.045} />
+        <ZoneRect key={'b' + i} r={b} color="#e0443a" opacity={0.45} y={0.05} />
       ))}
       {placed.map((s) => (
-        <ZoneRect key={s.uid} r={rectOf(s.id, s.x, s.z, s.rot)} color="#e05a4a" opacity={0.22} y={0.045} />
+        <ZoneRect key={s.uid} r={rectOf(s.id, s.x, s.z, s.rot)} color="#e0443a" opacity={0.4} y={0.05} />
       ))}
       {ghost}
       {removeMark}

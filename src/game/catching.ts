@@ -1,3 +1,5 @@
+import { useTools } from './trees'
+import { startCast } from './wand'
 /**
  * ระบบเก็บสัตว์ (ไม่ใช้การปาบอล)
  * ง่าย = เข้าใกล้แล้วเก็บ · ปานกลาง = ไม้คฑา หรือกล้วยสุกล่อ · ยาก = ป้อนกล้วยให้เชื่องก่อน แล้วใช้ไม้คฑา
@@ -21,8 +23,15 @@ export interface WildRuntime {
   pullStart: number
   /** ใช้ไม้คฑา (แสดงลำแสง) */
   beam: boolean
+  /** ระยะเวลาดูดเข้าคฑา (ms) ตามระดับสัตว์ */
+  pullMs?: number
+  /** ลำแสงยิงโดนแต่สัตว์สะบัดหลุด จนถึงเวลานี้ (performance.now) */
+  resistUntil?: number
   /** ตกใจวิ่งหนีจนถึงเวลานี้ */
   scaredUntil: number
+  /** ได้ยินเสียงผิวปาก: เดินเข้ามาหา / หันมามอง จนถึงเวลานี้ */
+  callUntil?: number
+  callMode?: 'come' | 'look'
 }
 
 const RESPAWN_MS = 3 * 60_000
@@ -65,7 +74,8 @@ export function catchHint(id: string) {
   const name = getSpecies(spawn.pet.species).label
   const tier = tierOf(id)
   const r = wild.get(id)!
-  if (tier === 'easy') return `เก็บ${name}${countOf('feed') > 0 ? ' (ให้อาหารสัตว์)' : ''}`
+  const wandHeld = useTools.getState().equipped === 'wand' && hasTool('wand')
+  if (tier === 'easy') return wandHeld ? `ใช้คฑาดูด${name}` : `เก็บ${name}${countOf('feed') > 0 ? ' (ให้อาหารสัตว์)' : ''}`
   if (tier === 'medium') {
     if (hasTool('wand')) return `ใช้ไม้คฑาเก็บ${name}`
     if (countOf('treat') > 0) return `ล่อ${name}ด้วยกล้วยสุก`
@@ -84,9 +94,12 @@ export function tryCatch(id: string) {
   const tier = tierOf(id)
   let chance = 1
   let beam = false
+  // ถือคฑาอยู่ = ใช้ลำแสงกับทุกระดับที่จับได้
+  const wandHeld = useTools.getState().equipped === 'wand' && hasTool('wand')
 
   if (tier === 'easy') {
     if (countOf('feed') > 0) use('feed')
+    beam = wandHeld
   } else if (tier === 'medium') {
     if (hasTool('wand')) {
       beam = true
@@ -120,7 +133,18 @@ export function tryCatch(id: string) {
     return
   }
 
+  // ใช้ลำแสง: ถือคฑาให้อัตโนมัติ แล้วหันไปชี้ที่สัตว์
+  const p = wildPos.get(id) ?? spawn.home
+  const pullMs = beam ? (tier === 'easy' ? 1400 : tier === 'medium' ? 1900 : 2500) : PULL_MS
+  if (beam) {
+    if (useTools.getState().equipped !== 'wand') useTools.setState({ equipped: 'wand' })
+  }
   if (Math.random() > chance) {
+    if (beam) {
+      // ลำแสงโดนแต่สัตว์ขัดขืนสะบัดหลุด
+      r.resistUntil = performance.now() + 1100
+      startCast(p[0], p[1], 1100)
+    }
     const fleeChance = tier === 'easy' ? 0 : CATCH_RULES[tier].fleeOnFail
     if (Math.random() < fleeChance) {
       r.status = 'fled'
@@ -137,7 +161,9 @@ export function tryCatch(id: string) {
   // สำเร็จ: ดึงเข้าหาอย่างนุ่มนวล แล้วเข้าสมุดสะสม
   r.status = 'pulling'
   r.beam = beam
+  r.pullMs = pullMs
   r.pullStart = performance.now()
+  if (beam) startCast(p[0], p[1], pullMs)
   window.setTimeout(() => {
     r.status = 'caught'
     r.until = Date.now() + RESPAWN_MS
@@ -146,8 +172,8 @@ export function tryCatch(id: string) {
     const caught = { uid: `${spawn.id}-${Date.now().toString(36)}`, pet: { ...spawn.pet, name: getSpecies(spawn.pet.species).suggestName }, day: g.save.day }
     useGame.setState({ save: { ...g.save, collection: [...g.save.collection, caught] }, dirty: true })
     g.saveNow('event')
-    toast(`🐾 เก็บ${name}ได้แล้ว!`, `ระดับ${TIERS[tier].label} · ดูได้ที่ เมนู → สัตว์ของฉัน`, 'discover')
-  }, PULL_MS)
+    toast(`🐾 เก็บ${name}ได้แล้ว!`, `${beam ? 'ดูดเข้าคฑาสำเร็จ · ' : ''}ระดับ${TIERS[tier].label} · ดูได้ที่ เมนู → สัตว์ของฉัน`, 'discover')
+  }, pullMs)
 }
 
 /** เรียกสัตว์ออกมาเดินตาม (null = เก็บเข้าไปพักก่อน) */
