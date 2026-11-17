@@ -7,6 +7,7 @@ import { useGame } from '../game/store'
 import { Pet, petScale } from './models/Pet'
 import { PET_ANCHORS } from './models/PetOutfit'
 import { playerPose } from './Player'
+import { templeGroundY } from '../game/content/temple'
 
 /** รอนานเท่าไรถึงนั่ง / นอน (วินาที) */
 const SIT_AFTER = 2.5
@@ -48,6 +49,19 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
     let tz = pz - Math.cos(ph) * back - Math.sin(ph) * side
 
     let [x, z] = pos.current
+    // ถูกขี่อยู่: อยู่ใต้ผู้เล่น หันตามผู้เล่น เดิน/วิ่งตามจังหวะผู้เล่น
+    if (g.riding) {
+      pos.current = [px, pz]
+      heading.current = ph
+      motion.current = pm
+      pose.current = 0
+      if (root.current) {
+        root.current.position.set(px, templeGroundY(px, pz), pz)
+        root.current.rotation.y = ph
+      }
+      if (leash.current) leash.current.visible = false
+      return
+    }
     const playerMoving = pm > 0
     const playing = !playerMoving && idle.current < play.current.until
 
@@ -119,7 +133,8 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       fly = info.flies ? (pose.current === 2 ? 0.05 : 1.5 + Math.sin(clock.elapsedTime * 2) * 0.12) : 0
       root.current.position.x = x
       root.current.position.z = z
-      root.current.position.y += (fly - root.current.position.y) * Math.min(1, dt * 3)
+      const ground = templeGroundY(x, z)
+      root.current.position.y += (ground + fly - root.current.position.y) * Math.min(1, dt * (fly ? 3 : 10))
       root.current.rotation.y = heading.current
     }
 

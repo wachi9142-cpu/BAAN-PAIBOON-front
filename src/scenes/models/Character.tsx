@@ -39,10 +39,12 @@ interface Props {
   action?: CharacterAction
   /** ของในมือขวา */
   tool?: ToolId
+  /** ถอดรองเท้า (ในโบสถ์) */
+  barefoot?: boolean
 }
 
 export type CharacterAction = 'sweep' | 'hoe' | 'talk'
-export type ToolId = 'broom' | 'hoe'
+export type ToolId = 'broom' | 'hoe' | 'pole'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -52,13 +54,32 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
   shy: [-0.45, -0.35, -0.45, 0.35],
   behind: [0.45, -0.25, 0.45, 0.25],
   cheer: [0, -2.7, 0, 2.7],
+  // ท่าในวัด (ใช้ชั่วคราว ไม่อยู่ในตัวเลือกท่าตอนสร้างตัวละคร)
+  prostrate: [-1.25, -0.5, -1.25, 0.5],
+  shake: [-0.95, -0.35, -0.95, 0.35],
+  offer: [-1.5, -0.25, -1.5, 0.25],
+  // ขี่: มือจับหลังสัตว์ข้างหน้า
+  ride: [-0.7, -0.1, -0.7, 0.1],
+}
+
+/** กราบสามครั้ง: ช่วงคุกเข่าพนมมือ แล้วกราบลง-ขึ้น 3 รอบ (วินาที) */
+export const PROSTRATE = { settle: 1.0, each: 2.0, times: 3 }
+/** คืนค่า 0..1 ว่าก้มลงไปแค่ไหน ณ เวลา t (0 = ตั้งตรงพนมมือ, 1 = หน้าผากแตะพื้น) */
+function bowAmount(t: number) {
+  const x = t - PROSTRATE.settle
+  if (x < 0 || x > PROSTRATE.each * PROSTRATE.times) return 0
+  const p = (x % PROSTRATE.each) / PROSTRATE.each
+  // ลง 40% · ค้าง 20% · ขึ้น 40%
+  if (p < 0.4) return Math.sin((p / 0.4) * Math.PI / 2)
+  if (p < 0.6) return 1
+  return Math.cos(((p - 0.6) / 0.4) * Math.PI / 2)
 }
 
 /** เอี๊ยม/เสื้อกั๊ก/แจ็กเก็ตเปิดหน้า */
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion, action, tool }: Props) {
+export function Character({ appearance, motion, action, tool, barefoot }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -102,6 +123,8 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const kidChest = useRef<Group>(null)
   const phase = useRef(0)
   const idle = useRef(0)
+  const upper = useRef<Group>(null)
+  const poseStart = useRef({ pose: pose as PoseId, t: 0 })
 
   useFrame((_, dt) => {
     const m = motion?.current ?? 0
@@ -155,7 +178,54 @@ export function Character({ appearance, motion, action, tool }: Props) {
       armR.current.rotation.x = lerp(armR.current.rotation.x, rx)
       armR.current.rotation.z = lerp(armR.current.rotation.z, rz)
     }
-    if (body.current) body.current.position.y = m > 0 ? Math.abs(Math.cos(phase.current)) * 0.05 : 0
+    // ---------- ท่าในวัด ----------
+    if (poseStart.current.pose !== pose) poseStart.current = { pose, t: idle.current }
+    const pt = idle.current - poseStart.current.t
+    const kneel = m === 0 && pose === 'prostrate'
+    let bow = 0
+    if (kneel) {
+      // คุกเข่า: ขาพับไปด้านหลังราบกับพื้น ตัวลดต่ำลง
+      if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, 1.45)
+      if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, 1.45)
+      bow = bowAmount(pt)
+      // ก้มลง: มือพนมเลื่อนลงไปแตะพื้นข้างหน้า
+      ;[lx, lz, rx, rz] = [-1.25 - bow * 0.55, -0.5 + bow * 0.25, -1.25 - bow * 0.55, 0.5 - bow * 0.25]
+      if (armL.current) {
+        armL.current.rotation.x = lx
+        armL.current.rotation.z = lz
+      }
+      if (armR.current) {
+        armR.current.rotation.x = rx
+        armR.current.rotation.z = rz
+      }
+    }
+    if (pose === 'ride') {
+      // นั่งคร่อมหลังสัตว์: ขากางออกสองข้าง งอไปข้างหน้าเล็กน้อย (ไม่แกว่งตามก้าว)
+      if (legL.current) {
+        legL.current.rotation.x = lerp(legL.current.rotation.x, -0.35)
+        legL.current.rotation.z = lerp(legL.current.rotation.z, -0.5)
+      }
+      if (legR.current) {
+        legR.current.rotation.x = lerp(legR.current.rotation.x, -0.35)
+        legR.current.rotation.z = lerp(legR.current.rotation.z, 0.5)
+      }
+      if (armL.current) armL.current.rotation.x = lerp(armL.current.rotation.x, -0.7)
+      if (armR.current) armR.current.rotation.x = lerp(armR.current.rotation.x, -0.7)
+    } else {
+      if (legL.current) legL.current.rotation.z = lerp(legL.current.rotation.z, 0)
+      if (legR.current) legR.current.rotation.z = lerp(legR.current.rotation.z, 0)
+    }
+    if (m === 0 && pose === 'shake') {
+      // เขย่ากระบอกเซียมซี: มือสองข้างโยกขึ้นลงเร็ว ๆ
+      const sh = Math.sin(idle.current * 18) * 0.18
+      if (armL.current) armL.current.rotation.x = -0.95 + sh
+      if (armR.current) armR.current.rotation.x = -0.95 + sh
+    }
+    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + (kneel ? bow * 1.15 : 0))
+    if (body.current) {
+      const down = kneel ? -0.62 * age.legScale : 0
+      body.current.position.y = m > 0 && pose !== 'ride' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
+    }
   })
 
   // ลักษณะชาย-หญิง: ชายไหล่กว้าง ตัวสูงกว่าเล็กน้อย · หญิงไหล่แคบ เอวคอด
@@ -204,7 +274,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
                 {skinMat}
               </mesh>
               <group position={[0, -0.3, 0]}>
-                <Shoe style={shoes} color={shoeColor} skin={skin} />
+                {barefoot ? <Foot skin={skin} /> : <Shoe style={shoes} color={shoeColor} skin={skin} />}
               </group>
             </group>
           ))}
@@ -253,7 +323,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
               </mesh>
             )}
             <group position={[0, -0.82, 0]}>
-              <Shoe style={shoes} color={shoeColor} skin={skin} />
+              {barefoot ? <Foot skin={skin} /> : <Shoe style={shoes} color={shoeColor} skin={skin} />}
             </group>
           </group>
         ))}
@@ -261,7 +331,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
       </group>
 
       {/* ---------- ท่อนบน (ผู้สูงอายุหลังค่อม หมุนรอบสะโพก) ---------- */}
-      <group position={[0, 0.82 * age.legScale, 0]} rotation={[age.hunch, 0, 0]}>
+      <group ref={upper} position={[0, 0.82 * age.legScale, 0]} rotation={[age.hunch, 0, 0]}>
       <group position={[0, -0.82, 0]}>
       {/* ---------- ลำตัว ---------- */}
       <group position={[0, 1.06, 0]} scale={[1, 1, 0.31 / (shoulder * 2)]}>
@@ -338,7 +408,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
           </mesh>
           </group>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
-          {i === 1 && tool && <Tool kind={tool} />}
+          {i === 1 && tool && tool !== 'pole' && <Tool kind={tool} />}
           {i === 0 && cane !== 'none' && <Cane kind={cane} />}
           {i === 1 && elder && appearance.basket && !tool && bag !== 'handbag' && <Basket />}
           {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && (
@@ -350,6 +420,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
       ))}
 
       <BodyBag bag={bag} color={bagColor} female={female} />
+      {tool === 'pole' && <CarryPole />}
       {kidItem !== 'none' && (
         // ของที่กอดไว้หน้าอก (ตำแหน่งเดียวกับมือสองข้างที่ประคอง)
         <group ref={kidChest} position={[0, 1.98, 0.2]} scale={1.5} visible={false}>
@@ -696,6 +767,56 @@ function Basket() {
           <meshStandardMaterial color={c} />
         </mesh>
       ))}
+    </group>
+  )
+}
+
+/** เท้าเปล่า (ถอดรองเท้าไว้หน้าโบสถ์) */
+function Foot({ skin }: { skin: string }) {
+  return (
+    <mesh position={[0, 0.035, 0.03]}>
+      <RBox args={[0.09, 0.07, 0.19]} />
+      <meshStandardMaterial color={skin} />
+    </mesh>
+  )
+}
+
+/** ไม้คานหาบบนไหล่ขวา ห้อยตะกร้าผลไม้สองข้าง (หน้า-หลัง) */
+function CarryPole() {
+  const basket = (z: number, fruit: string) => (
+    <group position={[0.2, 0.62, z]}>
+      {[-1, 1].flatMap((sx) =>
+        [-1, 1].map((sz) => (
+          <mesh key={`${sx}${sz}`} position={[sx * 0.14, 0.33, sz * 0.14]} rotation={[sz * 0.25, 0, -sx * 0.25]}>
+            <cylinderGeometry args={[0.006, 0.006, 0.7, 4]} />
+            <meshStandardMaterial color="#8a6a3e" />
+          </mesh>
+        )),
+      )}
+      <mesh>
+        <cylinderGeometry args={[0.28, 0.2, 0.2, 16, 1, true]} />
+        <meshStandardMaterial color="#a8824a" side={2} />
+      </mesh>
+      <mesh position={[0, -0.09, 0]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.02, 16]} />
+        <meshStandardMaterial color="#8a6a3e" />
+      </mesh>
+      {Array.from({ length: 7 }).map((_, k) => (
+        <mesh key={k} position={[Math.cos(k * 0.9) * 0.14 * (k % 2 ? 1 : 0.4), 0.08, Math.sin(k * 0.9) * 0.14 * (k % 2 ? 1 : 0.4)]}>
+          <sphereGeometry args={[0.065, 10, 8]} />
+          <meshStandardMaterial color={fruit} />
+        </mesh>
+      ))}
+    </group>
+  )
+  return (
+    <group>
+      <mesh position={[0.2, 1.38, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.025, 0.025, 2.1, 8]} />
+        <meshStandardMaterial color="#9a7448" />
+      </mesh>
+      {basket(0.95, '#a8d060')}
+      {basket(-0.95, '#e8a040')}
     </group>
   )
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Sky } from '@react-three/drei'
-import { formatClock, MAX_PET_HEARTS, periodOfDay, useGame } from '../game/store'
+import { formatClock, MAX_PET_HEARTS, useGame } from '../game/store'
 import { useSettings } from '../game/settings'
 import { PLACES, PLOTS } from '../game/content/village'
 import { useVillageSoundscape } from '../game/audio/useSoundscape'
@@ -12,14 +11,58 @@ import { Villagers } from '../scenes/Villagers'
 import { GameMenu } from './GameMenu'
 import { takePhoto } from '../game/photo'
 import { gather, gatherHint } from '../game/inventory'
+import { catchHint, summonPet, tierOf, tryCatch } from '../game/catching'
+import { getSpecies, RIDEABLE } from '../game/content/pets'
+import { TIERS } from '../game/content/wildlife'
+import { Wildlife } from '../scenes/Wildlife'
+import { DayLight } from '../scenes/DayLight'
+import { SPEEDS, skipToNextPeriod, syncClockFromSave, tickClock, useClock } from '../game/clock'
+import { isShopOpen, SHOP_HOURS, timePeriodAt } from '../game/content/daytime'
+import { applyGoldLeaf, birthdayCoin, bowThreeTimes, donate, drawSiamsi, lightIncense, pourWater, ringBell, useMerit, useTemple } from '../game/templeActions'
+import { BIRTH_DAYS } from '../game/content/temple'
+import { TalkWindow } from './TalkWindow'
+import { startTalk, useTalk } from '../game/talk'
+import { NPC_INFO } from '../game/content/villagers'
+import { FORTUNE_LEVEL } from '../game/content/siamsi'
 import { ShopWindow } from './ShopWindow'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
+  useEffect(() => syncClockFromSave(), [])
   useFrame((_, dt) => {
     const g = useGame.getState()
-    if (g.save && !g.paused) g.save.playSeconds += Math.min(dt, 0.1)
+    if (g.save && !g.paused) {
+      g.save.playSeconds += Math.min(dt, 0.1)
+      tickClock(Math.min(dt, 0.1))
+    }
   })
+  return null
+}
+
+/** แจ้งเตือนตามเวลา: เด็กต้องกลับบ้านก่อนมืด · ร้านปิด · เริ่มวันใหม่ */
+function TimeAlerts() {
+  const minute = useClock((s) => s.minute)
+  const day = useClock((s) => s.day)
+  const said = useRef(new Set<string>())
+  useEffect(() => {
+    const g = useGame.getState()
+    if (!g.save) return
+    const once = (key: string, fn: () => void) => {
+      const k = day + ':' + key
+      if (said.current.has(k)) return
+      said.current.add(k)
+      fn()
+    }
+    const child = g.save.player.appearance.age === 'child'
+    if (child && minute >= 18 * 60 && minute < 18 * 60 + 30)
+      once('curfew1', () => g.toast({ title: '🌇 ใกล้มืดแล้ว', body: 'เด็ก ๆ ต้องกลับบ้านก่อน 19:00 น. นะ', tone: 'warn' }))
+    if (child && minute >= 19 * 60)
+      once('curfew2', () => g.toast({ title: '🌙 มืดแล้ว กลับบ้านกันเถอะ', body: 'ตายายเป็นห่วง รีบกลับบ้านไปนอนนะ', tone: 'warn' }))
+    if (minute >= SHOP_HOURS.close * 60 && minute < SHOP_HOURS.close * 60 + 15)
+      once('shopclose', () => g.toast({ title: '🏪 ร้านป้าศรีปิดแล้ว', body: `เปิดอีกที ${String(SHOP_HOURS.open).padStart(2, '0')}:00 น.`, tone: 'info' }))
+    if (minute >= 5 * 60 && minute < 5 * 60 + 15)
+      once('rooster', () => g.toast({ title: '🐓 ไก่ขันแล้ว ฟ้าเริ่มสาง', body: `วันที่ ${day} เริ่มต้นแล้ว`, tone: 'info' }))
+  }, [minute, day])
   return null
 }
 
@@ -45,6 +88,11 @@ export function WorldScreen() {
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
   const [shop, setShop] = useState(false)
+  const [temple, setTemple] = useState(false)
+  const nearWorshipNow = useGame((s) => s.nearWorship)
+  useEffect(() => {
+    if (!nearWorshipNow) setTemple(false)
+  }, [nearWorshipNow])
   const [pauseOpen, setPauseOpen] = useState(false)
   const [hidden, setHidden] = useState(document.hidden)
 
@@ -58,11 +106,30 @@ export function WorldScreen() {
         setMenu((m) => !m)
       }
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
+      if (e.code === 'KeyR' && !e.repeat) toggleRide()
       if (e.code === 'KeyE' && !e.repeat) {
         const g = useGame.getState()
         if (g.paused) return
-        if (g.nearbyPlaceId === 'shop') setShop((o) => !o)
+        if (g.nearbyPlaceId === 'shop') {
+          if (isShopOpen(useClock.getState().minute)) setShop((o) => !o)
+          else g.toast({ title: 'ร้านป้าศรีปิดแล้ว', body: `เปิด ${String(SHOP_HOURS.open).padStart(2, '0')}:00 – ${SHOP_HOURS.close}:00 น.`, tone: 'info' })
+        }
+        else if (g.nearWorship) setTemple((o) => !o)
+        else if (useTalk.getState().near && !useTalk.getState().talking) startTalk(useTalk.getState().near!)
+        else if (useMerit.getState().spot) {
+          const sp = useMerit.getState().spot!
+          if (sp.startsWith('bell')) ringBell(sp)
+          else if (sp === 'water') pourWater()
+          else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
+        }
+        else if (g.wildTarget) tryCatch(g.wildTarget)
         else if (g.gatherTarget) gather(g.gatherTarget)
+        else g.toast({ title: 'ไม่มีอะไรให้เก็บใกล้ ๆ', body: 'เดินไปใกล้ต้นไม้ กองหิน หรือสัตว์ แล้วกด E (มีป้ายบอกกลางจอ)', tone: 'info' })
+      }
+      // Ctrl+S = บันทึกเกมทันที
+      if (e.code === 'KeyS' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        quickSave()
       }
       if (e.code === 'KeyC' && (e.target as HTMLElement)?.tagName !== 'INPUT') snapWorld()
       if (e.code === 'KeyL') {
@@ -99,35 +166,23 @@ export function WorldScreen() {
         gl={{ preserveDrawingBuffer: true }}
         style={{ position: 'absolute', inset: 0 }}
       >
-        {/* แสงนุ่ม: ฟ้าสีอ่อน แสงแวดล้อมอุ่น แดดโทนเหลืองอ่อน เงาเบลอและจาง */}
-        <Sky sunPosition={[80, 30, 60]} turbidity={3.5} rayleigh={0.7} mieCoefficient={0.004} mieDirectionalG={0.75} />
-        <hemisphereLight args={['#fff4dc', '#8a9a62', 1.45]} />
-        <ambientLight color="#ffe9c8" intensity={0.35} />
-        <directionalLight
-          position={[60, 60, 30]}
-          color="#ffe2b8"
-          intensity={1.15}
-          shadow-intensity={0.55}
-          shadow-radius={6}
-          shadow-bias={-0.0004}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-100}
-          shadow-camera-right={100}
-          shadow-camera-top={100}
-          shadow-camera-bottom={-100}
-          shadow-camera-far={250}
-        />
-        <fog attach="fog" args={['#e8ead8', 60, 320]} />
+        {/* แสง ท้องฟ้า หมอก ไฟตะเกียง เปลี่ยนตามเวลาในเกม */}
+        <DayLight />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
+        <Wildlife />
         <Player />
-        {save.player.pet && <PetFollower pet={save.player.pet} start={save.position} />}
+        {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
         <PlayClock />
         <PetBond />
       </Canvas>
+      <TimeAlerts />
       <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} onShop={() => setShop(true)} />
       {shop && !menu && <ShopWindow onClose={() => setShop(false)} />}
+      {temple && !menu && <TemplePanel onClose={() => setTemple(false)} />}
+      <FortuneSlip />
+      <MeritPopup />
+      <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
           <div className="menu pause-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="พักเกม">
@@ -206,6 +261,7 @@ function StatusPanel() {
           </span>
         ))}
       </div>
+      <AnimalButton />
       {pet && (
         <div className="pet-row">
           <span className="pet-hearts" title={`ความผูกพันกับ${pet.name} ${save.petHearts}/${MAX_PET_HEARTS}`}>
@@ -228,6 +284,220 @@ function StatusPanel() {
   )
 }
 
+/** นาฬิกาบนแถบด้านบน + ปุ่มเร่งเวลา / ข้ามช่วงเวลา */
+function HudClock() {
+  const minute = useClock((s) => s.minute)
+  const day = useClock((s) => s.day)
+  const speed = useClock((s) => s.speed)
+  const setSpeed = useClock((s) => s.setSpeed)
+  const p = timePeriodAt(minute)
+  const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]
+  return (
+    <>
+      <span>วันที่ {day}</span>
+      <span className="sep" />
+      <span title={p.mood}>
+        {formatClock(minute)} · {p.label}
+      </span>
+      <button type="button" className="btn small ghost pause-btn" onClick={() => setSpeed(next)} title="เร่งเวลา">
+        ⏩ x{speed}
+      </button>
+      <button type="button" className="btn small ghost pause-btn" onClick={skipToNextPeriod} title="ข้ามไปช่วงเวลาถัดไป">
+        ⏭
+      </button>
+    </>
+  )
+}
+
+/** ปุ่ม 🐾 เรียกสัตว์ออกมา / เก็บเข้า — สัตว์เลี้ยงตัวแรก + สัตว์ที่จับมาได้ */
+function AnimalButton() {
+  const save = useGame((s) => s.save)!
+  const [open, setOpen] = useState(false)
+  const current = save.player.pet
+  const same = (a: typeof current, b: typeof current) => !!a && !!b && a.species === b.species && a.name === b.name && a.color === b.color
+  const list = [
+    ...(save.homePet ? [{ key: 'home', pet: save.homePet, note: 'สัตว์เลี้ยงคู่ใจ' }] : []),
+    ...save.collection
+      .filter((c) => !same(c.pet, save.homePet))
+      .map((c) => ({ key: c.uid, pet: c.pet, note: `จับได้วันที่ ${c.day}` })),
+  ]
+  return (
+    <div className="animal-btn-wrap">
+      <button type="button" className="animal-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        🐾 เรียกสัตว์ {list.length > 0 && <span className="gm-badge">{list.length}</span>}
+      </button>
+      {open && (
+        <div className="animal-pop" role="menu">
+          {list.length === 0 && <p className="hint">ยังไม่มีสัตว์ — เข้าใกล้สัตว์ที่มีป้ายสีบนหัวแล้วกด E</p>}
+          {list.map((it) => {
+            const on = same(current, it.pet)
+            return (
+              <button
+                key={it.key}
+                type="button"
+                role="menuitem"
+                className={`animal-pick${on ? ' on' : ''}`}
+                onClick={() => {
+                  summonPet(on ? null : it.pet)
+                  setOpen(false)
+                }}
+              >
+                <strong>
+                  {it.pet.name} ({getSpecies(it.pet.species).label})
+                </strong>
+                <small>{on ? 'เดินตามอยู่ · กดเพื่อเก็บเข้า' : it.note}</small>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** แผงกิจกรรมหน้าพระประธาน: กราบ 3 ครั้ง · แปะทอง · เสี่ยงเซียมซี */
+function TemplePanel({ onClose }: { onClose: () => void }) {
+  const busy = useTemple((s) => s.busy)
+  const bowedAt = useTemple((s) => s.bowedAt)
+  const bowed = Date.now() - bowedAt < 10 * 60_000
+  return (
+    <div className="temple-panel" role="dialog" aria-label="กิจกรรมในโบสถ์">
+      <h3>🛕 หน้าพระประธาน</h3>
+      <button type="button" className="btn small" disabled={busy} onClick={bowThreeTimes}>
+        🙏 กราบพระ 3 ครั้ง
+      </button>
+      <button type="button" className="btn small" disabled={busy || !bowed} onClick={applyGoldLeaf} title={bowed ? '' : 'กราบพระก่อน'}>
+        ✨ แปะทอง
+      </button>
+      <button type="button" className="btn small" disabled={busy} onClick={drawSiamsi}>
+        🎋 เสี่ยงเซียมซี
+      </button>
+      {!bowed && <small>กราบพระก่อน แล้วจึงแปะทองได้</small>}
+      <button type="button" className="btn ghost small" disabled={busy} onClick={onClose}>
+        ปิด
+      </button>
+    </div>
+  )
+}
+
+/** ทำบุญตามศรัทธา: ตู้ทำบุญ / ค่าธูปเทียน (เลือกจำนวนเอง หรือไม่ให้ก็ได้) · เหรียญวันเกิด */
+function MeritPopup() {
+  const popup = useMerit((s) => s.popup)
+  const coins = useGame((s) => s.save?.coins ?? 0)
+  const [custom, setCustom] = useState('')
+  if (!popup) return null
+  const close = () => useMerit.setState({ popup: null })
+  if (popup === 'birthday') {
+    return (
+      <div className="menu-backdrop" onClick={close}>
+        <div className="menu merit-pop" role="dialog" aria-label="หยอดเหรียญวันเกิด" onClick={(e) => e.stopPropagation()}>
+          <h3>🪙 หยอดเหรียญประจำวันเกิด (1 บาท)</h3>
+          <p className="hint">เลือกวันเกิดของคุณ แล้วรับคำอวยพร</p>
+          <div className="day-grid">
+            {BIRTH_DAYS.map((d, i) => (
+              <button key={d.id} type="button" className="day-btn" style={{ background: d.color }} disabled={coins < 1} onClick={() => birthdayCoin(i)}>
+                วัน{d.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn ghost small" onClick={close}>
+            ปิด
+          </button>
+        </div>
+      </div>
+    )
+  }
+  const isIncense = popup === 'incense'
+  const give = (n: number) => {
+    setCustom('')
+    if (isIncense) lightIncense(n)
+    else donate(n)
+  }
+  const n = Math.max(0, Math.floor(Number(custom) || 0))
+  return (
+    <div className="menu-backdrop" onClick={close}>
+      <div className="menu merit-pop" role="dialog" aria-label={isIncense ? 'ธูปเทียน' : 'ตู้ทำบุญ'} onClick={(e) => e.stopPropagation()}>
+        <h3>{isIncense ? '🕯️ ธูปเทียน — ทำบุญตามศรัทธา' : '🙏 ตู้ทำบุญ — ตามศรัทธา'}</h3>
+        <p className="hint">ให้กี่บาทก็ได้ หรือไม่ให้ก็ได้ · มีเงิน {coins.toLocaleString('th-TH')} บาท</p>
+        <div className="chips">
+          {[0, 1, 5, 10, 20, 50].map((v) => (
+            <button key={v} type="button" className="chip" disabled={v > coins} onClick={() => give(v)}>
+              {v === 0 ? 'ไม่ให้ (ไหว้ด้วยใจ)' : `${v} บาท`}
+            </button>
+          ))}
+        </div>
+        <div className="merit-custom">
+          <input type="number" min={0} max={coins} placeholder="จำนวนเอง" value={custom} onChange={(e) => setCustom(e.target.value)} />
+          <button type="button" className="btn small" disabled={n > coins} onClick={() => give(n)}>
+            ให้ {n} บาท
+          </button>
+        </div>
+        <button type="button" className="btn ghost small" onClick={close}>
+          ปิด
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** ใบเซียมซีที่ได้ */
+function FortuneSlip() {
+  const f = useTemple((s) => s.fortune)
+  const close = useTemple((s) => s.closeFortune)
+  if (!f) return null
+  const lv = FORTUNE_LEVEL[f.level]
+  return (
+    <div className="menu-backdrop" onClick={close}>
+      <div className="fortune-slip" role="dialog" aria-label="ใบเซียมซี" onClick={(e) => e.stopPropagation()}>
+        <div className="fortune-no">ใบที่ {f.no}</div>
+        <div className="fortune-level" style={{ background: lv.color }}>
+          {lv.label}
+        </div>
+        <p className="fortune-text">{f.text}</p>
+        <p className="fortune-advice">คำแนะนำ: {f.advice}</p>
+        <button type="button" className="btn small" onClick={close}>
+          🙏 สาธุ
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** ขี่ / ลงจากสัตว์เลี้ยงตัวใหญ่ (ควาย วัว) */
+function toggleRide() {
+  const g = useGame.getState()
+  const pet = g.save?.player.pet
+  if (g.riding) {
+    g.setRiding(false)
+    g.toast({ title: 'ลงจากหลัง' + (pet?.name ?? 'สัตว์') + 'แล้ว', tone: 'info' })
+    return
+  }
+  if (!pet) return
+  if (!RIDEABLE[pet.species]) {
+    g.toast({ title: `${getSpecies(pet.species).label}ตัวเล็กเกินไป ขี่ไม่ได้`, body: 'ขี่ได้เฉพาะสัตว์ตัวใหญ่ เช่น ควาย วัว (เรียกออกมาด้วยปุ่ม 🐾)', tone: 'info' })
+    return
+  }
+  if (useMerit.getState().inside) {
+    g.toast({ title: 'ห้ามขี่สัตว์ขึ้นโบสถ์นะ', tone: 'warn' })
+    return
+  }
+  g.setRiding(true)
+  if (g.save?.petLeashed) g.setPetLeashed(false)
+  g.toast({ title: `🐃 ขี่${pet.name}แล้ว`, body: 'เดินเร็วขึ้น · กด R อีกครั้งเพื่อลง', tone: 'success' })
+}
+
+/** บันทึกเกมทันที (Ctrl+S หรือกดป้าย "บันทึก" มุมบน) */
+function quickSave() {
+  const g = useGame.getState()
+  const ok = g.saveNow('manual')
+  g.toast(ok ? { title: '💾 บันทึกเกมแล้ว', tone: 'success' } : { title: 'บันทึกไม่สำเร็จ', body: 'ลองอีกครั้ง หรือดูที่ เมนู → บันทึก', tone: 'warn' })
+}
+
+/** ปุ่มบนแถบคำแนะนำ: กดได้เหมือนกดคีย์บอร์ด */
+function pressKey(code: string) {
+  window.dispatchEvent(new KeyboardEvent('keydown', { code }))
+}
+
 /** ถ่ายภาพฉากในเกม (เฉพาะภาพ 3D ไม่ติดแถบสถานะ) */
 function snapWorld() {
   const canvas = document.querySelector<HTMLCanvasElement>('.screen canvas')
@@ -237,6 +507,11 @@ function snapWorld() {
 
 function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => void; onShop: () => void }) {
   const gatherTarget = useGame((s) => s.gatherTarget)
+  const wildTarget = useGame((s) => s.wildTarget)
+  const nearWorship = useGame((s) => s.nearWorship)
+  const meritSpot = useMerit((s) => s.spot)
+  const npcNear = useTalk((s) => s.near)
+  const talking = useTalk((s) => s.talking)
   const save = useGame((s) => s.save)!
   const nearby = useGame((s) => s.nearbyPlaceId)
   const toasts = useGame((s) => s.toasts)
@@ -258,11 +533,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
             📷
           </button>
           <span className="sep" />
-          <span>วันที่ {save.day}</span>
-          <span className="sep" />
-          <span>
-            {formatClock(save.minuteOfDay)} · {periodOfDay(save.minuteOfDay)}
-          </span>
+          <HudClock />
           <span className="sep" />
           <SaveIndicator />
           <button className="btn small" onClick={onMenu} aria-label="เปิดเมนูเกม">
@@ -295,7 +566,38 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           )}
         </div>
       )}
-      {!place && gatherTarget && (
+      {nearWorship && (
+        <div className="gather-hint">
+          <kbd>E</kbd> 🙏 กราบพระ · แปะทอง · เสี่ยงเซียมซี
+        </div>
+      )}
+      {!nearWorship && npcNear && !talking && (
+        <div className="gather-hint">
+          <kbd>E</kbd> 💬 คุยกับ{NPC_INFO[npcNear]?.name ?? 'ชาวบ้าน'}
+        </div>
+      )}
+      {!nearWorship && !npcNear && meritSpot && (
+        <div className="gather-hint">
+          <kbd>E</kbd>{' '}
+          {meritSpot === 'donate'
+            ? '🙏 หยอดตู้ทำบุญ'
+            : meritSpot === 'birthday'
+              ? '🪙 หยอดเหรียญวันเกิด'
+              : meritSpot === 'incense'
+                ? '🕯️ จุดธูปเทียนบูชา'
+                : meritSpot === 'water'
+                  ? '💧 กรวดน้ำ'
+                  : '🔔 ตีระฆัง'}
+        </div>
+      )}
+      {!nearWorship && !npcNear && !meritSpot && wildTarget && (
+        <div className="gather-hint wild">
+          <span className="tier-dot" style={{ background: TIERS[tierOf(wildTarget)].color }} />
+          <kbd>E</kbd> {catchHint(wildTarget)}
+          <small> · ระดับ{TIERS[tierOf(wildTarget)].label}</small>
+        </div>
+      )}
+      {!nearWorship && !npcNear && !meritSpot && !wildTarget && gatherTarget && (
         <div className="gather-hint">
           <kbd>E</kbd> {gatherHint(gatherTarget).replace('กด E — ', '')}
         </div>
@@ -309,7 +611,24 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
 
       <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม · <kbd>P</kbd> พัก · <kbd>L</kbd> จูงสัตว์ · <kbd>E</kbd> เก็บของ/เข้าร้าน · <kbd>C</kbd> ถ่ายภาพ · <kbd>Esc</kbd> เมนู
+        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
+        {(
+          [
+            ['KeyP', 'P', 'พัก'],
+            ['KeyL', 'L', 'จูงสัตว์'],
+            ['KeyE', 'E', 'เก็บของ/เข้าร้าน'],
+            ['KeyC', 'C', 'ถ่ายภาพ'],
+            ['KeyR', 'R', 'ขี่สัตว์'],
+            ['Escape', 'Esc', 'เมนู'],
+          ] as const
+        ).map(([code, k, label]) => (
+          <button key={code} type="button" className="help-key" onClick={() => pressKey(code)}>
+            <kbd>{k}</kbd> {label}
+          </button>
+        ))}
+        <button type="button" className="help-key" onClick={quickSave}>
+          <kbd>Ctrl+S</kbd> บันทึก
+        </button>
       </div>
     </div>
   )
@@ -328,8 +647,13 @@ function SaveIndicator() {
     error: 'ซิงก์เซิร์ฟเวอร์ไม่สำเร็จ',
   }
   return (
-    <span className={`save-ind ${status === 'error' ? 'err' : dirty ? 'dirty' : 'ok'}`} title={cloudText[cloud]}>
-      {text}
-    </span>
+    <button
+      type="button"
+      className={`save-ind ${status === 'error' ? 'err' : dirty ? 'dirty' : 'ok'}`}
+      title={`กดเพื่อบันทึกเกมทันที (Ctrl+S) · ${cloudText[cloud]}`}
+      onClick={quickSave}
+    >
+      💾 {text}
+    </button>
   )
 }

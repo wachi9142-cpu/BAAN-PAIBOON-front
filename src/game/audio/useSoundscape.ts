@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { SOUND_PERIODS, periodAt } from '../content/soundscape'
 import { useSettings } from '../settings'
-import { useGame } from '../store'
+import { useClock } from '../clock'
 import { audio } from './engine'
 
 /** ส่งค่าระดับเสียงจากการตั้งค่าเข้าระบบเสียง (ใช้ครั้งเดียวที่ App) */
@@ -17,7 +17,7 @@ export function useAudioSettings() {
 
 /** เสียงในหมู่บ้านตามช่วงเวลาในเกม */
 export function useVillageSoundscape() {
-  const minute = useGame((s) => s.save?.minuteOfDay ?? 6 * 60)
+  const minute = useClock((s) => s.minute)
   const preview = useSettings((s) => s.soundPreview)
   const period = preview === 'auto' ? periodAt(minute) : SOUND_PERIODS.find((p) => p.id === preview)!
   useEffect(() => {

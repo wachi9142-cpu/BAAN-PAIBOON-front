@@ -408,3 +408,9 @@ export const PET_HELD: { id: PetHeldId; label: string }[] = [
   { id: 'banana', label: '🍌 กล้วย' },
   { id: 'cheese', label: '🧀 ชีส' },
 ]
+
+/** สัตว์ตัวใหญ่ที่ขี่ได้ (อนาคต: สัตว์ในตำนาน/สัตว์พิเศษ) + ความเร็วตอนขี่ (เท่าของเดิน) */
+export const RIDEABLE: Partial<Record<PetSpecies, { speed: number }>> = {
+  buffalo: { speed: 1.7 },
+  cow: { speed: 1.8 },
+}

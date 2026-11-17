@@ -390,7 +390,7 @@ export const accessoryColorValue = (v: string | undefined) =>
   !v ? ACCESSORY_COLORS[0].color : isCustomColor(v) ? v : byId(ACCESSORY_COLORS, v).color
 
 // ---------- ท่าทาง (ตอนยืนอยู่กับที่) ----------
-export type PoseId = 'stand' | 'wave' | 'wai' | 'shy' | 'behind' | 'cheer'
+export type PoseId = 'stand' | 'wave' | 'wai' | 'shy' | 'behind' | 'cheer' | 'prostrate' | 'shake' | 'offer' | 'ride'
 export const POSES: (Option & { id: PoseId })[] = [
   { id: 'stand', label: 'ยืนปกติ' },
   { id: 'wave', label: 'โบกมือ' },

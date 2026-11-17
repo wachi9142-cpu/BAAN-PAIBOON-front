@@ -12,6 +12,7 @@ export type PlaceKind =
   | 'sala'
   | 'training'
   | 'npchouse'
+  | 'chedi'
 
 export interface Place {
   id: string
@@ -54,7 +55,7 @@ export const SPAWN: Vec2 = [0, 8]
 
 export const ROADS: Road[] = [
   { from: [-80, 0], to: [80, 0], width: 5 }, // ถนนสายหลักกลางหมู่บ้าน
-  { from: [0, -70], to: [0, 0], width: 4 }, // ถนนไปวัด
+  { from: [0, -34], to: [0, 0], width: 4 }, // ถนนไปวัด (ต่อด้วยทางเดินหินในลานวัด)
   { from: [30, 0], to: [30, 60], width: 3.5 }, // ซอยไปบ้านผู้เล่น
   { from: [-35, 0], to: [-35, 45], width: 3.5 }, // ทางไปบ่อปลา
 ]
@@ -65,10 +66,21 @@ export const PLACES: Place[] = [
     name: 'วัด',
     kind: 'temple',
     pos: [0, -62],
-    size: [16, 12],
-    arriveText: 'ทุกเช้าชาวบ้านจะมาใส่บาตรที่นี่',
+    size: [32, 44],
+    arriveText: 'ทุกคนเข้าไปกราบพระในโบสถ์ได้ · ทุกเช้าชาวบ้านจะมาใส่บาตรที่นี่',
     comingSoon: 'ใส่บาตรตอนเช้า (Part 2)',
-    solidRadius: 8,
+    // เดินเข้าโบสถ์ได้: ใช้กำแพงชน (temple.ts) แทนวงชนทั้งหลัง
+    solidRadius: 0,
+  },
+  {
+    id: 'chedi',
+    name: 'พระเจดีย์',
+    kind: 'chedi',
+    pos: [30, -62],
+    size: [26, 26],
+    arriveText: 'พระเจดีย์องค์ใหญ่ข้างวัด มีวิหารเล็กให้เข้าไปกราบไหว้',
+    // วงชนรอบฐานเจดีย์ (เว้นด้านหน้าให้ขึ้นบันไดไปหน้าวิหารเล็กได้)
+    solidRadius: 0,
   },
   {
     id: 'sala',

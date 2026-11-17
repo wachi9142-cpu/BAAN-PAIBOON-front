@@ -58,7 +58,7 @@ function spend(cost: Cost) {
 }
 
 /** อีโมจิในข้อความแจ้งเตือน (ตัวที่ Windows 10 ไม่มีฟอนต์ ให้เว้นไว้) */
-const ic = (id: ItemId) => (['🪵', '🪨', '🪚'].includes(ITEMS[id].icon) ? '' : ITEMS[id].icon + ' ')
+const ic = (id: ItemId) => (['🪵', '🪨', '🪚', '🪄'].includes(ITEMS[id].icon) ? '' : ITEMS[id].icon + ' ')
 
 const toast = (title: string, body?: string, tone: 'info' | 'success' | 'warn' = 'info') => useGame.getState().toast({ title, body, tone })
 const fullBag = () => toast('กระเป๋าเต็มแล้ว', 'ขายของที่ร้านป้าศรี หรือคราฟ/ซื้อกระเป๋าที่ใหญ่ขึ้น', 'warn')
@@ -178,6 +178,7 @@ export function gather(t: GatherTarget) {
     fullBag()
     return
   }
+  if (id === 'vine' && Math.random() < 0.3 && addItem('treat', 1) > 0) toast('🍌 ได้กล้วยสุกมาด้วย +1', 'ใช้ล่อสัตว์ป่าได้', 'success')
   // ทำงานแล้วเหนื่อย/หิวน้ำนิดหน่อย
   useGame.getState().changeStats({ thirst: -0.6, hunger: -0.3 })
   toast(`${ic(id)}${ITEMS[id].name} +${n}`, undefined, 'success')

@@ -8,6 +8,25 @@ import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character } from './models/Character'
 import { findGatherTarget } from '../game/inventory'
+import { insideTempleBox, TEMPLE, templeSpots, WORSHIP_SPOT, templeGroundY } from '../game/content/temple'
+import { leaveTemple, useMerit } from '../game/templeActions'
+import { RIDEABLE } from '../game/content/pets'
+import { PET_ANCHORS } from './models/PetOutfit'
+import { petScale } from './models/Pet'
+import type { SaveData } from '../game/store'
+import { Aura } from './Aura'
+
+const SPOTS = templeSpots()
+
+/** ความสูงหลังสัตว์ที่ขี่ ลบความสูงสะโพกผู้เล่น (ให้นั่งพอดีหลัง) */
+function rideHeight(save: SaveData) {
+  const pet = save.player.pet
+  if (!pet) return 0
+  const a = PET_ANCHORS[pet.species]
+  const back = (a.body[0] + a.bodyW * 0.45) * petScale(pet)
+  const age = AGE_RULES[save.player.appearance.age ?? 'adult']
+  return Math.max(0, back - 0.82 * age.legScale * age.bodyScale * 0.92)
+}
 
 /** เก็บปุ่มที่กดค้าง (ใช้ e.code จึงใช้ได้แม้คีย์บอร์ดเป็นภาษาไทย) */
 function useKeys() {
@@ -85,6 +104,11 @@ export function Player() {
   const discoverPlace = useGame((s) => s.discoverPlace)
   const setNearby = useGame((s) => s.setNearby)
   const setGatherTarget = useGame((s) => s.setGatherTarget)
+  const setNearWorship = useGame((s) => s.setNearWorship)
+  const wasInTemple = useRef(false)
+  const barefoot = useMerit((s) => s.inside)
+  const riding = useGame((s) => s.riding)
+  const gesture = useGame((s) => s.gesture)
   const toast = useGame((s) => s.toast)
 
   const keys = useKeys()
@@ -130,7 +154,9 @@ export function Player() {
       const age = AGE_RULES[save.player.appearance.age ?? 'adult']
       const look = save.player.appearance
       const caneK = look.age === 'elder' && look.cane && look.cane !== 'none' ? CANE_WALK : 1
-      const speed = (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK
+      // ขี่สัตว์: ใช้ความเร็วของสัตว์ (ไม่นับไม้เท้า/วัย)
+      const ride = useGame.getState().riding ? RIDEABLE[save.player.pet?.species ?? 'dog'] : undefined
+      const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK
       pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], colliders)
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current
@@ -139,11 +165,23 @@ export function Player() {
       motion.current = running ? 2 : 1
     } else {
       motion.current = 0
+      // ทำท่าในโบสถ์ (กราบ แปะทอง เขย่าเซียมซี): หันหน้าเข้าหาพระประธาน
+      const gst = useGame.getState().gesture
+      if (gst && gst !== 'wai' && useGame.getState().nearWorship) {
+        let diff = Math.PI - heading.current
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+        heading.current += diff * Math.min(1, dt * 6)
+      }
     }
 
     const [x, z] = pos.current
     if (root.current) {
-      root.current.position.set(x, 0, z)
+      // ขึ้นบันได/ยืนบนพื้นโบสถ์ (ค่อย ๆ ขยับความสูงให้นุ่ม)
+      const gy = templeGroundY(x, z)
+      // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
+      const rideY = useGame.getState().riding ? rideHeight(save) : 0
+      const targetY = gy + rideY
+      root.current.position.set(x, root.current.position.y + (targetY - root.current.position.y) * Math.min(1, dt * 12), z)
       root.current.rotation.y = heading.current
     }
     playerPose.x = x
@@ -154,12 +192,20 @@ export function Player() {
     // กล้องตาม
     const { pitch, dist } = orbit.current
     const eye = 1.5 * AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale
-    camTarget.set(x, eye, z)
+    camTarget.set(x, eye + (root.current?.position.y ?? 0), z)
     camPos.set(
       x + Math.sin(yaw) * Math.cos(pitch) * dist,
       eye + Math.sin(pitch) * dist,
       z + Math.cos(yaw) * Math.cos(pitch) * dist,
     )
+    // อยู่ในโบสถ์: กล้องไม่ทะลุผนังออกไปข้างนอก
+    const box = insideTempleBox(x, z)
+    if (box) {
+      camPos.x = Math.max(box.minX, Math.min(box.maxX, camPos.x))
+      camPos.z = Math.max(box.minZ, Math.min(box.maxZ, camPos.z))
+      camPos.y = Math.min(camPos.y, TEMPLE.floorY + TEMPLE.wallH - 0.3)
+    }
+    camPos.y += root.current?.position.y ?? 0
     state.camera.position.lerp(camPos, 1 - Math.exp(-dt * 10))
     state.camera.lookAt(camTarget)
 
@@ -183,6 +229,24 @@ export function Player() {
       }
       setNearby(near)
       setGatherTarget(findGatherTarget(x, z))
+      setNearWorship(Math.hypot(x - WORSHIP_SPOT[0], z - WORSHIP_SPOT[1]) < 2.6)
+      // จุดทำบุญรอบโบสถ์ / อยู่ในโบสถ์ (ถอดรองเท้า) / เดินออกจากวัด
+      let spot: string | null = null
+      let sd = 1.9
+      for (const sp of SPOTS) {
+        const d = Math.hypot(sp.x - x, sp.z - z)
+        if (d < sd) {
+          sd = d
+          spot = sp.id
+        }
+      }
+      // ขึ้นบันได = ถอดรองเท้าไว้ที่ลานถอดรองเท้า (ลงมาแล้วใส่กลับ)
+      const inside = templeGroundY(x, z) > 0.05
+      const m = useMerit.getState()
+      if (m.spot !== spot || m.inside !== inside) useMerit.setState({ spot, inside })
+      const inArea = Math.hypot(x - TEMPLE.pos[0], z - TEMPLE.pos[1]) < 24
+      if (wasInTemple.current && !inArea) leaveTemple()
+      wasInTemple.current = inArea
       if (near && !near.startsWith('plot:') && discoverPlace(near)) {
         const place = PLACES.find((p) => p.id === near)!
         toast({ title: `ค้นพบสถานที่ใหม่: ${place.name}`, body: place.arriveText, tone: 'discover' })
@@ -217,7 +281,12 @@ export function Player() {
 
   return (
     <group ref={root} position={[save.position[0], 0, save.position[1]]}>
-      <Character appearance={save.player.appearance} motion={motion} />
+      <Character
+        appearance={riding ? { ...save.player.appearance, pose: 'ride' } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
+        motion={motion}
+        barefoot={barefoot}
+      />
+      <Aura />
     </group>
   )
 }

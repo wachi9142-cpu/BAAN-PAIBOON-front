@@ -30,6 +30,15 @@ const SVG: Record<string, React.ReactNode> = {
       <path d="M18 15 L28 18 L25 25 L16 24 Z" fill="#76726b" />
     </g>
   ),
+  // ไม้คฑา
+  '🪄': (
+    <g>
+      <rect x="14" y="8" width="4" height="22" rx="2" fill="#7a4f2e" transform="rotate(35 16 19)" />
+      <path d="M8 2 L10 7 L15 7 L11 10 L12.5 15 L8 12 L3.5 15 L5 10 L1 7 L6 7 Z" fill="#f6d36b" />
+      <circle cx="22" cy="6" r="1.6" fill="#f2a7b8" />
+      <circle cx="26" cy="11" r="1.2" fill="#a8d8f0" />
+    </g>
+  ),
   // เลื่อย
   '🪚': (
     <g>

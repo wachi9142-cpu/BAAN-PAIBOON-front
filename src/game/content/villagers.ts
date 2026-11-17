@@ -17,7 +17,7 @@ export interface Villager {
   id: string
   appearance: Appearance
   behavior: VillagerBehavior
-  tool?: 'broom' | 'hoe'
+  tool?: 'broom' | 'hoe' | 'pole'
 }
 
 // ชุดชาวบ้าน: เสื้อแขนยาวสีฟ้า ม่วง แดง ขาว · กางเกงสีเข้ม · หมวกปีกกว้าง
@@ -64,6 +64,14 @@ export const VILLAGERS: Villager[] = [
     behavior: { kind: 'walk', path: [[30.8, 50], [30.8, 2], [-10, 2]], pauseSec: 5 },
   },
 
+  // แม่ค้าหาบเร่: หาบผลไม้เดินขายรอบหมู่บ้าน
+  {
+    id: 'hawker',
+    appearance: woman('#4f74b8', { hairStyle: 'curly', hairColor: 'darkbrown', outfit: 'phathung', bottomColor: '#a8805a', sarongPattern: 'stripes', sarongAccent: 'cream', accessory: 'widehat', accessoryColor: 'cream' }),
+    tool: 'pole',
+    behavior: { kind: 'walk', path: [[-30, -2.2], [10, -2.2], [10, -18], [28, -18], [28, 0]], pauseSec: 8 },
+  },
+
   // ยืนกวาดถนน (ไม้กวาดด้ามยาว)
   { id: 'sweep-1', appearance: woman('#9fc2e6'), tool: 'broom', behavior: { kind: 'work', action: 'sweep', pos: [-20, 2.2], heading: Math.PI / 2, drift: 2.5 } },
   {
@@ -101,3 +109,26 @@ export const VILLAGE_DOGS: { id: string; pet: PetChoice; path: Vec2[] }[] = [
     path: [[8, -1], [24, -1], [24, 1.6]],
   },
 ]
+
+/** ชื่อและบุคลิกของชาวบ้านแต่ละคน (คุยด้วยได้ทุกคน) */
+export interface NpcInfo {
+  name: string
+  /** แม่ค้า = ซื้อของได้ */
+  vendor?: boolean
+  greet: string[]
+}
+export const NPC_INFO: Record<string, NpcInfo> = {
+  hawker: { name: 'ป้าบัว แม่ค้าหาบเร่', vendor: true, greet: ['มาจ้า ๆ ผลไม้สด ๆ จากสวนเลยลูก', 'วันนี้มะม่วงหวานนะ ลองชิมไหม', 'เดินมาทั้งวัน เมื่อยขาแต่ใจยังสู้'] },
+  'walk-1': { name: 'น้าแก้ว', greet: ['ไปไหนมาจ๊ะ', 'อากาศดีนะวันนี้'] },
+  'walk-2': { name: 'ตาทอง', greet: ['หลานเอ๊ย กินข้าวหรือยัง', 'สมัยตายังหนุ่ม ทุ่งนาตรงนี้กว้างสุดตา'] },
+  'walk-3': { name: 'น้องหอม', greet: ['เล่นด้วยกันไหม!', 'หนูจะไปโรงเรียนนะ'] },
+  'walk-4': { name: 'พี่ดำ', greet: ['ว่าไงเพื่อน', 'เย็นนี้ไปหาปลากันไหม'] },
+  'sweep-1': { name: 'ป้าศรีนวล', greet: ['วันนี้วันทำความสะอาดหมู่บ้านจ้ะ', 'ช่วยกันคนละไม้คนละมือ หมู่บ้านก็สะอาด'] },
+  'sweep-2': { name: 'ยายมา', greet: ['ยายกวาดทุกเช้า ใจมันสบาย', 'ระวังลื่นนะลูก'] },
+  'sweep-3': { name: 'แม่ปราณี', greet: ['ไปวัดมาหรือยัง วันนี้วันพระ', 'ใบไม้ร่วงเยอะจริงหน้านี้'] },
+  'hoe-1': { name: 'ลุงมี', greet: ['หญ้าขึ้นไวเหลือเกิน', 'แดดแรง อย่าลืมใส่หมวกนะ'] },
+  'hoe-2': { name: 'ลุงเขียว', greet: ['บ่อปลาลุงอยู่ทางโน้น แวะไปเที่ยวได้', 'ถางเสร็จแล้วจะไปทอดแห'] },
+  'chat-1': { name: 'น้าจันทร์', greet: ['คุยเรื่องงานบุญอยู่จ้ะ', 'มาฟังด้วยกันสิ'] },
+  'chat-2': { name: 'ยายเพ็ญ', greet: ['หลานใครเนี่ย หน้าตาน่ารัก', 'ยายทอผ้าไหมมาสี่สิบปีแล้วนะ'] },
+  'chat-3': { name: 'ลุงสมบัติ', greet: ['ว่าไงหลาน', 'ปีนี้ฝนดี ข้าวน่าจะงาม'] },
+}

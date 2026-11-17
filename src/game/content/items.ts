@@ -11,6 +11,9 @@ export type ItemId =
   | 'hammer'
   | 'machete'
   | 'saw'
+  | 'feed'
+  | 'treat'
+  | 'wand'
 
 export type ItemKind = 'material' | 'tool'
 
@@ -36,6 +39,9 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   hammer: { id: 'hammer', name: 'ค้อน', icon: '🔨', kind: 'tool', stack: 1, sell: 30, note: 'ใช้ทำเครื่องมือที่ซับซ้อนขึ้น (เลื่อย)' },
   machete: { id: 'machete', name: 'มีดพร้า', icon: '🗡️', kind: 'tool', stack: 1, sell: 45, note: 'ถางหญ้า ลอกเชือกกล้วยได้มากขึ้น' },
   saw: { id: 'saw', name: 'เลื่อย', icon: '🪚', kind: 'tool', stack: 1, sell: 55, note: 'เลื่อยไม้ท่อนเป็นไม้กระดาน' },
+  feed: { id: 'feed', name: 'อาหารสัตว์', icon: '🌾', kind: 'material', stack: 30, sell: 2, note: 'ข้าวเปลือกและรำ ล่อสัตว์เลี้ยงทั่วไปให้เชื่องเร็วขึ้น' },
+  treat: { id: 'treat', name: 'กล้วยสุก', icon: '🍌', kind: 'material', stack: 20, sell: 5, note: 'ผลไม้หวาน ล่อสัตว์ป่าระดับปานกลาง-ยาก (บางทีได้จากต้นกล้วย)' },
+  wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 
 // ---------- กระเป๋า (ยิ่งระดับสูง ยิ่งมีช่องมาก) ----------
@@ -72,6 +78,8 @@ export const RECIPES: Recipe[] = [
   { id: 'machete', name: 'มีดพร้า', icon: '🗡️', needs: { log: 1, stone: 3, vine: 1 }, gives: { item: 'machete', qty: 1 } },
   { id: 'saw', name: 'เลื่อย', icon: '🪚', needs: { log: 2, stone: 4 }, tool: 'hammer', gives: { item: 'saw', qty: 1 } },
   { id: 'plank', name: 'ไม้กระดาน ×2', icon: '🟫', needs: { log: 1 }, tool: 'saw', gives: { item: 'plank', qty: 2 } },
+  { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', needs: { branch: 1, vine: 1 }, gives: { item: 'feed', qty: 4 } },
+  { id: 'wand', name: 'ไม้คฑา', icon: '🪄', needs: { plank: 2, stone: 5, vine: 3 }, tool: 'hammer', gives: { item: 'wand', qty: 1 } },
   { id: 'bag1', name: 'ย่ามผ้าฝ้าย (20 ช่อง)', icon: '🎒', needs: { vine: 6, branch: 2 }, gives: { bagLevel: 1 } },
   { id: 'bag2', name: 'กระเป๋าสานไม้ไผ่ (28 ช่อง)', icon: '🧺', needs: { vine: 10, plank: 4 }, tool: 'machete', gives: { bagLevel: 2 } },
   { id: 'bag3', name: 'เป้ใบใหญ่ (40 ช่อง)', icon: '🎒', needs: { vine: 15, plank: 6, log: 4 }, tool: 'hammer', gives: { bagLevel: 3 } },
@@ -90,6 +98,9 @@ export const SHOP: ShopEntry[] = [
   { id: 'hammer', name: 'ค้อน', icon: '🔨', price: 100, gives: { item: 'hammer', qty: 1 } },
   { id: 'machete', name: 'มีดพร้า', icon: '🗡️', price: 150, gives: { item: 'machete', qty: 1 } },
   { id: 'saw', name: 'เลื่อย', icon: '🪚', price: 180, gives: { item: 'saw', qty: 1 } },
+  { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', price: 25, gives: { item: 'feed', qty: 4 } },
+  { id: 'treat3', name: 'กล้วยสุก ×3', icon: '🍌', price: 45, gives: { item: 'treat', qty: 3 } },
+  { id: 'wand', name: 'ไม้คฑา', icon: '🪄', price: 500, gives: { item: 'wand', qty: 1 } },
   { id: 'vine5', name: 'เชือกกล้วย ×5', icon: '🌿', price: 30, gives: { item: 'vine', qty: 5 } },
   { id: 'plank4', name: 'ไม้กระดาน ×4', icon: '🟫', price: 90, gives: { item: 'plank', qty: 4 } },
   { id: 'bag1', name: 'ย่ามผ้าฝ้าย (20 ช่อง)', icon: '🎒', price: 150, gives: { bagLevel: 1 } },

@@ -10,17 +10,21 @@ import { SaveSlots } from './SaveSlots'
 import { KnowledgePanel } from './KnowledgePanel'
 import { BAG_LEVELS, bagSlots, ITEMS, RECIPES, SHOP, toSlots, type ItemId } from '../game/content/items'
 import { craft } from '../game/inventory'
+import { setFollower } from '../game/catching'
+import { LEGENDS, SPECIES_TIER, TIERS, type Tier } from '../game/content/wildlife'
+import { PET_SPECIES, getSpecies } from '../game/content/pets'
 import { ReportPanel } from './ReportPanel'
 import { useUnreadReports } from '../game/feedback/reports'
 import { ItemIcon } from './ItemIcon'
 
-type Tab = 'character' | 'bag' | 'craft' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
+type Tab = 'character' | 'bag' | 'craft' | 'animals' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
 type Confirm = null | 'confirm-exit' | 'confirm-title' | 'exited'
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'character', icon: '👕', label: 'ตัวละคร' },
   { id: 'bag', icon: '🎒', label: 'กระเป๋า' },
   { id: 'craft', icon: '🔨', label: 'คราฟของ' },
+  { id: 'animals', icon: '🐾', label: 'สัตว์ของฉัน' },
   { id: 'guide', icon: '📖', label: 'คู่มือ' },
   { id: 'knowledge', icon: '📜', label: 'เกร็ดความรู้' },
   { id: 'report', icon: '📮', label: 'แจ้งปัญหา' },
@@ -113,6 +117,7 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
           {tab === 'character' && <CharacterTab onDone={onClose} />}
           {tab === 'bag' && <BagTab onCraft={() => setTab('craft')} />}
           {tab === 'craft' && <CraftTab />}
+          {tab === 'animals' && <AnimalsTab />}
           {tab === 'guide' && <GuideTab />}
           {tab === 'knowledge' && (
             <>
@@ -259,6 +264,84 @@ function CraftTab() {
           )
         })}
       </ul>
+    </div>
+  )
+}
+
+function AnimalsTab() {
+  const save = useGame((s) => s.save)!
+  const caught = save.collection
+  const kinds = new Set(caught.map((c) => c.pet.species))
+  const current = save.player.pet
+  const tiers: Tier[] = ['easy', 'medium', 'hard', 'legend']
+  return (
+    <div className="gm-animals">
+      <h3>สัตว์ของฉัน</h3>
+      <p className="hint">
+        เก็บได้แล้ว {kinds.size}/{PET_SPECIES.length} ชนิด · เข้าใกล้สัตว์ที่มีป้ายสีบนหัว แล้วกด <kbd>E</kbd>
+      </p>
+      <div className="tier-legend">
+        {tiers.map((t) => (
+          <span key={t} title={TIERS[t].how}>
+            <span className="tier-dot" style={{ background: TIERS[t].color }} />
+            {TIERS[t].label}
+          </span>
+        ))}
+      </div>
+      <ul className="tier-how">
+        {tiers.map((t) => (
+          <li key={t}>
+            <strong style={{ color: TIERS[t].color }}>{TIERS[t].label}:</strong> {TIERS[t].how}
+          </li>
+        ))}
+      </ul>
+
+      <h4>สมุดสะสม</h4>
+      <div className="animal-grid">
+        {PET_SPECIES.map((sp) => {
+          const have = caught.filter((c) => c.pet.species === sp.id)
+          const tier = SPECIES_TIER[sp.id]
+          return (
+            <div key={sp.id} className={`animal-card${have.length ? '' : ' locked'}`}>
+              <span className="tier-dot" style={{ background: TIERS[tier].color }} />
+              <strong>{have.length ? sp.label : '???'}</strong>
+              <small>{have.length ? `มี ${have.length} ตัว` : `ระดับ${TIERS[tier].label}`}</small>
+            </div>
+          )
+        })}
+        {LEGENDS.map((l) => (
+          <div key={l.id} className="animal-card locked legend" title={l.hint}>
+            <span className="tier-dot" style={{ background: TIERS.legend.color }} />
+            <strong>???</strong>
+            <small>ในตำนาน</small>
+          </div>
+        ))}
+      </div>
+
+      {caught.length > 0 && (
+        <>
+          <h4>สัตว์ที่เก็บได้</h4>
+          <ul className="shop-list">
+            {[...caught].reverse().map((c) => {
+              const following = current && current.species === c.pet.species && current.name === c.pet.name && current.color === c.pet.color
+              return (
+                <li key={c.uid} className="shop-row">
+                  <span className="tier-dot" style={{ background: TIERS[SPECIES_TIER[c.pet.species]].color }} />
+                  <span className="shop-name">
+                    <strong>
+                      {c.pet.name} ({getSpecies(c.pet.species).label})
+                    </strong>
+                    <small>เก็บได้วันที่ {c.day}</small>
+                  </span>
+                  <button type="button" className="btn small" disabled={!!following} onClick={() => setFollower(c.uid)}>
+                    {following ? 'เดินตามอยู่' : 'ให้เดินตาม'}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </div>
   )
 }

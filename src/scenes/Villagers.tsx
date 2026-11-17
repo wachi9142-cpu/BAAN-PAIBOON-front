@@ -7,6 +7,10 @@ import { VILLAGERS, VILLAGE_DOGS, type Villager } from '../game/content/villager
 import type { Vec2 } from '../game/content/village'
 import { Character } from './models/Character'
 import { Pet } from './models/Pet'
+import { useClock } from '../game/clock'
+import { npcPos, useTalk } from '../game/talk'
+import { playerPose } from './Player'
+import { villagersOut } from '../game/content/daytime'
 
 const WALK_SPEED = 1.3
 
@@ -59,6 +63,15 @@ function VillagerActor({ v, index }: { v: Villager; index: number }) {
     const dt = Math.min(raw, 0.05)
     clock.current += dt
     const g = root.current
+    // กำลังคุยกับผู้เล่น: หยุด หันหน้ามาหา
+    if (useTalk.getState().talking === v.id) {
+      motion.current = 0
+      const target = Math.atan2(playerPose.x - g.position.x, playerPose.z - g.position.z)
+      const diff = Math.atan2(Math.sin(target - g.rotation.y), Math.cos(target - g.rotation.y))
+      g.rotation.y += diff * Math.min(1, dt * 6)
+      npcPos.set(v.id, [g.position.x, g.position.z])
+      return
+    }
     if (b.kind === 'walk') {
       motion.current = walk(g, dt)
     } else if (b.kind === 'work') {
@@ -67,6 +80,7 @@ function VillagerActor({ v, index }: { v: Villager; index: number }) {
       g.position.set(b.pos[0] + Math.cos(b.heading) * off, 0, b.pos[1] - Math.sin(b.heading) * off)
       g.rotation.y = b.heading + Math.sin(clock.current * 0.5) * 0.15
     }
+    npcPos.set(v.id, [g.position.x, g.position.z])
   })
 
   const init: [number, number, number] = b.kind === 'walk' ? [b.path[0][0], 0, b.path[0][1]] : [b.pos[0], 0, b.pos[1]]
@@ -103,11 +117,35 @@ function VillageDog({ dog, index }: { dog: (typeof VILLAGE_DOGS)[number]; index:
 
 /** ชาวบ้านและหมาที่ใช้ชีวิตอยู่ในหมู่บ้าน (บรรยากาศ) */
 export function Villagers() {
+  // ค่ำแล้วชาวบ้านกลับเข้าบ้าน (หมาในหมู่บ้านยังเดินเล่น)
+  const out = useClock((s) => villagersOut(s.minute))
+  // หาชาวบ้านที่อยู่ใกล้พอจะคุย (5 ครั้ง/วินาที)
+  const tick = useRef(0)
+  useFrame((_, dt) => {
+    tick.current += dt
+    if (tick.current < 0.2) return
+    tick.current = 0
+    let best: string | null = null
+    let bd = 2.6
+    if (out)
+      for (const [id, p] of npcPos) {
+        const d = Math.hypot(p[0] - playerPose.x, p[1] - playerPose.z)
+        if (d < bd) {
+          bd = d
+          best = id
+        }
+      }
+    const t = useTalk.getState()
+    if (t.near !== best) useTalk.setState({ near: best })
+    // เดินห่างออกมา = จบบทสนทนา
+    if (t.talking && t.talking !== best) useTalk.setState({ talking: null, reward: null })
+  })
   return (
     <group>
-      {VILLAGERS.map((v, i) => (
-        <VillagerActor key={v.id} v={v} index={i} />
-      ))}
+      {out &&
+        VILLAGERS.map((v, i) => (
+          <VillagerActor key={v.id} v={v} index={i} />
+        ))}
       {VILLAGE_DOGS.map((d, i) => (
         <VillageDog key={d.id} dog={d} index={i} />
       ))}

@@ -46,7 +46,36 @@ export interface SaveData {
   inventory: Partial<Record<ItemId, number>>
   /** ระดับกระเป๋า (ยิ่งสูงยิ่งมีช่องมาก) */
   bagLevel: number
+  /** สัตว์ที่เก็บได้ (สมุดสะสม) */
+  collection: CaughtAnimal[]
+  /** สัตว์เลี้ยงตัวแรกที่เลือกตอนสร้างตัวละคร (ไม่หายแม้สลับตัวที่เดินตาม) */
+  homePet: PetChoice | null
+  /** จำนวนครั้งที่แปะทองพระประธาน (เห็นทองบนองค์พระเพิ่มขึ้น) */
+  goldLeaf?: number
+  /** ภารกิจที่รับจากชาวบ้าน (ยังไม่เสร็จ) */
+  quests: QuestState[]
+  questsDone?: number
 }
+
+export interface QuestState {
+  npcId: string
+  kind: 'bring' | 'catch'
+  item?: ItemId
+  species?: PetChoice['species']
+  qty: number
+  /** จำนวนสัตว์ในสมุดตอนรับภารกิจ (ภารกิจเก็บสัตว์) */
+  startCount?: number
+}
+
+export interface CaughtAnimal {
+  uid: string
+  pet: PetChoice
+  /** วันในเกมที่เก็บได้ */
+  day: number
+}
+
+/** ท่าทางชั่วคราวของผู้เล่น (ในวัด) */
+export type Gesture = 'wai' | 'prostrate' | 'shake' | 'offer'
 
 export interface GatherTarget {
   kind: 'tree' | 'rock'
@@ -88,6 +117,9 @@ function migrateSave(data: SaveData): SaveData {
     petLeashed: data.petLeashed ?? false,
     inventory: data.inventory ?? {},
     bagLevel: data.bagLevel ?? 0,
+    collection: data.collection ?? [],
+    quests: data.quests ?? [],
+    homePet: data.homePet !== undefined ? data.homePet : (data.player.pet ?? null),
     version: SAVE_VERSION,
   }
 }
@@ -111,6 +143,20 @@ interface GameState {
   nearbyPlaceId: string | null
   /** สิ่งที่เก็บได้ใกล้ตัว (ต้นไม้/กองหิน) */
   gatherTarget: GatherTarget | null
+  /** สัตว์ที่อยู่ใกล้พอจะเก็บ (id จุดเกิด) */
+  wildTarget: string | null
+  /** ยืนอยู่หน้าพระประธาน (กด E กราบพระได้) */
+  nearWorship: boolean
+  setNearWorship: (v: boolean) => void
+  /** กำลังขี่สัตว์เลี้ยง (ควาย/วัว) */
+  riding: boolean
+  setRiding: (v: boolean) => void
+  /** ท่าทางชั่วคราวของผู้เล่น (เช่น ไหว้) */
+  gesture: Gesture | null
+  doGesture: (g: Gesture, ms?: number) => void
+  /** วันที่กราบพระครั้งล่าสุด (ได้ค่าสถานะวันละครั้ง) */
+  lastWorshipDay: number
+  setWildTarget: (id: string | null) => void
   setGatherTarget: (t: GatherTarget | null) => void
 
   goTo: (s: Screen) => void
@@ -170,6 +216,24 @@ export const useGame = create<GameState>()((set, get) => ({
   toasts: [],
   nearbyPlaceId: null,
   gatherTarget: null,
+  wildTarget: null,
+  nearWorship: false,
+  setNearWorship: (nearWorship) => {
+    if (get().nearWorship !== nearWorship) set({ nearWorship })
+  },
+  riding: false,
+  setRiding: (riding) => set({ riding }),
+  gesture: null,
+  doGesture: (gesture, ms = 2600) => {
+    set({ gesture })
+    window.setTimeout(() => {
+      if (get().gesture === gesture) set({ gesture: null })
+    }, ms)
+  },
+  lastWorshipDay: -1,
+  setWildTarget: (wildTarget) => {
+    if (get().wildTarget !== wildTarget) set({ wildTarget })
+  },
   setGatherTarget: (gatherTarget) => {
     const cur = get().gatherTarget
     if (cur?.kind !== gatherTarget?.kind || cur?.index !== gatherTarget?.index) set({ gatherTarget })
@@ -190,6 +254,9 @@ export const useGame = create<GameState>()((set, get) => ({
       coins: STARTING_COINS,
       inventory: {},
       bagLevel: 0,
+      collection: [],
+      quests: [],
+      homePet: draft.pet ?? null,
       day: 1,
       minuteOfDay: STARTING_MINUTE,
       position: [...SPAWN],
@@ -344,7 +411,7 @@ export const useGame = create<GameState>()((set, get) => ({
     const ok = get().saveNow('exit')
     if (!ok && !force) return false
     leaveWorld()
-    set({ screen: 'title', toasts: [], nearbyPlaceId: null, flushWorld: null })
+    set({ screen: 'title', toasts: [], nearbyPlaceId: null, flushWorld: null, riding: false })
     return true
   },
 

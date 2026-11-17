@@ -15,6 +15,7 @@ import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
 import { House, VillagerHouse, GableRoof } from './models/House'
 import { RBox } from './models/RBox'
+import { BigChedi, Temple } from './Temple'
 
 /** ฉากหมู่บ้านทั้งหมด (สิ่งที่อยู่นิ่ง) */
 export function Village({ playerHouseId, playerName }: { playerHouseId?: string; playerName?: string }) {
@@ -105,49 +106,12 @@ function PlaceMesh({ place }: { place: Place }) {
 
   switch (place.kind) {
     case 'temple':
-      labelY = 11
-      body = (
-        <group>
-          {/* ลานวัด */}
-          <mesh position={[0, 0.03, 4]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[w + 10, d + 14]} />
-            <meshStandardMaterial color="#e3d6b8" />
-          </mesh>
-          {/* ฐาน */}
-          <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
-            <RBox args={[w * 0.75, 1.2, d * 0.8]} />
-            <meshStandardMaterial color="#f1ece2" />
-          </mesh>
-          {/* ตัวโบสถ์ */}
-          <mesh position={[0, 3.2, 0]} castShadow receiveShadow>
-            <RBox args={[w * 0.6, 4, d * 0.65]} />
-            <meshStandardMaterial color="#faf6ee" />
-          </mesh>
-          {/* หลังคาซ้อนชั้น */}
-          <group rotation={[0, Math.PI / 2, 0]}>
-            <GableRoof width={d * 0.7} depth={w * 0.62} height={2.4} y={5.2} color="#b5402a" overhang={0.9} />
-            <GableRoof width={d * 0.5} depth={w * 0.4} height={2.2} y={6.6} color="#2f6b4a" overhang={0.4} />
-          </group>
-          {/* ช่อฟ้า */}
-          {[-1, 1].map((s) => (
-            <mesh key={s} position={[0, 9.1, s * d * 0.25]} rotation={[s * 0.4, 0, 0]}>
-              <coneGeometry args={[0.15, 1.2, 12]} />
-              <meshStandardMaterial color="#d9a441" metalness={0.5} roughness={0.3} />
-            </mesh>
-          ))}
-          {/* ต้นโพธิ์ */}
-          <group position={[w * 0.6, 0, 6]}>
-            <mesh position={[0, 2, 0]} castShadow>
-              <cylinderGeometry args={[0.4, 0.6, 4, 12]} />
-              <meshStandardMaterial color="#6b5440" />
-            </mesh>
-            <mesh position={[0, 5.5, 0]} castShadow>
-              <icosahedronGeometry args={[3.2, 3]} />
-              <meshStandardMaterial color="#4f7d3c" />
-            </mesh>
-          </group>
-        </group>
-      )
+      labelY = 15
+      body = <Temple placeZ={place.pos[1]} />
+      break
+    case 'chedi':
+      labelY = 26
+      body = <BigChedi />
       break
     case 'sala':
       body = (
