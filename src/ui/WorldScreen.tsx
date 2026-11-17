@@ -1,3 +1,6 @@
+import { useInterior } from '../game/interior'
+import { activateHomeSpot, enterHome, homeSpotLabel } from '../game/homeActions'
+import { HomeInterior } from '../scenes/HomeInterior'
 import { startPlay, toyHint, usePlay } from '../game/play'
 import { isShop, SHOPS } from '../game/content/shops'
 import { isBoard, openBoard, useBoard } from '../game/noticeboard'
@@ -157,7 +160,12 @@ export function WorldScreen() {
       if (e.code === 'KeyE' && !e.repeat) {
         const g = useGame.getState()
         if (g.paused) return
-        if (isBoard(g.nearbyPlaceId)) {
+        const hn = useInterior.getState().near
+        if (hn) {
+          if (hn === 'enter') enterHome()
+          else activateHomeSpot(hn)
+        }
+        else if (isBoard(g.nearbyPlaceId)) {
           if (useBoard.getState().open) useBoard.setState({ open: null })
           else openBoard(g.nearbyPlaceId)
         }
@@ -237,6 +245,7 @@ export function WorldScreen() {
         <Villagers />
         <Wildlife />
         <Player />
+        <HomeInterior />
         {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
         <PlayClock />
         <PetBond />
@@ -665,6 +674,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const usableNear = useBuild((s) => s.near)
   const chestNear = useChests((s) => s.near)
   const toyNear = usePlay((s) => s.near)
+  const homeNear = useInterior((s) => s.near)
   const playing = usePlay((s) => s.playing)
   useGame((s) => s.save?.chestsOpened)
   const building = useBuild((s) => s.active)
@@ -759,6 +769,11 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                     ? '👟 ใส่รองเท้า'
                     : '👣 ถอดรองเท้า'
                   : '🔔 ตีระฆัง'}
+        </div>
+      )}
+      {homeNear && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeSpotLabel(homeNear)}
         </div>
       )}
       {!building && toyNear && (

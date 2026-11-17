@@ -1,3 +1,5 @@
+import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, outsideDoor, useInterior } from '../game/interior'
+import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
@@ -133,6 +135,12 @@ export function Player() {
   const camPos = useMemo(() => new Vector3(), [])
 
   const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures])
+  const homeCol = useMemo(() => ({ low: interiorColliders(false), up: interiorColliders(true) }), [])
+  // โหลดเซฟตอนอยู่ในบ้าน → อยู่ในบ้านต่อ
+  useEffect(() => {
+    useInterior.setState({ inside: isInterior(save.position[0], save.position[1]) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // เริ่มกล้องด้านหลังตัวละคร
   useEffect(() => {
@@ -157,6 +165,19 @@ export function Player() {
     let mx = fx * f + rx * r
     let mz = fz * f + rz * r
     const len = Math.hypot(mx, mz)
+    // วาร์ปเข้า/ออกบ้าน
+    if (warp.pending) {
+      const w = warp.pending
+      warp.pending = null
+      pos.current = [w.x, w.z]
+      heading.current = w.heading
+      orbit.current.yaw = w.heading + Math.PI
+      // ในบ้าน: มองจากด้านบน (บ้านตุ๊กตา) · ออกนอกบ้าน: มุมปกติ
+      orbit.current.pitch = useInterior.getState().inside ? 1.05 : 0.42
+      orbit.current.dist = useInterior.getState().inside ? 8 : 9
+      if (root.current) root.current.position.set(w.x, w.y, w.z)
+      state.camera.position.set(w.x, 2, w.z + 3)
+    }
     // กำลังเล่นเครื่องเล่น: เดินเพื่อเลิกเล่น
     let pp = playPose(performance.now())
     if (pp && len > 0) {
@@ -214,7 +235,9 @@ export function Player() {
       // ขี่สัตว์: ใช้ความเร็วของสัตว์ (ไม่นับไม้เท้า/วัย)
       const ride = useGame.getState().riding ? RIDEABLE[save.player.pet?.species ?? 'dog'] : undefined
       const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK
-      pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], colliders)
+      const insideNow = useInterior.getState().inside
+      const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
+      pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow)
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current
       diff = Math.atan2(Math.sin(diff), Math.cos(diff))
@@ -234,7 +257,8 @@ export function Player() {
     const [x, z] = pos.current
     if (root.current) {
       // ขึ้นบันได/ยืนบนพื้นโบสถ์ (ค่อย ๆ ขยับความสูงให้นุ่ม)
-      const gy = templeGroundY(x, z)
+      const inHome = useInterior.getState().inside
+      const gy = inHome ? interiorGround(x - INTERIOR_ORIGIN[0], z - INTERIOR_ORIGIN[1], root.current.position.y) : templeGroundY(x, z)
       // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
       const rideY = useGame.getState().riding ? rideHeight(save) : 0
       const targetY = gy + rideY
@@ -268,6 +292,13 @@ export function Player() {
       camPos.y = Math.min(camPos.y, TEMPLE.floorY + TEMPLE.wallH - 0.3)
     }
     camPos.y += root.current?.position.y ?? 0
+    // ในบ้าน: กล้องไม่ทะลุผนัง/เพดาน
+    if (useInterior.getState().inside) {
+      const ib = interiorCameraBox((root.current?.position.y ?? 0) > FLOOR2 * 0.5)
+      camPos.x = Math.max(ib.minX, Math.min(ib.maxX, camPos.x))
+      camPos.z = Math.max(ib.minZ, Math.min(ib.maxZ, camPos.z))
+      camPos.y = Math.min(camPos.y, ib.maxY)
+    }
     state.camera.position.lerp(camPos, 1 - Math.exp(-dt * 10))
     state.camera.lookAt(camTarget)
 
@@ -292,6 +323,17 @@ export function Player() {
       setNearby(near)
       setGatherTarget(findGatherTarget(x, z))
       pickupNear(x, z)
+      // ประตูบ้านตารัง–ยายเลียน / ของในบ้าน
+      const ins = useInterior.getState()
+      let hn: string | null = null
+      if (ins.inside) hn = findHomeSpot(x, z, root.current?.position.y ?? 0)
+      else {
+        const [dx, dz] = outsideDoor()
+        if (Math.hypot(dx - x, dz - z) < 1.8) hn = 'enter'
+      }
+      if (ins.near !== hn) useInterior.setState({ near: hn })
+      const up = ins.inside && (root.current?.position.y ?? 0) > FLOOR2 * 0.5
+      if (ins.upper !== up) useInterior.setState({ upper: up })
       const toy = findToy(x, z)
       if (usePlay.getState().near !== toy) usePlay.setState({ near: toy })
       const chest = findChest(x, z)

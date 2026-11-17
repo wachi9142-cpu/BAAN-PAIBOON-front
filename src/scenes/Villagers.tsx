@@ -11,6 +11,8 @@ import { useClock } from '../game/clock'
 import { npcPos, useTalk } from '../game/talk'
 import { playerPose } from './Player'
 import { villagersOut } from '../game/content/daytime'
+import { NPC_INFO } from '../game/content/villagers'
+import { TextSprite } from './TextSprite'
 
 const WALK_SPEED = 1.3
 
@@ -90,6 +92,7 @@ function VillagerActor({ v, index }: { v: Villager; index: number }) {
   return (
     <group ref={root} position={init} rotation-y={rotY}>
       <Character appearance={v.appearance} motion={motion} action={action} tool={v.tool} />
+      <TalkMark id={v.id} />
     </group>
   )
 }
@@ -149,6 +152,25 @@ export function Villagers() {
       {VILLAGE_DOGS.map((d, i) => (
         <VillageDog key={d.id} dog={d} index={i} />
       ))}
+    </group>
+  )
+}
+
+/** ป้ายชื่อ + ลูกศรลอยเหนือหัวชาวบ้านที่อยู่ใกล้พอจะคุย (จะได้รู้ว่ากด E แล้วคุยกับใคร) */
+function TalkMark({ id }: { id: string }) {
+  const near = useTalk((s) => s.near === id)
+  const ref = useRef<Group>(null)
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.position.y = 2.25 + Math.sin(clock.elapsedTime * 3) * 0.06
+  })
+  if (!near) return null
+  return (
+    <group ref={ref} position={[0, 2.25, 0]}>
+      <TextSprite text={'💬 ' + (NPC_INFO[id]?.name ?? 'ชาวบ้าน')} color="#2b4a28" height={0.32} position={[0, 0.25, 0]} />
+      <mesh position={[0, -0.05, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.1, 0.2, 4]} />
+        <meshStandardMaterial color="#f6c445" emissive="#f6c445" emissiveIntensity={0.5} />
+      </mesh>
     </group>
   )
 }

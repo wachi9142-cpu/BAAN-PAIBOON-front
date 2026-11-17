@@ -35,7 +35,7 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
 const PLAYER_R = 0.4
 
 /** ขยับตำแหน่งแล้วดันออกจากวงชน + จำกัดขอบโลก */
-export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[]): Vec2 {
+export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = true): Vec2 {
   let [x, z] = pos
   for (const c of colliders) {
     if (!('r' in c)) {
@@ -71,6 +71,7 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[]): Vec2 {
       z = c.z + (dz / dist) * min
     }
   }
+  if (!clamp) return [x, z]
   const lim = WORLD_HALF_SIZE - 1
   return [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, z))]
 }
