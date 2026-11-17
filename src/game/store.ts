@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Appearance } from './content/appearance'
+import type { PetChoice } from './content/pets'
 import { SPAWN, STARTING_PLOT_ID } from './content/village'
 import { clearSaves, listSaves, loadLatest, writeSave, type Envelope, type SaveReason } from './save/localSave'
 import { cloudEnabled, flushOutbox, queueForUpload, type CloudStatus } from './save/cloudSync'
@@ -14,6 +15,8 @@ export const SAVE_VERSION = 1
 export interface PlayerProfile {
   name: string
   appearance: Appearance
+  /** สัตว์เลี้ยงที่พาไปด้วย (null = ไม่มี) */
+  pet: PetChoice | null
 }
 
 export interface SaveData {
@@ -33,7 +36,7 @@ export interface SaveData {
   playSeconds: number
 }
 
-export type Screen = 'title' | 'create' | 'house' | 'world'
+export type Screen = 'title' | 'create' | 'pet' | 'house' | 'world'
 
 export interface Toast {
   id: number
@@ -49,7 +52,12 @@ const SESSION_FLAG = 'baan-paiboon-session-open'
 
 function migrateSave(data: SaveData): SaveData {
   // v1 เป็นรุ่นแรก — เติมค่าเริ่มต้นให้ฟิลด์ที่อาจขาด
-  return { ...data, playSeconds: data.playSeconds ?? 0, version: SAVE_VERSION }
+  return {
+    ...data,
+    player: { ...data.player, pet: data.player.pet ?? null },
+    playSeconds: data.playSeconds ?? 0,
+    version: SAVE_VERSION,
+  }
 }
 
 interface GameState {

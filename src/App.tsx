@@ -3,11 +3,13 @@ import { useAudioSettings } from './game/audio/useSoundscape'
 import { TitleScreen } from './ui/TitleScreen'
 import { CreateCharacterScreen } from './ui/CreateCharacterScreen'
 import { ChooseHouseScreen } from './ui/ChooseHouseScreen'
+import { ChoosePetScreen } from './ui/ChoosePetScreen'
 import { WorldScreen } from './ui/WorldScreen'
 
 const SCREENS = {
   title: TitleScreen,
   create: CreateCharacterScreen,
+  pet: ChoosePetScreen,
   house: ChooseHouseScreen,
   world: WorldScreen,
 }

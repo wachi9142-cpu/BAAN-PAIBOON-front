@@ -1,7 +1,9 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
-import { byId, HAIR_COLORS, OUTFITS, SKIN_TONES, type Appearance } from '../../game/content/appearance'
+import { byId, hairColorValue, lipColorValue, shoeColorValue, bagColorValue, OUTFITS, SKIN_TONES, type Appearance } from '../../game/content/appearance'
+import { Shoe } from './Shoe'
+import { BodyBag, HandBag } from './Bag'
 
 interface Props {
   appearance: Appearance
@@ -12,9 +14,13 @@ interface Props {
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
 export function Character({ appearance, motion }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
-  const hair = byId(HAIR_COLORS, appearance.hairColor).color
+  const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
   const female = appearance.gender === 'female'
+  const shoes = appearance.shoes ?? 'sandals'
+  const shoeColor = shoeColorValue(appearance.shoeColor)
+  const bag = appearance.bag ?? 'none'
+  const bagColor = bagColorValue(appearance.bagColor)
 
   const legL = useRef<Group>(null)
   const legR = useRef<Group>(null)
@@ -53,6 +59,9 @@ export function Character({ appearance, motion }: Props) {
                 <cylinderGeometry args={[0.05, 0.05, 0.3, 6]} />
                 <meshStandardMaterial color={skin} flatShading />
               </mesh>
+              <group position={[0, -0.3, 0]}>
+                <Shoe style={shoes} color={shoeColor} skin={skin} />
+              </group>
             </group>
           ))}
         </>
@@ -63,10 +72,14 @@ export function Character({ appearance, motion }: Props) {
               <boxGeometry args={[0.15, 0.62, 0.17]} />
               <meshStandardMaterial color={outfit.bottom} flatShading />
             </mesh>
-            <mesh position={[0, -0.72, 0.03]} castShadow>
-              <boxGeometry args={[0.13, 0.16, 0.22]} />
+            {/* ข้อเท้า (ระหว่างขากางเกงกับรองเท้า) */}
+            <mesh position={[0, -0.71, 0]} castShadow>
+              <cylinderGeometry args={[0.045, 0.045, 0.2, 6]} />
               <meshStandardMaterial color={skin} flatShading />
             </mesh>
+            <group position={[0, -0.82, 0]}>
+              <Shoe style={shoes} color={shoeColor} skin={skin} />
+            </group>
           </group>
         ))
       )}
@@ -88,8 +101,11 @@ export function Character({ appearance, motion }: Props) {
             <boxGeometry args={[0.09, 0.2, 0.1]} />
             <meshStandardMaterial color={skin} flatShading />
           </mesh>
+          {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
         </group>
       ))}
+
+      <BodyBag bag={bag} color={bagColor} female={female} />
 
       {/* คอ + หัว */}
       <mesh position={[0, 1.4, 0]}>
@@ -111,7 +127,7 @@ export function Character({ appearance, motion }: Props) {
       {/* ปาก: ยิ้มเล็ก ๆ (ครึ่งวงแหวนหงายขึ้น) */}
       <mesh position={[0, 1.515, 0.158]} rotation={[0.25, 0, Math.PI]}>
         <torusGeometry args={[0.032, 0.009, 6, 14, Math.PI]} />
-        <meshStandardMaterial color="#8a3b2c" />
+        <meshStandardMaterial color={lipColorValue(appearance.lipColor)} />
       </mesh>
       {/* แก้มอมชมพูจาง ๆ */}
       {[-0.095, 0.095].map((x) => (

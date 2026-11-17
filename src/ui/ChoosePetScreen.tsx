@@ -1,0 +1,152 @@
+import { useEffect, useState } from 'react'
+import { PET_COLORS, PET_PATTERNS, PET_SPECIES, defaultPet, getSpecies, type PetChoice, type PetSpecies } from '../game/content/pets'
+import { useGame } from '../game/store'
+import { PreviewStage } from '../scenes/PreviewStage'
+import { Character } from '../scenes/models/Character'
+import { Pet } from '../scenes/models/Pet'
+import { ColorChoiceField } from './CreateCharacterScreen'
+
+const MAX_NAME = 16
+
+/** ขั้นที่ 2: เลือกสัตว์เลี้ยง (ไม่บังคับ) */
+export function ChoosePetScreen() {
+  const draft = useGame((s) => s.draft)
+  const setDraft = useGame((s) => s.setDraft)
+  const goTo = useGame((s) => s.goTo)
+
+  const [hasPet, setHasPet] = useState(draft?.pet != null)
+  const [pet, setPet] = useState<PetChoice>(draft?.pet ?? defaultPet('dog'))
+
+  useEffect(() => {
+    if (!draft) goTo('create')
+  }, [draft, goTo])
+  if (!draft) return null
+
+  const patch = (p: Partial<PetChoice>) => setPet((x) => ({ ...x, ...p }))
+  const chooseSpecies = (species: PetSpecies) =>
+    setPet((x) => {
+      // เปลี่ยนชนิด: ใช้สีเริ่มต้นของชนิดนั้น แต่ถ้าผู้เล่นตั้งชื่อเองแล้ว ให้คงชื่อเดิม
+      const fresh = defaultPet(species)
+      const customName = x.name.trim() && x.name !== defaultPet(x.species).name
+      return { ...fresh, name: customName ? x.name : fresh.name, pattern: x.pattern }
+    })
+
+  const finish = (withPet: boolean) => {
+    setDraft({ ...draft, pet: withPet ? { ...pet, name: pet.name.trim() || defaultPet(pet.species).name } : null })
+    goTo('house')
+  }
+
+  const flies = pet.species === 'bird'
+  const sp = getSpecies(pet.species)
+  // สีธรรมชาติของสัตว์ชนิดนั้นเป็นตัวเลือกแรกเสมอ
+  const bodyColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.color }, ...PET_COLORS]
+  const accentColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.patternColor }, ...PET_COLORS]
+
+  return (
+    <div className="setup">
+      <div className="setup-stage">
+        <PreviewStage camera={[1.2, 1.4, 4.4]} target={[0.4, 0.7, 0]} minDistance={2} maxDistance={8}>
+          <group position={[-0.4, 0, 0]}>
+            <Character appearance={draft.appearance} />
+          </group>
+          {hasPet && (
+            <group position={[0.55, flies ? 1.45 : 0, 0.35]} rotation={[0, -0.5, 0]} scale={pet.species === 'buffalo' ? 0.8 : 1.3}>
+              <Pet pet={pet} />
+            </group>
+          )}
+        </PreviewStage>
+      </div>
+
+      <div className="setup-panel">
+        <div>
+          <div className="step">ขั้นที่ 2 / 3</div>
+          <h2>สัตว์เลี้ยงคู่ใจ</h2>
+        </div>
+        <p className="hint" style={{ margin: 0 }}>
+          สัตว์เลี้ยงจะเดินตาม{draft.name}ไปทุกที่ในหมู่บ้าน — ไม่เลือกก็ได้
+        </p>
+
+        <label className="pet-toggle">
+          <input type="checkbox" checked={hasPet} onChange={(e) => setHasPet(e.target.checked)} />
+          <span>พาสัตว์เลี้ยงไปด้วย</span>
+        </label>
+
+        {hasPet && (
+          <>
+            <div className="field">
+              <label>ชนิดสัตว์</label>
+              <div className="chips">
+                {PET_SPECIES.map((s) => (
+                  <button key={s.id} type="button" className="chip" aria-pressed={s.id === pet.species} onClick={() => chooseSpecies(s.id)}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="petname">ชื่อสัตว์เลี้ยง</label>
+              <input
+                id="petname"
+                type="text"
+                value={pet.name}
+                maxLength={MAX_NAME}
+                autoComplete="off"
+                onChange={(e) => patch({ name: e.target.value })}
+              />
+            </div>
+
+            <ColorChoiceField
+              key={'c' + pet.species}
+              label={pet.species === 'turtle' ? 'สีกระดอง' : 'สีตัว'}
+              options={bodyColors}
+              value={colorChoice(pet.color, bodyColors)}
+              onChange={(v) => patch({ color: resolveColor(v, bodyColors) })}
+              fallbackCustom={pet.color}
+            />
+
+            <div className="field">
+              <label>ลาย</label>
+              <div className="chips">
+                {PET_PATTERNS.map((p) => (
+                  <button key={p.id} type="button" className="chip" aria-pressed={p.id === pet.pattern} onClick={() => patch({ pattern: p.id })}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <ColorChoiceField
+              key={'p' + pet.species}
+              label={pet.pattern === 'plain' ? 'สีส่วนประกอบ (หู หาง ปีก)' : 'สีลาย'}
+              options={accentColors}
+              value={colorChoice(pet.patternColor, accentColors)}
+              onChange={(v) => patch({ patternColor: resolveColor(v, accentColors) })}
+              fallbackCustom={pet.patternColor}
+            />
+          </>
+        )}
+
+        <p className="hint">ลากเมาส์บนภาพเพื่อหมุนดูรอบตัว</p>
+
+        <div className="setup-footer">
+          <button type="button" className="btn ghost" onClick={() => goTo('create')}>
+            ย้อนกลับ
+          </button>
+          <button type="button" className="btn" onClick={() => finish(hasPet)}>
+            {hasPet ? 'ต่อไป: เลือกบ้าน' : 'ข้าม: ไม่มีสัตว์เลี้ยง'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** สีที่เก็บเป็น hex เสมอ → แปลงกลับเป็น id ถ้าตรงกับสีตัวอย่าง (ให้ปุ่มสีตัวอย่างขึ้นว่าเลือกอยู่) */
+type Opt = { id: string; color: string }
+function colorChoice(hex: string, opts: Opt[]) {
+  return opts.find((c) => c.color.toLowerCase() === hex.toLowerCase())?.id ?? hex
+}
+function resolveColor(v: string, opts: Opt[]) {
+  return v.startsWith('#') ? v : (opts.find((c) => c.id === v)?.color ?? v)
+}

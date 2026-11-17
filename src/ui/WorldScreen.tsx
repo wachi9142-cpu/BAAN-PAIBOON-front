@@ -8,6 +8,7 @@ import { SOUND_PERIODS } from '../game/content/soundscape'
 import { useVillageSoundscape } from '../game/audio/useSoundscape'
 import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
+import { PetFollower } from '../scenes/PetFollower'
 import { SaveSlots } from './SaveSlots'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
@@ -59,6 +60,7 @@ export function WorldScreen() {
         <fog attach="fog" args={['#dfe6d8', 70, 340]} />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Player />
+        {save.player.pet && <PetFollower pet={save.player.pet} start={save.position} />}
         <PlayClock />
       </Canvas>
       <Hud onMenu={() => setMenu(true)} />

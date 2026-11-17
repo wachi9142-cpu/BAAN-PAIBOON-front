@@ -4,6 +4,7 @@ import { useGame } from '../game/store'
 import { PreviewStage } from '../scenes/PreviewStage'
 import { House } from '../scenes/models/House'
 import { Character } from '../scenes/models/Character'
+import { Pet } from '../scenes/models/Pet'
 
 export function ChooseHouseScreen() {
   const draft = useGame((s) => s.draft)
@@ -26,12 +27,17 @@ export function ChooseHouseScreen() {
           <group position={[1.2, 0, 4.6]}>
             <Character appearance={draft.appearance} />
           </group>
+          {draft.pet && (
+            <group position={[2.2, draft.pet.species === 'bird' ? 1.3 : 0, 4.9]} rotation={[0, -0.4, 0]}>
+              <Pet pet={draft.pet} />
+            </group>
+          )}
         </PreviewStage>
       </div>
 
       <div className="setup-panel">
         <div>
-          <div className="step">ขั้นที่ 2 / 2</div>
+          <div className="step">ขั้นที่ 3 / 3</div>
           <h2>เลือกบ้านของ{draft.name}</h2>
         </div>
         <p className="hint" style={{ margin: 0 }}>
@@ -55,7 +61,7 @@ export function ChooseHouseScreen() {
         </div>
 
         <div className="setup-footer">
-          <button type="button" className="btn ghost" onClick={() => goTo('create')}>
+          <button type="button" className="btn ghost" onClick={() => goTo('pet')}>
             ย้อนกลับ
           </button>
           <button type="button" className="btn" onClick={() => startNewLife(houseId)}>

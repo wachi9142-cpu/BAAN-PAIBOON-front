@@ -59,11 +59,80 @@ export interface Appearance {
   hairStyle: HairStyleId
   hairColor: string
   outfit: string
+  /** สีปาก: id สีตัวอย่าง หรือ "#rrggbb" (เซฟเก่าที่ไม่มีค่านี้ใช้สีเริ่มต้น) */
+  lipColor?: string
+  /** รองเท้า (เซฟเก่าที่ไม่มีค่านี้ใช้รองเท้าแตะ) */
+  shoes?: ShoeId
+  shoeColor?: string
+  /** กระเป๋า (none = ไม่มี) */
+  bag?: BagId
+  bagColor?: string
 }
 
 export const DEFAULT_APPEARANCE: Record<Gender, Appearance> = {
-  female: { gender: 'female', skin: 'medium', hairStyle: 'long', hairColor: 'black', outfit: 'phasin' },
-  male: { gender: 'male', skin: 'tan', hairStyle: 'short', hairColor: 'black', outfit: 'mohom' },
+  female: { gender: 'female', skin: 'medium', hairStyle: 'long', hairColor: 'black', outfit: 'phasin', lipColor: 'rose', shoes: 'sandals', shoeColor: 'brown' },
+  male: { gender: 'male', skin: 'tan', hairStyle: 'short', hairColor: 'black', outfit: 'mohom', lipColor: 'natural', shoes: 'sandals', shoeColor: 'brown' },
 }
 
-export const byId = <T extends Option>(list: T[], id: string): T => list.find((o) => o.id === id) ?? list[0]
+/** สีผม: เป็น id ของสีตัวอย่าง หรือรหัสสี "#rrggbb" ที่ผู้เล่นเลือกเองจากวงล้อสี */
+export const isCustomColor = (v: string) => v.startsWith('#')
+export const hairColorValue = (v: string) => (isCustomColor(v) ? v : byId(HAIR_COLORS, v).color)
+
+export const byId =<T extends Option>(list: T[], id: string): T => list.find((o) => o.id === id) ?? list[0]
+
+export const LIP_COLORS: (Option & { color: string })[] = [
+  { id: 'natural', label: 'ธรรมชาติ', color: '#8a3b2c' },
+  { id: 'rose', label: 'ชมพูกุหลาบ', color: '#c4566a' },
+  { id: 'red', label: 'แดง', color: '#b3202c' },
+  { id: 'coral', label: 'ส้มพีช', color: '#e07a5f' },
+  { id: 'brown', label: 'น้ำตาล', color: '#6b3a2a' },
+]
+
+export const lipColorValue = (v: string | undefined) =>
+  !v ? LIP_COLORS[0].color : isCustomColor(v) ? v : byId(LIP_COLORS, v).color
+
+export type ShoeId = 'sandals' | 'heels' | 'sneakers' | 'maryjane' | 'kachu'
+
+export const SHOES: (Option & { id: ShoeId })[] = [
+  { id: 'sandals', label: 'รองเท้าแตะ' },
+  { id: 'sneakers', label: 'รองเท้าผ้าใบ' },
+  { id: 'kachu', label: 'รองเท้าคัชชู' },
+  { id: 'maryjane', label: 'รองเท้าแมรี่เจน' },
+  { id: 'heels', label: 'รองเท้าส้นสูง' },
+]
+
+export const SHOE_COLORS: (Option & { color: string })[] = [
+  { id: 'brown', label: 'น้ำตาล', color: '#6b4426' },
+  { id: 'black', label: 'ดำ', color: '#1f1b1a' },
+  { id: 'white', label: 'ขาว', color: '#f1eee8' },
+  { id: 'red', label: 'แดง', color: '#b3202c' },
+  { id: 'navy', label: 'กรมท่า', color: '#26324f' },
+]
+
+export const shoeColorValue = (v: string | undefined) =>
+  !v ? SHOE_COLORS[0].color : isCustomColor(v) ? v : byId(SHOE_COLORS, v).color
+
+export type BagId = 'none' | 'yaam' | 'backpack' | 'tote' | 'shoulder' | 'crossbody' | 'waist' | 'handbag'
+
+export const BAGS: (Option & { id: BagId })[] = [
+  { id: 'none', label: 'ไม่มีกระเป๋า' },
+  { id: 'yaam', label: 'ย่าม' },
+  { id: 'backpack', label: 'เป้สะพายหลัง' },
+  { id: 'tote', label: 'กระเป๋าผ้า' },
+  { id: 'shoulder', label: 'สะพายไหล่' },
+  { id: 'crossbody', label: 'คาดลำตัว' },
+  { id: 'waist', label: 'คาดเอว' },
+  { id: 'handbag', label: 'กระเป๋าถือ' },
+]
+
+export const BAG_COLORS: (Option & { color: string })[] = [
+  { id: 'indigo', label: 'คราม', color: '#2f3f6e' },
+  { id: 'brown', label: 'น้ำตาล', color: '#7a4a28' },
+  { id: 'cream', label: 'ครีม', color: '#e8dcc0' },
+  { id: 'green', label: 'เขียว', color: '#5c7a3a' },
+  { id: 'red', label: 'แดง', color: '#a83a32' },
+  { id: 'black', label: 'ดำ', color: '#222023' },
+]
+
+export const bagColorValue = (v: string | undefined) =>
+  !v ? BAG_COLORS[0].color : isCustomColor(v) ? v : byId(BAG_COLORS, v).color

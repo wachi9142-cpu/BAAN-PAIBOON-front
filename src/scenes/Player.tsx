@@ -71,6 +71,9 @@ function useOrbit() {
   return orbit
 }
 
+/** ตำแหน่งผู้เล่นล่าสุด (อัปเดตทุกเฟรม) ให้สัตว์เลี้ยงและระบบอื่นอ่านได้โดยไม่ต้อง re-render */
+export const playerPose = { x: 0, z: 0, heading: 0, motion: 0 }
+
 const WALK = 4.2
 const RUN = 8
 
@@ -136,6 +139,10 @@ export function Player() {
       root.current.position.set(x, 0, z)
       root.current.rotation.y = heading.current
     }
+    playerPose.x = x
+    playerPose.z = z
+    playerPose.heading = heading.current
+    playerPose.motion = motion.current
 
     // กล้องตาม
     const { pitch, dist } = orbit.current
