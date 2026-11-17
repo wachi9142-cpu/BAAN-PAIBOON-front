@@ -1487,3 +1487,47 @@ kbd {
   font-size: 13px;
   pointer-events: none;
 }
+
+/* ---------- เลือกทรงผมแบบมีรูป ---------- */
+.hair-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+.hair-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 7px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #fffaf0;
+  cursor: pointer;
+  font-family: 'Mitr', sans-serif;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+}
+.hair-card:hover {
+  border-color: var(--gold);
+}
+.hair-card[aria-checked='true'] {
+  border-color: var(--green);
+  background: #e4eed9;
+  box-shadow: 0 0 0 2px rgba(63, 107, 58, 0.25);
+}
+.hair-card img,
+.hair-ph {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #fff6e6, #efe2c8);
+}
+.hair-ph {
+  display: block;
+  animation: hair-pulse 1.2s ease-in-out infinite;
+}
+@keyframes hair-pulse {
+  50% { opacity: 0.5; }
+}

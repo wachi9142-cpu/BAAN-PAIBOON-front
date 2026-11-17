@@ -22,6 +22,7 @@ import {
   GENDERS,
   HAIR_COLORS,
   HAIR_STYLES,
+  hairColorValue,
   isCustomColor,
   LIP_COLORS,
   OUTFITS,
@@ -40,6 +41,7 @@ import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
 import { ColorWheel } from './ColorWheel'
 import { useRandomBackdrop } from './RandomBackdrop'
+import { useHairThumbs } from './hairThumbs'
 
 const MAX_NAME = 20
 /** ตัวเลือกที่แสดงก่อนกด "เพิ่มเติม" */
@@ -166,7 +168,7 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
           <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
   
           <div className="setup-section">ทรงผม</div>
-          <ChipField label="ทรงผม" options={HAIR_STYLES} value={look.hairStyle} onChange={(id) => patch({ hairStyle: id as Appearance['hairStyle'] })} />
+          <HairPicker look={look} onChange={(hairStyle) => patch({ hairStyle })} />
           <ColorChoiceField label="สีผม" options={HAIR_COLORS} value={look.hairColor} onChange={(hairColor) => patch({ hairColor })} />
   
           <div className="setup-section">การแต่งตัว</div>
@@ -279,6 +281,31 @@ function ChipField({
           )
         })}
         {toggle}
+      </div>
+    </div>
+  )
+}
+
+/** เลือกทรงผมแบบมีรูป: หุ่นหัวตามสีผมและสีผิวที่เลือกอยู่ */
+function HairPicker({ look, onChange }: { look: Appearance; onChange: (id: Appearance['hairStyle']) => void }) {
+  const thumbs = useHairThumbs(hairColorValue(look.hairColor), byId(SKIN_TONES, look.skin).color)
+  return (
+    <div className="field">
+      <label>ทรงผม</label>
+      <div className="hair-grid" role="radiogroup" aria-label="ทรงผม">
+        {HAIR_STYLES.map((h) => (
+          <button
+            key={h.id}
+            type="button"
+            role="radio"
+            aria-checked={look.hairStyle === h.id}
+            className="hair-card"
+            onClick={() => onChange(h.id)}
+          >
+            {thumbs[h.id] ? <img src={thumbs[h.id]} alt="" /> : <span className="hair-ph" aria-hidden="true" />}
+            <span>{h.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
