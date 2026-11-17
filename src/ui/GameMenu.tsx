@@ -1,3 +1,5 @@
+import { FortuneCard } from './FortuneCard'
+import { CUPS, FORTUNE_LEVEL, fortuneOf, weekdayOf, weekOf } from '../game/content/siamsi'
 import { equip } from '../game/trees'
 import { eat } from '../game/garden'
 import { useEffect, useState } from 'react'
@@ -19,7 +21,7 @@ import { ReportPanel } from './ReportPanel'
 import { useUnreadReports } from '../game/feedback/reports'
 import { ItemIcon } from './ItemIcon'
 
-export type Tab = 'character' | 'bag' | 'craft' | 'animals' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
+export type Tab = 'character' | 'bag' | 'craft' | 'animals' | 'notebook' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
 type Confirm = null | 'confirm-exit' | 'confirm-title' | 'exited'
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
@@ -27,6 +29,7 @@ const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'bag', icon: '🎒', label: 'กระเป๋า' },
   { id: 'craft', icon: '🔨', label: 'คราฟของ' },
   { id: 'animals', icon: '🐾', label: 'สัตว์ของฉัน' },
+  { id: 'notebook', icon: '📒', label: 'สมุดเซียมซี' },
   { id: 'guide', icon: '📖', label: 'คู่มือ' },
   { id: 'knowledge', icon: '📜', label: 'เกร็ดความรู้' },
   { id: 'report', icon: '📮', label: 'แจ้งปัญหา' },
@@ -138,6 +141,7 @@ export function GameMenu({ onClose, initialTab }: { onClose: () => void; initial
           {tab === 'bag' && <BagTab onCraft={() => setTab('craft')} />}
           {tab === 'craft' && <CraftTab />}
           {tab === 'animals' && <AnimalsTab />}
+          {tab === 'notebook' && <SiamsiNotebook />}
           {tab === 'guide' && <GuideTab />}
           {tab === 'knowledge' && (
             <>
@@ -561,6 +565,50 @@ function SettingsTab() {
         <span>ความไวเมาส์</span>
         <input type="range" min={0.3} max={2} step={0.1} value={settings.mouseSensitivity} onChange={(e) => settings.set({ mouseSensitivity: Number(e.target.value) })} />
       </label>
+    </div>
+  )
+}
+
+/** สมุดเซียมซี: คำทำนายประจำสัปดาห์ + ประวัติย้อนหลังทั้งหมด */
+function SiamsiNotebook() {
+  const save = useGame((s) => s.save)!
+  const hist = [...(save.siamsi?.history ?? [])].reverse()
+  const [open, setOpen] = useState<number | null>(hist.length ? 0 : null)
+  const week = weekOf(save.day)
+  const thisWeek = (save.siamsi?.history ?? []).find((h) => h.week === week)
+  return (
+    <div className="gm-notebook">
+      <h3>📒 สมุดเซียมซี</h3>
+      <p className="hint">
+        วันนี้วัน{weekdayOf(save.day)} · สัปดาห์ที่ {week} · เสี่ยงได้วันละ 1 ครั้งที่โบสถ์ · คำทำนายประจำสัปดาห์ = ใบแรกที่ได้ในสัปดาห์นั้น
+        {save.siamsi?.pending && ` · มีใบเลข ${save.siamsi.pending.no} รอหยิบที่ตู้หน้าโบสถ์`}
+      </p>
+      {thisWeek && (
+        <>
+          <h4>⭐ คำทำนายประจำสัปดาห์นี้</h4>
+          <FortuneCard f={fortuneOf(thisWeek.week, thisWeek.cup, thisWeek.no)} />
+        </>
+      )}
+      <h4>ประวัติย้อนหลัง</h4>
+      {hist.length === 0 && <p className="hint">ยังไม่เคยเสี่ยงเซียมซี — ไปที่วัด เข้าโบสถ์ แล้วกด E หน้าพระประธาน</p>}
+      <ul className="nb-list">
+        {hist.map((h, i) => {
+          const f = fortuneOf(h.week, h.cup, h.no)
+          return (
+            <li key={i}>
+              <button type="button" className="nb-row" onClick={() => setOpen(open === i ? null : i)}>
+                <span>
+                  วันที่ {h.day} (วัน{weekdayOf(h.day)}) · {CUPS[h.cup].name} เลข {h.no}
+                </span>
+                <span className="nb-level" style={{ background: FORTUNE_LEVEL[f.level].color }}>
+                  {h.read ? FORTUNE_LEVEL[f.level].label : 'ยังไม่ได้หยิบใบ'}
+                </span>
+              </button>
+              {open === i && h.read && <FortuneCard f={f} />}
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

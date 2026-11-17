@@ -1,25 +1,29 @@
 import { useState } from 'react'
 import { useGame } from '../game/store'
 import { buy, sell } from '../game/inventory'
-import { BAG_LEVELS, bagSlots, ITEMS, RECIPES, SHOP, slotsUsed, type ItemId } from '../game/content/items'
+import { BAG_LEVELS, bagSlots, ITEMS, RECIPES, slotsUsed, type ItemId } from '../game/content/items'
+import { SHOPS } from '../game/content/shops'
 import { ItemIcon } from './ItemIcon'
 
 /** ร้านค้าป้าศรี: ซื้อเครื่องมือ/กระเป๋า และขายของที่เก็บมา */
-export function ShopWindow({ onClose }: { onClose: () => void }) {
+export function ShopWindow({ onClose, shopId = 'shop' }: { onClose: () => void; shopId?: string }) {
+  const def = SHOPS[shopId] ?? SHOPS.shop
   const save = useGame((s) => s.save)!
   const [tab, setTab] = useState<'buy' | 'sell'>('buy')
   const inv = save.inventory
-  const owned = (Object.keys(inv) as ItemId[]).filter((id) => (inv[id] ?? 0) > 0)
+  const owned = (Object.keys(inv) as ItemId[]).filter((id) => (inv[id] ?? 0) > 0 && (!def.buys || def.buys.includes(id)))
 
   return (
     <div className="menu-backdrop" onClick={onClose}>
-      <div className="menu shop" role="dialog" aria-label="ร้านค้าป้าศรี" onClick={(e) => e.stopPropagation()}>
+      <div className="menu shop" role="dialog" aria-label={def.name} onClick={(e) => e.stopPropagation()}>
         <div className="shop-head">
-          <h2>🛒 ร้านค้าป้าศรี</h2>
+          <h2>
+            {def.icon} {def.name}
+          </h2>
           <div className="shop-coins">💰 {save.coins.toLocaleString('th-TH')} บาท</div>
         </div>
         <p className="hint" style={{ margin: 0 }}>
-          ของในร้านสะดวกแต่แพงกว่า — หาวัตถุดิบมาคราฟเองจะประหยัดกว่า (เมนู → คราฟของ)
+          {def.note}{shopId === 'shop' ? ' · ของในร้านสะดวกแต่แพงกว่า — คราฟเองประหยัดกว่า' : ''}
         </p>
         <div className="chips">
           <button type="button" className="chip" aria-pressed={tab === 'buy'} onClick={() => setTab('buy')}>
@@ -35,7 +39,7 @@ export function ShopWindow({ onClose }: { onClose: () => void }) {
 
         {tab === 'buy' ? (
           <ul className="shop-list">
-            {SHOP.map((e) => {
+            {def.goods.map((e) => {
               const isBag = 'bagLevel' in e.gives
               const ownedBag = isBag && 'bagLevel' in e.gives && save.bagLevel >= e.gives.bagLevel
               const recipe = RECIPES.find((r) => r.id === e.id)
@@ -45,7 +49,7 @@ export function ShopWindow({ onClose }: { onClose: () => void }) {
                   <span className="shop-name">
                     <strong>{e.name}</strong>
                     <small>
-                      {'item' in e.gives ? ITEMS[e.gives.item].note : 'เพิ่มช่องในกระเป๋า'}
+                      {'item' in e.gives ? ITEMS[e.gives.item].note : 'eat' in e.gives ? 'กินเลยที่ร้าน' : 'เพิ่มช่องในกระเป๋า'}
                       {recipe && ' · คราฟเองได้'}
                     </small>
                   </span>
@@ -62,7 +66,7 @@ export function ShopWindow({ onClose }: { onClose: () => void }) {
             })}
           </ul>
         ) : owned.length === 0 ? (
-          <p className="hint">ยังไม่มีของจะขาย — ลองเก็บกิ่งไม้ ก้อนหิน หรือตัดต้นไม้ดูนะ</p>
+          <p className="hint">{def.buys ? `ร้านนี้รับซื้อเฉพาะ: ${def.buys.map((b) => ITEMS[b].name).join(' ')} — ของอื่นขายที่ร้านค้าป้าศรีริมถนนใหญ่` : 'ยังไม่มีของจะขาย — ลองเก็บกิ่งไม้ ก้อนหิน หรือตัดต้นไม้ดูนะ'}</p>
         ) : (
           <ul className="shop-list">
             {owned.map((id) => {

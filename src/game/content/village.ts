@@ -14,6 +14,9 @@ export type PlaceKind =
   | 'npchouse'
   | 'chedi'
   | 'school'
+  | 'garage'
+  | 'eventground'
+  | 'lake'
 
 export interface Place {
   id: string
@@ -23,6 +26,8 @@ export interface Place {
   /** ขนาดพื้นที่ (กว้าง x ลึก) */
   size: Vec2
   rotation?: number
+  /** ร้านค้า: big = ร้านใหญ่ริมถนน · stall = ร้านประจำซอย */
+  style?: 'big' | 'stall'
   /** ข้อความเมื่อผู้เล่นเดินมาถึง */
   arriveText?: string
   /** ระบบที่จะเปิดใช้ในอนาคต (แสดงเป็น "เร็ว ๆ นี้") */
@@ -55,11 +60,19 @@ export const WORLD_HALF_SIZE = 90
 export const SPAWN: Vec2 = [0, 8]
 
 export const ROADS: Road[] = [
-  { from: [-80, 0], to: [80, 0], width: 5 }, // ถนนสายหลักกลางหมู่บ้าน
-  { from: [0, -34], to: [0, 0], width: 4 }, // ถนนไปวัด (ต่อด้วยทางเดินหินในลานวัด)
-  { from: [30, 0], to: [30, 60], width: 3.5 }, // ซอยไปบ้านผู้เล่น
-  { from: [-35, 0], to: [-35, 45], width: 3.5 }, // ทางไปบ่อปลา
-  { from: [66, 0], to: [66, -40], width: 3.5 }, // ทางไปโรงเรียน
+  // ถนนใหญ่ตัดผ่านหมู่บ้าน (ตะวันตก–ตะวันออก)
+  { from: [-88, 0], to: [88, 0], width: 7 },
+  // สี่แยกกลางหมู่บ้าน: แยกเหนือไปทุ่งนา · แยกใต้ไปวัด
+  { from: [0, 3.5], to: [0, 27], width: 5 },
+  { from: [0, -3.5], to: [0, -38], width: 5 },
+  // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
+  { from: [30, 3.5], to: [30, 60], width: 3.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
+  { from: [-35, 3.5], to: [-35, 45], width: 3.5 }, // ซอย 2 ไปบ่อปลา · ร้านข้าวแกง
+  { from: [66, -3.5], to: [66, -36], width: 3.5 }, // ซอย 3 · ร้านเครื่องมือช่าง
+  { from: [-30, -3.5], to: [-30, -30], width: 3.5 }, // ซอย 4 · ร้านจักสาน
+  { from: [-60, 3.5], to: [-60, 40], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์
+  // ถนนเข้าโรงเรียนวัดบ้านไพบูลย์
+  { from: [-62, -3.5], to: [-62, -45], width: 4.5 },
 ]
 
 export const PLACES: Place[] = [
@@ -81,7 +94,25 @@ export const PLACES: Place[] = [
     pos: [30, -62],
     size: [26, 26],
     arriveText: 'พระเจดีย์องค์ใหญ่ข้างวัด มีวิหารเล็กให้เข้าไปกราบไหว้',
-    // วงชนรอบฐานเจดีย์ (เว้นด้านหน้าให้ขึ้นบันไดไปหน้าวิหารเล็กได้)
+    solidRadius: 0,
+  },
+  {
+    id: 'school',
+    name: 'โรงเรียนวัดบ้านไพบูลย์',
+    kind: 'school',
+    pos: [-62, -62],
+    size: [34, 34],
+    arriveText: 'โรงเรียนขนาดใหญ่ของหมู่บ้าน มีสนามเด็กเล่น โรงอาหาร โดมกีฬา เวที และแปลงผัก',
+    comingSoon: 'กิจกรรมโรงเรียน (เร็ว ๆ นี้)',
+    solidRadius: 0,
+  },
+  {
+    id: 'school-pond',
+    name: 'บ่อน้ำระหว่างโรงเรียนกับวัด',
+    kind: 'lake',
+    pos: [-31, -62],
+    size: [22, 30],
+    arriveText: 'บ่อน้ำใหญ่กั้นระหว่างโรงเรียนกับวัด มีสะพานไม้ทางเดินเดิมเชื่อมสองฝั่ง',
     solidRadius: 0,
   },
   {
@@ -94,11 +125,49 @@ export const PLACES: Place[] = [
     comingSoon: 'ประชุมหมู่บ้านและเทศกาล (Part 7)',
     solidRadius: 0,
   },
+  // ---------- ถนนใหญ่: ร้านค้าขนาดใหญ่ → ร้านซ่อมรถ (ติดกัน) → ลานกิจกรรม ----------
+  {
+    id: 'shop',
+    name: 'ร้านค้าป้าศรี (ร้านใหญ่)',
+    kind: 'shop',
+    style: 'big',
+    pos: [16, -11],
+    size: [12, 8],
+    arriveText: 'ร้านค้าขนาดใหญ่ริมถนนใหญ่ มีของครบ รับซื้อของทุกอย่าง',
+    solidRadius: 0,
+  },
+  {
+    id: 'garage',
+    name: 'อู่ซ่อมรถช่างเปี๊ยก',
+    kind: 'garage',
+    pos: [31, -11],
+    size: [9, 7],
+    arriveText: 'ร้านซ่อมรถติดกับร้านค้าใหญ่ ซ่อมจักรยาน มอเตอร์ไซค์ รถไถ',
+    comingSoon: 'ซ่อม/ซื้อยานพาหนะ (เร็ว ๆ นี้)',
+    solidRadius: 0,
+  },
+  {
+    id: 'eventground',
+    name: 'ลานกิจกรรมหมู่บ้าน',
+    kind: 'eventground',
+    pos: [51, -15],
+    size: [22, 14],
+    arriveText: 'ลานจัดงานเทศกาล งานประจำหมู่บ้าน และกิจกรรมตามฤดูกาล',
+    comingSoon: 'งานเทศกาล สงกรานต์ ลอยกระทง กีฬาหมู่บ้าน (เร็ว ๆ นี้)',
+    solidRadius: 0,
+  },
+  // ---------- ร้านประจำซอย (ขายของต่างกัน) ----------
+  { id: 'shop-plants', name: 'ร้านต้นไม้ลุงชิต (ซอย 1)', kind: 'shop', style: 'stall', color: '#5f9e47', pos: [35.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'เมล็ดผัก ต้นกล้า และของทำสวน', solidRadius: 0 },
+  { id: 'shop-food', name: 'ร้านข้าวแกงป้านวล (ซอย 2)', kind: 'shop', style: 'stall', color: '#e0802e', pos: [-40.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'ข้าวแกง ขนม น้ำดื่ม กินอิ่มเติมแรง', solidRadius: 0 },
+  { id: 'shop-tools', name: 'ร้านเครื่องมือช่างหน่อย (ซอย 3)', kind: 'shop', style: 'stall', color: '#4a6a8a', pos: [71.5, -8], size: [6, 5], arriveText: 'ขวาน ค้อน เลื่อย มีดพร้า เครื่องมือช่างครบ', solidRadius: 0 },
+  { id: 'shop-craft', name: 'ร้านจักสานยายจันทร์ (ซอย 4)', kind: 'shop', style: 'stall', color: '#b8904a', pos: [-24.5, -9], size: [6, 5], arriveText: 'กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน', solidRadius: 0 },
+  { id: 'shop-pet', name: 'ร้านอาหารสัตว์พี่แดง (ซอย 5)', kind: 'shop', style: 'stall', color: '#c0504a', pos: [-54.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์', solidRadius: 0 },
+  // ---------- บอร์ดประกาศ 3 จุด ----------
   {
     id: 'questboard',
     name: 'บอร์ดประกาศหน้าหมู่บ้าน',
     kind: 'questboard',
-    pos: [-72, 5],
+    pos: [-74, 6],
     size: [3, 1],
     rotation: Math.PI,
     arriveText: 'ข่าวสารประจำหมู่บ้าน กิจกรรมตามฤดูกาล และภารกิจพิเศษ',
@@ -108,7 +177,7 @@ export const PLACES: Place[] = [
     id: 'board-school',
     name: 'บอร์ดประกาศหน้าโรงเรียน',
     kind: 'questboard',
-    pos: [70, -35],
+    pos: [-57.5, -42],
     size: [3, 1],
     rotation: 0,
     arriveText: 'ข่าวและกิจกรรมของโรงเรียน รับสมัครเข้าร่วมกิจกรรม',
@@ -118,31 +187,11 @@ export const PLACES: Place[] = [
     id: 'board-headman',
     name: 'บอร์ดประกาศหน้าบ้านผู้ใหญ่บ้าน',
     kind: 'questboard',
-    pos: [-59, -5],
+    pos: [-67, -7.5],
     size: [3, 1],
     rotation: 0,
     arriveText: 'ประกาศจากผู้ใหญ่บ้าน งานช่วยเหลือชาวบ้าน และตามหาของหาย',
     solidRadius: 1.2,
-  },
-  {
-    id: 'school',
-    name: 'โรงเรียน',
-    kind: 'school',
-    pos: [66, -46],
-    size: [16, 9],
-    arriveText: 'โรงเรียนประจำหมู่บ้าน เด็ก ๆ มาเรียนทุกวัน',
-    comingSoon: 'กิจกรรมโรงเรียน (เร็ว ๆ นี้)',
-    solidRadius: 0,
-  },
-  {
-    id: 'shop',
-    name: 'ร้านค้าป้าศรี',
-    kind: 'shop',
-    pos: [14, -10],
-    size: [7, 6],
-    arriveText: 'ร้านขายของชำประจำหมู่บ้าน',
-    comingSoon: 'ซื้อเครื่องมือ กระเป๋า และขายของที่เก็บมา',
-    solidRadius: 4,
   },
   {
     id: 'training',
@@ -176,12 +225,12 @@ export const PLACES: Place[] = [
   },
   // บ้านชาวบ้าน (Part 6 จะใส่ชาวบ้านและกิจวัตร)
   { id: 'house-khiao', name: 'บ้านลุงเขียว', kind: 'npchouse', pos: [-30, 18], size: [6, 5], color: '#7d5a3c', solidRadius: 4.2 },
-  { id: 'house-si', name: 'บ้านป้าศรี', kind: 'npchouse', pos: [22, -18], size: [6, 5], color: '#c9b79a', solidRadius: 4.2 },
+  { id: 'house-si', name: 'บ้านป้าศรี', kind: 'npchouse', pos: [22, -27], size: [6, 5], color: '#c9b79a', solidRadius: 4.2 },
   { id: 'house-mai', name: 'บ้านยายไหม', kind: 'npchouse', pos: [-46, -34], size: [6, 5], color: '#8f6a46', solidRadius: 4.2 },
-  { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [46, -14], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
+  { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [80, -16], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
   { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-20, 10], size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
-  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [-64, -11], size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
+  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [-71, -14], size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
 export const PLOTS: Plot[] = [

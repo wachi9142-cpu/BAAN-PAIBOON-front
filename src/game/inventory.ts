@@ -106,7 +106,10 @@ export function buy(e: ShopEntry) {
     toast('เงินไม่พอ', `ต้องใช้ ${e.price} บาท`, 'warn')
     return false
   }
-  if ('bagLevel' in e.gives) {
+  if ('eat' in e.gives) {
+    g.changeStats(e.gives.eat)
+    toast(`${e.icon} อร่อยจัง!`, e.gives.eat.thirst && !e.gives.eat.hunger ? 'ชื่นใจ หายหิวน้ำ' : 'อิ่มท้อง มีแรงทำงานต่อ', 'success')
+  } else if ('bagLevel' in e.gives) {
     if (g.save.bagLevel >= e.gives.bagLevel) {
       toast('มีกระเป๋าใบนี้หรือใหญ่กว่าแล้ว', undefined, 'info')
       return false

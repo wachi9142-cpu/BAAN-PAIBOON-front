@@ -51,7 +51,7 @@ interface Props {
 }
 
 export type CharacterAction = 'sweep' | 'hoe' | 'talk'
-export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand'
+export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -221,9 +221,12 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     // ---------- ท่าในวัด ----------
     if (poseStart.current.pose !== pose) poseStart.current = { pose, t: idle.current }
     const pt = idle.current - poseStart.current.t
-    const kneel = m === 0 && pose === 'prostrate'
+    const kneel = m === 0 && (pose === 'prostrate' || pose === 'shake')
     let bow = 0
-    if (kneel) {
+    if (kneel && pose === 'shake') {
+      if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, 1.45)
+      if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, 1.45)
+    } else if (kneel) {
       // คุกเข่า: ขาพับไปด้านหลังราบกับพื้น ตัวลดต่ำลง
       if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, 1.45)
       if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, 1.45)
@@ -601,6 +604,27 @@ function StrawHat() {
 
 /** เครื่องมือในมือขวา (จุดกำเนิด = มือ, ด้ามยาวต่อลงไปตามแนวแขน) */
 function Tool({ kind }: { kind: ToolId }) {
+  if (kind === 'siamsi') {
+    // กระบอกเซียมซีสีแดงทรงสูง (ขนาดพอดีมือ) มีไม้สีแดงอยู่ข้างใน — ถือเอียงไปข้างหน้า
+    return (
+      <group position={[-0.08, -0.55, 0.06]} rotation={[0.9, 0, 0.2]}>
+        <mesh>
+          <cylinderGeometry args={[0.055, 0.05, 0.26, 16]} />
+          <meshStandardMaterial color="#b8323a" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, 0.13, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.055, 0.007, 6, 16]} />
+          <meshStandardMaterial color="#d9a441" metalness={0.6} roughness={0.35} />
+        </mesh>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <mesh key={i} position={[Math.cos(i * 0.7) * 0.03, 0.17, Math.sin(i * 0.7) * 0.03]} rotation={[Math.sin(i) * 0.12, 0, Math.cos(i) * 0.12]}>
+            <boxGeometry args={[0.012, 0.16, 0.004]} />
+            <meshStandardMaterial color="#c8423a" />
+          </mesh>
+        ))}
+      </group>
+    )
+  }
   if (kind === 'axe' || kind === 'axe2') {
     // ขวาน: ด้ามไม้ยื่นไปข้างหน้าจากมือ หัวเหล็กที่ปลาย (ขวานเหล็กหัวใหญ่ สีเงินกว่า)
     const big = kind === 'axe2'

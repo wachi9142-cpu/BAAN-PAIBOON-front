@@ -339,7 +339,7 @@ export function Player() {
         appearance={riding ? { ...save.player.appearance, pose: 'ride' } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
-        tool={riding || gesture || equipped === 'hand' ? undefined : equipped}
+        tool={gesture === 'shake' ? 'siamsi' : riding || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
         wandGem={wandGem}
         aim={wandCast}

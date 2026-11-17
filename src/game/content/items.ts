@@ -135,7 +135,7 @@ export interface ShopEntry {
   name: string
   icon: string
   price: number
-  gives: { item: ItemId; qty: number } | { bagLevel: number }
+  gives: { item: ItemId; qty: number } | { bagLevel: number } | { eat: { hunger?: number; thirst?: number; fun?: number } }
 }
 export const SHOP: ShopEntry[] = [
   { id: 'axe', name: 'ขวาน', icon: '🪓', price: 120, gives: { item: 'axe', qty: 1 } },

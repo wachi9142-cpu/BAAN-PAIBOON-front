@@ -23,9 +23,7 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
     out.push({ x: plot.center[0] + plot.houseOffset[0], z: plot.center[1] + plot.houseOffset[1], r: Math.max(w, d) * 0.62 })
   }
   out.push(...templeWalls())
-  // อาคารเรียน (ด้านหลังของพื้นที่โรงเรียน)
-  const sc = PLACES.find((p) => p.id === 'school')
-  if (sc) out.push({ minX: sc.pos[0] - 7, maxX: sc.pos[0] + 7, minZ: sc.pos[1] - 4.3, maxZ: sc.pos[1] - 0.3 })
+  out.push(...campusWalls())
   for (const s of structures) out.push(...structureColliders(s))
   // หีบสมบัติ: ชนเป็นวงกลมเล็ก ๆ
   for (const ch of CHEST_SPOTS) out.push({ x: ch.pos[0], z: ch.pos[1], r: 0.55 })
@@ -73,4 +71,34 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[]): Vec2 {
   }
   const lim = WORLD_HALF_SIZE - 1
   return [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, z))]
+}
+
+/** โรงเรียนวัดบ้านไพบูลย์ + บ่อน้ำ: รั้วรอบโรงเรียน (เว้นประตูเหนือและตะวันออก) · อาคาร · บ่อน้ำเดินไม่ได้ ยกเว้นสะพานไม้ */
+export function campusWalls(): Rect[] {
+  const out: Rect[] = []
+  const sc = PLACES.find((p) => p.id === 'school')
+  if (sc) {
+    const [cx, cz] = sc.pos
+    const h = sc.size[0] / 2
+    const t = 0.25
+    const R = (x0: number, x1: number, z0: number, z1: number) => out.push({ minX: cx + x0, maxX: cx + x1, minZ: cz + z0, maxZ: cz + z1 })
+    R(-h, h, -h - t, -h + t) // รั้วใต้
+    R(-h - t, -h + t, -h, h) // รั้วตะวันตก
+    R(-h, -2.5, h - t, h + t) // รั้วเหนือ ซ้ายประตู
+    R(2.5, h, h - t, h + t) // รั้วเหนือ ขวาประตู
+    R(h - t, h + t, -h, -3.5) // รั้วตะวันออก ใต้ประตูสะพาน
+    R(h - t, h + t, -0.5, h) // รั้วตะวันออก เหนือประตูสะพาน
+    R(-12, 12, -15, -8.5) // อาคารเรียนหลัก
+    R(13.2, 16.4, -6.6, -3.4) // ห้องน้ำ
+    R(4.6, 11.4, -6.4, -3.6) // เวที
+  }
+  const lk = PLACES.find((p) => p.id === 'school-pond')
+  if (lk) {
+    const [cx, cz] = lk.pos
+    const [w, d] = lk.size
+    // สะพานที่ z = cz - 2 กว้าง 2.6 ม.
+    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz - 3.3 })
+    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - 0.7, maxZ: cz + d / 2 })
+  }
+  return out
 }

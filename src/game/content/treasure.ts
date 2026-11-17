@@ -83,10 +83,10 @@ export interface ChestSpot {
 export const CHEST_SPOTS: ChestSpot[] = [
   { id: 'wood-1', kind: 'wood', pos: [-4, 22], rot: 0.4 },
   { id: 'wood-2', kind: 'wood', pos: [26, 10], rot: -0.6 },
-  { id: 'wood-3', kind: 'wood', pos: [-26, -10], rot: 1.2 },
+  { id: 'wood-3', kind: 'wood', pos: [-24, -22], rot: 1.2 },
   { id: 'iron-1', kind: 'iron', pos: [52, -36], rot: -1.1 },
-  { id: 'iron-2', kind: 'iron', pos: [-58, 10], rot: 0.9 },
-  { id: 'magic-1', kind: 'magic', pos: [-24, -50], rot: 0.2 },
+  { id: 'iron-2', kind: 'iron', pos: [-70, 30], rot: 0.9 },
+  { id: 'magic-1', kind: 'magic', pos: [-20, -36], rot: 0.2 },
   { id: 'ancient-1', kind: 'ancient', pos: [66, 26], rot: -1.6 },
   { id: 'secret-1', kind: 'secret', pos: [-76, 70], rot: 2.4 },
   { id: 'secret-2', kind: 'secret', pos: [74, -72], rot: -2.2 },

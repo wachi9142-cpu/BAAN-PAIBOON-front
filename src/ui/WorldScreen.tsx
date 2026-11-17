@@ -1,3 +1,4 @@
+import { isShop, SHOPS } from '../game/content/shops'
 import { isBoard, openBoard, useBoard } from '../game/noticeboard'
 import { NoticeBoardWindow } from './NoticeBoardWindow'
 import { chestHint, openChest, useChests } from '../game/treasure'
@@ -30,12 +31,13 @@ import { Wildlife } from '../scenes/Wildlife'
 import { DayLight } from '../scenes/DayLight'
 import { SPEEDS, skipToNextPeriod, syncClockFromSave, tickClock, useClock } from '../game/clock'
 import { isShopOpen, SHOP_HOURS, timePeriodAt } from '../game/content/daytime'
-import { applyGoldLeaf, birthdayCoin, bowThreeTimes, donate, drawSiamsi, lightIncense, pourWater, ringBell, toggleShoes, useMerit, useTemple } from '../game/templeActions'
+import { applyGoldLeaf, birthdayCoin, bowThreeTimes, donate, drawFromCup, drawSiamsi, lightIncense, pourWater, ringBell, takeSlip, toggleShoes, useMerit, useTemple } from '../game/templeActions'
 import { BIRTH_DAYS } from '../game/content/temple'
 import { TalkWindow } from './TalkWindow'
 import { startTalk, useTalk } from '../game/talk'
 import { NPC_INFO } from '../game/content/villagers'
-import { FORTUNE_LEVEL } from '../game/content/siamsi'
+import { FortuneCard } from './FortuneCard'
+import { CUPS, STICKS_PER_CUP } from '../game/content/siamsi'
 import { ShopWindow } from './ShopWindow'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
@@ -100,7 +102,7 @@ export function WorldScreen() {
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
   const [menuTab, setMenuTab] = useState<Tab | undefined>(undefined)
-  const [shop, setShop] = useState(false)
+  const [shop, setShop] = useState<string | null>(null)
   const [temple, setTemple] = useState(false)
   const nearWorshipNow = useGame((s) => s.nearWorship)
   useEffect(() => {
@@ -132,6 +134,11 @@ export function WorldScreen() {
       }
       if (e.code === 'Escape') {
         setPauseOpen(false)
+        const tp = useTemple.getState()
+        if (tp.stick || tp.cupPick || tp.fortune) {
+          useTemple.setState({ stick: null, cupPick: false, fortune: null })
+          return
+        }
         if (useBoard.getState().open) {
           useBoard.setState({ open: null })
           return
@@ -153,9 +160,10 @@ export function WorldScreen() {
           if (useBoard.getState().open) useBoard.setState({ open: null })
           else openBoard(g.nearbyPlaceId)
         }
-        else if (g.nearbyPlaceId === 'shop') {
-          if (isShopOpen(useClock.getState().minute)) setShop((o) => !o)
-          else g.toast({ title: 'ร้านป้าศรีปิดแล้ว', body: `เปิด ${String(SHOP_HOURS.open).padStart(2, '0')}:00 – ${SHOP_HOURS.close}:00 น.`, tone: 'info' })
+        else if (isShop(g.nearbyPlaceId)) {
+          const id = g.nearbyPlaceId
+          if (isShopOpen(useClock.getState().minute)) setShop((o) => (o ? null : id))
+          else g.toast({ title: `${SHOPS[id].name}ปิดแล้ว`, body: `เปิด ${String(SHOP_HOURS.open).padStart(2, '0')}:00 – ${SHOP_HOURS.close}:00 น.`, tone: 'info' })
         }
         else if (g.nearWorship) setTemple((o) => !o)
         else if (useTalk.getState().near && !useTalk.getState().talking) startTalk(useTalk.getState().near!)
@@ -164,6 +172,7 @@ export function WorldScreen() {
           if (sp.startsWith('bell')) ringBell(sp)
           else if (sp === 'water') pourWater()
           else if (sp === 'shoes') toggleShoes()
+          else if (sp === 'slips') takeSlip()
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
         }
         else if (useChests.getState().near) openChest(useChests.getState().near!)
@@ -231,10 +240,12 @@ export function WorldScreen() {
         <PetBond />
       </Canvas>
       <TimeAlerts />
-      <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} onShop={() => setShop(true)} />
-      {shop && !menu && <ShopWindow onClose={() => setShop(false)} />}
+      <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} onShop={(id) => setShop(id)} />
+      {shop && !menu && <ShopWindow shopId={shop} onClose={() => setShop(null)} />}
       {temple && !menu && <TemplePanel onClose={() => setTemple(false)} />}
       <FortuneSlip />
+      <CupPicker />
+      <StickPopup />
       <MeritPopup />
       <SeedPicker />
       <NoticeBoardWindow />
@@ -529,23 +540,72 @@ function MeritPopup() {
   )
 }
 
-/** ใบเซียมซีที่ได้ */
+/** ใบเซียมซีที่หยิบจากตู้หน้าโบสถ์ */
 function FortuneSlip() {
   const f = useTemple((s) => s.fortune)
   const close = useTemple((s) => s.closeFortune)
   if (!f) return null
-  const lv = FORTUNE_LEVEL[f.level]
   return (
     <div className="menu-backdrop" onClick={close}>
-      <div className="fortune-slip" role="dialog" aria-label="ใบเซียมซี" onClick={(e) => e.stopPropagation()}>
-        <div className="fortune-no">ใบที่ {f.no}</div>
-        <div className="fortune-level" style={{ background: lv.color }}>
-          {lv.label}
-        </div>
-        <p className="fortune-text">{f.text}</p>
-        <p className="fortune-advice">คำแนะนำ: {f.advice}</p>
+      <div className="fortune-wrap" role="dialog" aria-label="ใบเซียมซี" onClick={(e) => e.stopPropagation()}>
+        <FortuneCard f={f} />
+        <p className="hint" style={{ color: '#fff8ea', textAlign: 'center' }}>เก็บไว้ในสมุดเซียมซีแล้ว (เมนู → สมุดเซียมซี)</p>
         <button type="button" className="btn small" onClick={close}>
           🙏 สาธุ
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** เลือกกระบอกเซียมซี 3 กระบอก */
+function CupPicker() {
+  const open = useTemple((s) => s.cupPick)
+  if (!open) return null
+  const close = () => useTemple.setState({ cupPick: false })
+  return (
+    <div className="menu-backdrop" onClick={close}>
+      <div className="menu cup-pick" role="dialog" aria-label="เลือกกระบอกเซียมซี" onClick={(e) => e.stopPropagation()}>
+        <h3>🎋 ตั้งจิตอธิษฐาน แล้วเลือกกระบอก</h3>
+        <p className="hint">ถามคำถามในใจ · เขย่าจนไม้หล่นออกมา 1 อัน · เสี่ยงได้วันละ 1 ครั้ง</p>
+        <div className="cups">
+          {CUPS.map((c) => (
+            <button key={c.id} type="button" className="cup-btn" onClick={() => drawFromCup(c.id)}>
+              <span className="cup-art" aria-hidden="true">
+                <span className="cup-sticks" />
+                <span className="cup-body" />
+              </span>
+              <strong>{c.name}</strong>
+              <small>เลข 1–{STICKS_PER_CUP}</small>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="btn ghost small" onClick={close}>
+          ปิด
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** ไม้เซียมซีที่หล่นออกมา */
+function StickPopup() {
+  const st = useTemple((s) => s.stick)
+  if (!st) return null
+  const close = () => useTemple.setState({ stick: null })
+  return (
+    <div className="menu-backdrop" onClick={close}>
+      <div className="menu stick-pop" role="dialog" aria-label="ไม้เซียมซี" onClick={(e) => e.stopPropagation()}>
+        <div className="stick-art" aria-hidden="true">
+          <span>{st.no}</span>
+        </div>
+        <h3>ไม้เซียมซีหล่นออกมาแล้ว!</h3>
+        <p>
+          กระบอก <strong>{CUPS[st.cup].name}</strong> · เลขที่ <strong>{st.no}</strong>
+        </p>
+        <p className="hint">เดินออกไปหยิบใบคำทำนายที่ตรงกับเลขนี้ ที่ตู้ใบเซียมซีหน้าโบสถ์ (ลานด้านขวา)</p>
+        <button type="button" className="btn small" onClick={close}>
+          🙏 รับทราบ
         </button>
       </div>
     </div>
@@ -594,7 +654,7 @@ function snapWorld() {
   useGame.getState().toast({ title: '📷 ถ่ายภาพแล้ว', body: 'บันทึกเป็นไฟล์รูปในเครื่อง (โฟลเดอร์ดาวน์โหลด)', tone: 'info' })
 }
 
-function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => void; onShop: () => void }) {
+function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => void; onShop: (id: string) => void }) {
   const gatherTarget = useGame((s) => s.gatherTarget)
   const wildTarget = useGame((s) => s.wildTarget)
   const nearWorship = useGame((s) => s.nearWorship)
@@ -654,9 +714,9 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
         <div className="interact">
           <h3>{place.name}</h3>
           {place.arriveText && <p>{place.arriveText}</p>}
-          {place.id === 'shop' ? (
-            <button className="btn small" onClick={onShop}>
-              🛒 เข้าร้าน (E)
+          {isShop(place.id) ? (
+            <button className="btn small" onClick={() => onShop(place.id)}>
+              {SHOPS[place.id].icon} เข้าร้าน (E)
             </button>
           ) : isBoard(place.id) ? (
             <button className="btn small" onClick={() => openBoard(place.id as Parameters<typeof openBoard>[0])}>
@@ -688,6 +748,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                 ? '🕯️ จุดธูปเทียนบูชา'
                 : meritSpot === 'water'
                   ? '💧 กรวดน้ำ'
+                  : meritSpot === 'slips'
+                  ? '📜 หยิบใบคำทำนายเซียมซี'
                   : meritSpot === 'shoes'
                   ? shoesOff
                     ? '👟 ใส่รองเท้า'

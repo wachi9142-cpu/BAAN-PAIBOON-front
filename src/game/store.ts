@@ -74,6 +74,21 @@ export interface SaveData {
   chestsOpened?: Record<string, number>
   /** อ่านประกาศบนบอร์ดแต่ละจุดล่าสุดวันที่ */
   boardSeen?: Record<string, number>
+  /** เซียมซี: วันที่เสี่ยงล่าสุด · เลขที่ได้แต่ยังไม่ได้หยิบใบ · ประวัติทั้งหมด */
+  siamsi?: {
+    lastDrawDay?: number
+    pending?: SiamsiDraw
+    history: SiamsiDraw[]
+  }
+}
+
+export interface SiamsiDraw {
+  week: number
+  day: number
+  cup: 0 | 1 | 2
+  no: number
+  /** หยิบใบคำทำนายมาอ่านแล้ว (ได้โบนัสแล้ว) */
+  read?: boolean
 }
 
 export interface QuestState {

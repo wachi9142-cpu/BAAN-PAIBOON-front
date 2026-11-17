@@ -65,6 +65,8 @@ export function templeWalls(): Rect[] {
     // ระฆัง + แท่นธูปเทียน
     ...SPOT_LOCAL.bells.map(([x, z]) => ({ minX: cx + x - 0.3, maxX: cx + x + 0.3, minZ: cz + z - 0.7, maxZ: cz + z + 0.7 })),
     { minX: cx + SPOT_LOCAL.incense[0] - 0.7, maxX: cx + SPOT_LOCAL.incense[0] + 2.1, minZ: cz + SPOT_LOCAL.incense[1] - 0.45, maxZ: cz + SPOT_LOCAL.incense[1] + 0.45 },
+    // ตู้ใบเซียมซี
+    { minX: cx + SPOT_LOCAL.slips[0] - 0.9, maxX: cx + SPOT_LOCAL.slips[0] + 2.4, minZ: cz + SPOT_LOCAL.slips[1] - 0.35, maxZ: cz + SPOT_LOCAL.slips[1] + 0.35 },
     // พระเจดีย์องค์ใหญ่ข้างวัด (ฐานองค์ระฆัง)
     { minX: 30 - 9.1, maxX: 30 + 9.1, minZ: -62 - 9.1, maxZ: -62 + 9.1 },
     // เสามุขหน้า
@@ -83,7 +85,7 @@ export function insideTempleBox(x: number, z: number) {
 }
 
 // ---------- จุดทำบุญรอบโบสถ์ ----------
-export type TempleSpotKind = 'donate' | 'birthday' | 'incense' | 'bell' | 'water' | 'shoes'
+export type TempleSpotKind = 'donate' | 'birthday' | 'incense' | 'bell' | 'water' | 'shoes' | 'slips'
 export interface TempleSpot {
   id: string
   kind: TempleSpotKind
@@ -103,6 +105,8 @@ export const SPOT_LOCAL = {
   water: [-2.2, TEMPLE.hallD / 2 + 1.4] as const,
   /** ป้ายลำดับการทำบุญ */
   sign: [-5.6, TEMPLE.hallD / 2 + TEMPLE.porch + TEMPLE.stairLen + 6.5] as const,
+  /** ตู้ใบคำทำนายเซียมซี + ป้ายวิธีใช้ (ลานหน้าโบสถ์ ฝั่งขวา) */
+  slips: [5.4, TEMPLE.hallD / 2 + TEMPLE.porch + TEMPLE.stairLen + 3.6] as const,
   /** ระฆังสองข้างโบสถ์ */
   bells: [-1, 1].flatMap((sx) => [-6, -2, 2, 6].map((z) => [sx * (TEMPLE.hallW / 2 + 2.8), z] as const)),
 }
@@ -115,6 +119,7 @@ export function templeSpots(): TempleSpot[] {
     { id: 'incense', kind: 'incense', x: cx + SPOT_LOCAL.incense[0], z: cz + SPOT_LOCAL.incense[1] },
     { id: 'water', kind: 'water', x: cx + SPOT_LOCAL.water[0], z: cz + SPOT_LOCAL.water[1] },
     { id: 'shoes', kind: 'shoes', x: cx + SPOT_LOCAL.shoes[0], z: cz + SPOT_LOCAL.shoes[1] },
+    { id: 'slips', kind: 'slips', x: cx + SPOT_LOCAL.slips[0], z: cz + SPOT_LOCAL.slips[1] + 0.9 },
     ...SPOT_LOCAL.bells.map(([x, z], i) => ({ id: 'bell' + i, kind: 'bell' as const, x: cx + x, z: cz + z })),
   ]
 }

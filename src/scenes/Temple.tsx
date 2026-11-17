@@ -1,7 +1,9 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
-import { useMerit } from '../game/templeActions'
+import { useMerit, useTemple } from '../game/templeActions'
+import { CanvasTexture, SRGBColorSpace } from 'three'
+import { CUPS } from '../game/content/siamsi'
 import { LatheGeometry, Shape, Vector2 } from 'three'
 import { RBox } from './models/RBox'
 import { SignBoard } from './SignBoard'
@@ -15,6 +17,7 @@ import { useGame } from '../game/store'
  */
 export function Temple({ placeZ }: { placeZ: number }) {
   const goldLeaf = useGame((s) => s.save?.goldLeaf ?? 0)
+  const shakingCup = useTemple((s) => s.shakingCup)
   const { hallW: W, hallD: D, wallH: H, door } = TEMPLE
   const offZ = TEMPLE.pos[1] - placeZ
   const t = 0.35 // ความหนาผนัง
@@ -385,18 +388,9 @@ export function Temple({ placeZ }: { placeZ: number }) {
           </mesh>
         ))}
         {/* กระบอกเซียมซีบนโต๊ะ */}
-        <group position={[-1.35, 0.9, 1.0]}>
-          <mesh position={[0, 0.2, 0]}>
-            <cylinderGeometry args={[0.13, 0.12, 0.4, 14]} />
-            <meshStandardMaterial color="#a8323a" />
-          </mesh>
-          {Array.from({ length: 7 }).map((_, i) => (
-            <mesh key={i} position={[Math.cos(i * 0.9) * 0.06, 0.48, Math.sin(i * 0.9) * 0.06]} rotation={[Math.sin(i) * 0.1, 0, Math.cos(i) * 0.1]}>
-              <cylinderGeometry args={[0.01, 0.01, 0.35, 5]} />
-              <meshStandardMaterial color="#d8b878" />
-            </mesh>
-          ))}
-        </group>
+        {[-1.62, -1.38, -1.14].map((x, ci) => (
+          <SiamsiCupModel key={ci} position={[x, 0.9, 1.0]} hidden={shakingCup === ci} />
+        ))}
         {/* พระยืนซ้าย-ขวา */}
         {[-1, 1].map((s) => (
           <group key={'s' + s} position={[s * 2.9, 0, -0.9]}>
@@ -659,6 +653,7 @@ function MeritSpots({ floorY, W, D, H }: { floorY: number; W: number; D: number;
         </mesh>
       </group>
       {/* ป้ายลำดับการทำบุญ */}
+      <SlipCabinet />
       <group position={[SPOT_LOCAL.sign[0], 0, SPOT_LOCAL.sign[1]]} rotation={[0, 0.35, 0]}>
         {[-0.75, 0.75].map((x) => (
           <mesh key={'sg' + x} position={[x, 0.9, -0.03]}>
@@ -899,6 +894,107 @@ export function BigChedi() {
           </mesh>
         </group>
       ))}
+    </group>
+  )
+}
+
+/** กระบอกเซียมซีสีแดงทรงสูง ขนาดพอดีมือ ไม้เซียมซีสีแดงปักอยู่ */
+function SiamsiCupModel({ position, hidden }: { position: [number, number, number]; hidden?: boolean }) {
+  if (hidden) return null
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.13, 0]} castShadow>
+        <cylinderGeometry args={[0.055, 0.05, 0.26, 16]} />
+        <meshStandardMaterial color="#b8323a" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.26, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.055, 0.007, 6, 16]} />
+        <meshStandardMaterial color="#d9a441" metalness={0.6} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, 0.12, 0.052]}>
+        <planeGeometry args={[0.05, 0.08]} />
+        <meshStandardMaterial color="#f6e6c0" />
+      </mesh>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <mesh key={i} position={[Math.cos(i * 0.55) * 0.03, 0.31, Math.sin(i * 0.55) * 0.03]} rotation={[Math.sin(i * 1.3) * 0.13, 0, Math.cos(i * 1.7) * 0.13]}>
+          <boxGeometry args={[0.012, 0.16, 0.004]} />
+          <meshStandardMaterial color="#c8423a" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ตู้เก็บใบเซียมซี (3 ชุดตามกระบอก ชุดละ 50 ช่อง) + ป้ายวิธีใช้แบบเรียบง่าย */
+function SlipCabinet() {
+  const tex = useMemo(() => {
+    const c = document.createElement('canvas')
+    c.width = 768
+    c.height = 512
+    const g = c.getContext('2d')!
+    g.fillStyle = '#f4ead4'
+    g.fillRect(0, 0, c.width, c.height)
+    g.fillStyle = '#a82e2e'
+    g.fillRect(0, 0, c.width, 70)
+    g.fillStyle = '#fff6d8'
+    g.font = 'bold 36px Mitr, sans-serif'
+    g.textAlign = 'center'
+    g.fillText('ตู้เก็บใบเซียมซี', c.width / 2, 48)
+    CUPS.forEach((cup, k) => {
+      const x0 = 14 + k * 251
+      g.fillStyle = '#7a3a2a'
+      g.font = 'bold 20px Mitr, sans-serif'
+      g.fillText(cup.name, x0 + 118, 98)
+      for (let n = 0; n < 50; n++) {
+        const col = n % 5
+        const row = Math.floor(n / 5)
+        const x = x0 + col * 47
+        const y = 110 + row * 39
+        g.fillStyle = '#e6d6b4'
+        g.fillRect(x, y, 43, 35)
+        g.fillStyle = '#fffaf0'
+        g.fillRect(x + 4, y + 16, 35, 15)
+        g.fillStyle = '#a82e2e'
+        g.font = '14px Mitr, sans-serif'
+        g.fillText(String(n + 1), x + 21, y + 13)
+      }
+    })
+    const tx = new CanvasTexture(c)
+    tx.colorSpace = SRGBColorSpace
+    return tx
+  }, [])
+  return (
+    <group position={[SPOT_LOCAL.slips[0], 0, SPOT_LOCAL.slips[1]]}>
+      {/* ตู้ไม้ */}
+      <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
+        <RBox args={[1.5, 1.8, 0.45]} radius={0.06} />
+        <meshStandardMaterial color="#7a4a2a" />
+      </mesh>
+      <mesh position={[0, 1.05, 0.231]}>
+        <planeGeometry args={[1.36, 0.9]} />
+        <meshStandardMaterial map={tex} />
+      </mesh>
+      <mesh position={[0, 1.88, 0]} castShadow>
+        <RBox args={[1.65, 0.12, 0.6]} radius={0.05} />
+        <meshStandardMaterial color="#a82e2e" />
+      </mesh>
+      {/* ป้ายวิธีใช้ (แบบเรียบง่าย) */}
+      <group position={[1.6, 0, 0.1]} rotation={[0, -0.25, 0]}>
+        {[-0.5, 0.5].map((x) => (
+          <mesh key={x} position={[x, 0.75, 0]} castShadow>
+            <RBox args={[0.08, 1.5, 0.08]} radius={0.03} />
+            <meshStandardMaterial color="#6e4a2e" />
+          </mesh>
+        ))}
+        <group position={[0, 1.15, 0.05]}>
+          <SignBoard
+            title="วิธีเสี่ยงเซียมซี"
+            lines={['1 ตั้งจิต ถามคำถามในใจ', '2 เลือกกระบอก เขย่าจนไม้หล่น 1 อัน', '3 จำเลขบนไม้เซียมซี', '4 หยิบใบคำทำนายตามเลขที่ตู้นี้', 'วันละ 1 ครั้ง · เปลี่ยนชุดทุกวันจันทร์']}
+            width={1.2}
+            height={0.85}
+          />
+        </group>
+      </group>
     </group>
   )
 }
