@@ -144,6 +144,24 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
           </mesh>
         </group>
       )
+    case 'widehat':
+      // หมวกผ้าปีกกว้าง (แบบที่ชาวบ้านใส่ทำงานกลางแดด)
+      return (
+        <group position={[0, 1.7, 0]} rotation={[-0.08, 0, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.34, 0.36, 0.02, 20]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.07, 0]}>
+            <sphereGeometry args={[0.18, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.02, 0]}>
+            <cylinderGeometry args={[0.183, 0.183, 0.035, 14]} />
+            <M c="#f1ece0" />
+          </mesh>
+        </group>
+      )
     case 'headphones':
       // หูฟังคล้องคอ
       return (

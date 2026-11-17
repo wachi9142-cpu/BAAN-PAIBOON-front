@@ -3,6 +3,12 @@ import {
   ACCESSORIES,
   AGE_GROUPS,
   AGE_RULES,
+  CANES,
+  SHAWLS,
+  type CaneId,
+  type ShawlId,
+  KID_ITEMS,
+  type KidItemId,
   type AgeGroup,
   ACCESSORY_COLORS,
   BAGS,
@@ -134,6 +140,12 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
           <ChipField label="เพศ" options={GENDERS} value={look.gender} onChange={(id) => chooseGender(id as Gender)} />
           <ChipField label="วัย" options={AGE_GROUPS} value={look.age ?? 'adult'} onChange={(id) => chooseAge(id as AgeGroup)} />
           {(look.age ?? 'adult') !== 'adult' && <p className="age-note">⚠️ {AGE_RULES[look.age!].note}</p>}
+          {look.age === 'child' && (
+            <ChipField label="ของถือ (เด็ก)" options={KID_ITEMS} value={look.kidItem ?? 'none'} onChange={(id) => patch({ kidItem: id as KidItemId })} />
+          )}
+          {look.age === 'elder' && (
+            <ChipField label="ไม้เท้า" options={CANES} value={look.cane ?? 'none'} onChange={(id) => patch({ cane: id as CaneId })} />
+          )}
           <ChipField label="สีผิว" options={SKIN_TONES} value={look.skin} onChange={(skin) => patch({ skin })} />
           <ColorChoiceField label="สีตา" options={EYE_COLORS} value={look.eyeColor ?? 'black'} onChange={(eyeColor) => patch({ eyeColor })} fallbackCustom="#8a4fc0" />
           <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
@@ -154,6 +166,7 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
           {look.accessory && look.accessory !== 'none' && (
             <ColorChoiceField label="สีเครื่องประดับ" options={ACCESSORY_COLORS} value={look.accessoryColor ?? 'navy'} onChange={(accessoryColor) => patch({ accessoryColor })} fallbackCustom="#e58fa0" />
           )}
+          <ChipField label="ผ้าคลุมไหล่" options={SHAWLS} value={look.shawl ?? 'none'} onChange={(id) => patch({ shawl: id as ShawlId })} />
           <ChipField label="กระเป๋า" options={BAGS} value={look.bag ?? 'none'} onChange={(id) => patch({ bag: id as BagId })} />
           {look.bag && look.bag !== 'none' && (
             <ColorChoiceField label="สีกระเป๋า" options={BAG_COLORS} value={look.bagColor ?? 'indigo'} onChange={(bagColor) => patch({ bagColor })} fallbackCustom="#5c7a3a" />

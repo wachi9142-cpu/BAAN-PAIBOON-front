@@ -4,6 +4,10 @@ import type { Group } from 'three'
 import {
   accessoryColorValue,
   AGE_RULES,
+  CANE_WALK,
+  SHAWLS,
+  type CaneId,
+  type KidItemId,
   bagColorValue,
   byId,
   clothColor,
@@ -65,6 +69,11 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const accColor = accessoryColorValue(appearance.accessoryColor)
   const pose = appearance.pose ?? 'stand'
   const age = AGE_RULES[appearance.age ?? 'adult']
+  // ไม้เท้าใช้ได้เฉพาะผู้สูงอายุ
+  const cane = appearance.age === 'elder' ? (appearance.cane ?? 'none') : 'none'
+  const shawl = SHAWLS.find((s) => s.id === (appearance.shawl ?? 'none'))!
+  // ของถือของเด็กใช้ได้เฉพาะวัยเด็ก
+  const kidItem = appearance.age === 'child' ? (appearance.kidItem ?? 'none') : 'none'
 
   const legL = useRef<Group>(null)
   const legR = useRef<Group>(null)
@@ -76,7 +85,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
 
   useFrame((_, dt) => {
     const m = motion?.current ?? 0
-    phase.current += dt * (m === 2 ? 13 : 8) * (m > 0 ? 1 : 0) * (m === 2 ? age.runSpeed : age.walkSpeed)
+    phase.current += dt * (m === 2 ? 13 : 8) * (m > 0 ? 1 : 0) * (m === 2 ? age.runSpeed : age.walkSpeed) * (cane !== 'none' ? CANE_WALK : 1)
     idle.current += dt
     const swing = m > 0 ? Math.sin(phase.current) * (m === 2 ? 0.8 : 0.5) : 0
     const k = Math.min(1, dt * 10)
@@ -102,6 +111,11 @@ export function Character({ appearance, motion, action, tool }: Props) {
       // คุย: ยกมือประกอบเป็นพัก ๆ
       const g = Math.max(0, Math.sin(idle.current * 1.3)) * 0.5
       ;[lx, lz, rx, rz] = [0, 0.05, -0.2 - g, -0.1 - g * 0.3]
+    }
+    if (cane !== 'none' && !action) {
+      // มือซ้ายจับไม้เท้า: ยื่นไปข้างหน้าเล็กน้อย เดินแล้วจิ้มไม้เท้าไปพร้อมก้าว
+      lx = -0.28 + (m > 0 ? Math.sin(phase.current) * 0.18 : 0)
+      lz = 0.12
     }
     if (m === 0 && pose === 'cheer') {
       const b = Math.sin(idle.current * 5) * 0.12
@@ -250,10 +264,13 @@ export function Character({ appearance, motion, action, tool }: Props) {
           </group>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
           {i === 1 && tool && <Tool kind={tool} />}
+          {i === 0 && cane !== 'none' && <Cane kind={cane} />}
+          {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && <KidItem kind={kidItem} />}
         </group>
       ))}
 
       <BodyBag bag={bag} color={bagColor} female={female} />
+      {shawl.id !== 'none' && <Shawl color={shawl.color} stripe={shawl.stripe} shoulder={shoulder} />}
 
       {/* ---------- หัว (เด็กหัวใหญ่กว่าตัว) ---------- */}
       <group position={[0, 1.4, 0]} scale={age.headScale} rotation={[-age.hunch * 0.7, 0, 0]}>
@@ -377,4 +394,127 @@ function shade(hex: string, k: number) {
   const n = parseInt(hex.slice(1), 16)
   const c = (v: number) => Math.round(Math.min(255, v * k)).toString(16).padStart(2, '0')
   return '#' + c((n >> 16) & 255) + c((n >> 8) & 255) + c(n & 255)
+}
+
+/** ไม้เท้า: จับที่มือซ้าย ปลายแตะพื้น (ชดเชยแขนที่ยื่นไปข้างหน้า) */
+function Cane({ kind }: { kind: CaneId }) {
+  const wood = kind === 'wood' ? '#7a4f2e' : kind === 'flower' ? '#c9a06a' : '#5a4a3c'
+  return (
+    <group position={[0, -0.53, 0.02]} rotation={[0.3, 0, -0.12]}>
+      {/* ด้ามจับโค้ง */}
+      <mesh position={[0, 0.02, 0.04]} rotation={[0, Math.PI / 2, 0]}>
+        <torusGeometry args={[0.045, 0.014, 6, 10, Math.PI]} />
+        <meshStandardMaterial color={wood} flatShading />
+      </mesh>
+      <mesh position={[0, -0.4, 0]}>
+        <cylinderGeometry args={[0.014, 0.016, 0.82, 6]} />
+        <meshStandardMaterial color={wood} flatShading />
+      </mesh>
+      {kind === 'wood' &&
+        [-0.15, -0.35, -0.55].map((y) => (
+          <mesh key={y} position={[0, y, 0]}>
+            <cylinderGeometry args={[0.019, 0.019, 0.025, 6]} />
+            <meshStandardMaterial color="#4a2f1a" flatShading />
+          </mesh>
+        ))}
+      {kind === 'flower' && (
+        <group position={[0, -0.06, 0.03]}>
+          {['#f2a7b8', '#f6d36b', '#ffffff'].map((c, i) => (
+            <mesh key={c} position={[Math.cos(i * 2.1) * 0.025, 0, Math.sin(i * 2.1) * 0.025]}>
+              <sphereGeometry args={[0.022, 6, 5]} />
+              <meshStandardMaterial color={c} />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {/* ปลายยาง */}
+      <mesh position={[0, -0.82, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.04, 6]} />
+        <meshStandardMaterial color="#2b2a2c" />
+      </mesh>
+    </group>
+  )
+}
+
+/** ผ้าคลุมไหล่: แผ่นผ้าพาดรอบไหล่ ชายผ้าห้อยด้านหน้า */
+function Shawl({ color, stripe, shoulder }: { color: string; stripe?: string; shoulder: number }) {
+  const w = shoulder * 2 + 0.05
+  return (
+    <group>
+      <mesh position={[0, 1.31, 0]} castShadow>
+        <boxGeometry args={[w, 0.08, 0.3]} />
+        <meshStandardMaterial color={color} flatShading />
+      </mesh>
+      <mesh position={[0, 1.2, -0.138]}>
+        <boxGeometry args={[w, 0.22, 0.02]} />
+        <meshStandardMaterial color={color} flatShading />
+      </mesh>
+      {[-1, 1].map((sx) => (
+        <group key={sx}>
+          <mesh position={[sx * shoulder * 0.55, 1.12, 0.14]} rotation={[0, 0, sx * 0.08]}>
+            <boxGeometry args={[0.1, 0.36, 0.02]} />
+            <meshStandardMaterial color={color} flatShading />
+          </mesh>
+          {stripe &&
+            [1.2, 1.04].map((y) => (
+              <mesh key={y} position={[sx * shoulder * 0.55, y, 0.152]} rotation={[0, 0, sx * 0.08]}>
+                <boxGeometry args={[0.102, 0.025, 0.004]} />
+                <meshStandardMaterial color={stripe} />
+              </mesh>
+            ))}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** ของถือของเด็ก: อยู่ในมือขวา */
+function KidItem({ kind }: { kind: KidItemId }) {
+  if (kind === 'bottle')
+    return (
+      <group position={[0, -0.56, 0.05]} rotation={[0.3, 0, 0]}>
+        <mesh>
+          <cylinderGeometry args={[0.035, 0.035, 0.12, 10]} />
+          <meshStandardMaterial color="#fbfaf4" transparent opacity={0.9} />
+        </mesh>
+        <mesh position={[0, -0.02, 0]}>
+          <cylinderGeometry args={[0.036, 0.036, 0.07, 10]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[0, 0.07, 0]}>
+          <cylinderGeometry args={[0.038, 0.038, 0.025, 10]} />
+          <meshStandardMaterial color="#8fc4e8" />
+        </mesh>
+        <mesh position={[0, 0.1, 0]}>
+          <coneGeometry args={[0.02, 0.05, 8]} />
+          <meshStandardMaterial color="#e8c48a" />
+        </mesh>
+      </group>
+    )
+  if (kind === 'ball')
+    return (
+      <mesh position={[0, -0.6, 0.06]} castShadow>
+        <icosahedronGeometry args={[0.08, 1]} />
+        <meshStandardMaterial color="#e8746a" flatShading />
+      </mesh>
+    )
+  // ตุ๊กตาหมี
+  return (
+    <group position={[0, -0.6, 0.07]}>
+      <mesh>
+        <sphereGeometry args={[0.06, 8, 6]} />
+        <meshStandardMaterial color="#b88456" flatShading />
+      </mesh>
+      <mesh position={[0, 0.08, 0]}>
+        <sphereGeometry args={[0.045, 8, 6]} />
+        <meshStandardMaterial color="#b88456" flatShading />
+      </mesh>
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[sx * 0.035, 0.12, 0]}>
+          <sphereGeometry args={[0.017, 6, 5]} />
+          <meshStandardMaterial color="#8a5a36" />
+        </mesh>
+      ))}
+    </group>
+  )
 }

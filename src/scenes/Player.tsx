@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
 import { saveOnUnload, useGame } from '../game/store'
 import { useSettings } from '../game/settings'
-import { AGE_RULES } from '../game/content/appearance'
+import { AGE_RULES, CANE_WALK } from '../game/content/appearance'
 import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character } from './models/Character'
@@ -126,7 +126,9 @@ export function Player() {
       mx /= len
       mz /= len
       const age = AGE_RULES[save.player.appearance.age ?? 'adult']
-      const speed = running ? RUN * age.runSpeed : WALK * age.walkSpeed
+      const look = save.player.appearance
+      const caneK = look.age === 'elder' && look.cane && look.cane !== 'none' ? CANE_WALK : 1
+      const speed = (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK
       pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], colliders)
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current

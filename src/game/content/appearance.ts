@@ -130,7 +130,43 @@ export interface Appearance {
   accessory?: AccessoryId
   accessoryColor?: string
   pose?: PoseId
+  /** ไม้เท้า (เฉพาะผู้สูงอายุ) */
+  cane?: CaneId
+  /** ผ้าคลุมไหล่ */
+  shawl?: ShawlId
+  /** ของถือของเด็ก (เฉพาะวัยเด็ก) */
+  kidItem?: KidItemId
 }
+
+// ---------- ของถือของเด็ก ----------
+export type KidItemId = 'none' | 'bottle' | 'ball' | 'teddy'
+export const KID_ITEMS: (Option & { id: KidItemId })[] = [
+  { id: 'none', label: 'ไม่ถือ' },
+  { id: 'bottle', label: 'ขวดนม' },
+  { id: 'ball', label: 'ลูกบอลผ้า' },
+  { id: 'teddy', label: 'ตุ๊กตาหมี' },
+]
+
+// ---------- ไม้เท้า (ผู้สูงอายุ) ----------
+export type CaneId = 'none' | 'plain' | 'wood' | 'flower'
+export const CANES: (Option & { id: CaneId })[] = [
+  { id: 'none', label: 'ไม่ใช้' },
+  { id: 'plain', label: 'ไม้เท้าธรรมดา' },
+  { id: 'wood', label: 'ไม้เท้าลายไม้' },
+  { id: 'flower', label: 'ไม้เท้าดอกไม้' },
+]
+/** ถือไม้เท้าแล้วเดินช้าลงอีกเล็กน้อย */
+export const CANE_WALK = 0.9
+
+// ---------- ผ้าคลุมไหล่ ----------
+export type ShawlId = 'none' | 'white' | 'pakaoma' | 'silk' | 'knit'
+export const SHAWLS: (Option & { id: ShawlId; color: string; stripe?: string })[] = [
+  { id: 'none', label: 'ไม่มี', color: '#ffffff' },
+  { id: 'white', label: 'ผ้าสีขาว', color: '#f1ece0' },
+  { id: 'pakaoma', label: 'ผ้าขาวม้า', color: '#c0443a', stripe: '#f2e6cf' },
+  { id: 'silk', label: 'ผ้าไหมสีม่วง', color: '#7a4a8a', stripe: '#d9a441' },
+  { id: 'knit', label: 'ผ้าถักไหมพรม', color: '#d98a6a', stripe: '#f2d0a0' },
+]
 
 export const DEFAULT_APPEARANCE: Record<Gender, Appearance> = {
   female: { gender: 'female', skin: 'medium', hairStyle: 'long', hairColor: 'black', outfit: 'phasin', lipColor: 'rose', shoes: 'sandals', shoeColor: 'brown' },
@@ -229,7 +265,7 @@ export const eyeColorValue = (v: string | undefined) =>
   !v ? EYE_COLORS[0].color : isCustomColor(v) ? v : byId(EYE_COLORS, v).color
 
 // ---------- เครื่องประดับ ----------
-export type AccessoryId = 'none' | 'glasses' | 'ribbon' | 'hairclip' | 'flowercrown' | 'headband' | 'cap' | 'beanie' | 'beret' | 'strawhat' | 'headphones'
+export type AccessoryId = 'none' | 'glasses' | 'ribbon' | 'hairclip' | 'flowercrown' | 'headband' | 'cap' | 'beanie' | 'beret' | 'strawhat' | 'widehat' | 'headphones'
 export const ACCESSORIES: (Option & { id: AccessoryId })[] = [
   { id: 'none', label: 'ไม่มี' },
   { id: 'glasses', label: 'แว่นตา' },
@@ -242,6 +278,7 @@ export const ACCESSORIES: (Option & { id: AccessoryId })[] = [
   { id: 'headphones', label: 'หูฟังคล้องคอ' },
   { id: 'beret', label: 'หมวกเบเร่ต์' },
   { id: 'strawhat', label: 'หมวกสาน' },
+  { id: 'widehat', label: 'หมวกปีกกว้าง' },
 ]
 export const ACCESSORY_COLORS: (Option & { color: string })[] = [
   { id: 'navy', label: 'กรมท่า', color: '#26324f' },
