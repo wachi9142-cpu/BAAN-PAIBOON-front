@@ -136,7 +136,26 @@ export interface Appearance {
   shawl?: ShawlId
   /** ของถือของเด็ก (เฉพาะวัยเด็ก) */
   kidItem?: KidItemId
+  /** ของเด็ก: กระเป๋าเป้เล็ก / ของบนหัว (โบว์ หมวกเด็ก) */
+  kidBag?: boolean
+  kidHead?: KidHeadId
+  /** ของผู้สูงอายุ: แว่นตา / หมวกปีกกว้าง / ตะกร้าเล็ก (ใส่พร้อมกันได้) */
+  elderGlasses?: boolean
+  elderHat?: boolean
+  basket?: boolean
 }
+
+export type KidHeadId = 'none' | 'bow' | 'hat'
+export const KID_HEADS: (Option & { id: KidHeadId })[] = [
+  { id: 'none', label: 'ไม่มี' },
+  { id: 'bow', label: 'โบว์ผม' },
+  { id: 'hat', label: 'หมวกเด็ก' },
+]
+/** ตัวเลือก ใส่ / ไม่ใส่ */
+export const YES_NO: Option[] = [
+  { id: 'no', label: 'ไม่ใช้' },
+  { id: 'yes', label: 'ใช้' },
+]
 
 // ---------- ของถือของเด็ก ----------
 export type KidItemId = 'none' | 'bottle' | 'ball' | 'teddy'

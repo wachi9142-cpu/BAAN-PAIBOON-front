@@ -71,7 +71,15 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const age = AGE_RULES[appearance.age ?? 'adult']
   // ไม้เท้าใช้ได้เฉพาะผู้สูงอายุ
   const cane = appearance.age === 'elder' ? (appearance.cane ?? 'none') : 'none'
-  const shawl = SHAWLS.find((s) => s.id === (appearance.shawl ?? 'none'))!
+  const elder = appearance.age === 'elder'
+  const child = appearance.age === 'child'
+  // ผ้าคลุมไหล่ แว่น หมวกปีกกว้าง ตะกร้า = ของผู้สูงอายุ · ขวดนม ของเล่น เป้เล็ก โบว์/หมวกเด็ก = ของเด็ก
+  const shawl = SHAWLS.find((s) => s.id === (elder ? (appearance.shawl ?? 'none') : 'none'))!
+  const kidHead = child ? (appearance.kidHead ?? 'none') : 'none'
+  const ageHat = (elder && appearance.elderHat) || kidHead === 'hat'
+  // ถ้าใส่หมวกตามวัยแล้ว ไม่ซ้อนหมวกจากเครื่องประดับทั่วไป
+  const HATS = ['cap', 'beanie', 'beret', 'strawhat', 'widehat']
+  const shownAccessory = ageHat && HATS.includes(accessory) ? 'none' : accessory
   // ของถือของเด็กใช้ได้เฉพาะวัยเด็ก
   const kidItem = appearance.age === 'child' ? (appearance.kidItem ?? 'none') : 'none'
 
@@ -80,6 +88,8 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const armL = useRef<Group>(null)
   const armR = useRef<Group>(null)
   const body = useRef<Group>(null)
+  const kidHand = useRef<Group>(null)
+  const kidChest = useRef<Group>(null)
   const phase = useRef(0)
   const idle = useRef(0)
 
@@ -112,6 +122,11 @@ export function Character({ appearance, motion, action, tool }: Props) {
       const g = Math.max(0, Math.sin(idle.current * 1.3)) * 0.5
       ;[lx, lz, rx, rz] = [0, 0.05, -0.2 - g, -0.1 - g * 0.3]
     }
+    // ของเด็ก: ยืนอยู่ = กอด/ประคองด้วยสองมือที่อก · เดิน = ถือมือเดียว
+    const hugging = kidItem !== 'none' && m === 0 && !action
+    if (hugging) [lx, lz, rx, rz] = kidItem === 'teddy' ? [-1.1, 0.55, -1.1, -0.55] : [-0.95, 0.45, -0.95, -0.45]
+    if (kidHand.current) kidHand.current.visible = !hugging
+    if (kidChest.current) kidChest.current.visible = hugging
     if (cane !== 'none' && !action) {
       // มือซ้ายจับไม้เท้า: ยื่นไปข้างหน้าเล็กน้อย เดินแล้วจิ้มไม้เท้าไปพร้อมก้าว
       lx = -0.28 + (m > 0 ? Math.sin(phase.current) * 0.18 : 0)
@@ -265,11 +280,23 @@ export function Character({ appearance, motion, action, tool }: Props) {
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
           {i === 1 && tool && <Tool kind={tool} />}
           {i === 0 && cane !== 'none' && <Cane kind={cane} />}
-          {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && <KidItem kind={kidItem} />}
+          {i === 1 && elder && appearance.basket && !tool && bag !== 'handbag' && <Basket />}
+          {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && (
+            <group ref={kidHand}>
+              <KidItem kind={kidItem} />
+            </group>
+          )}
         </group>
       ))}
 
       <BodyBag bag={bag} color={bagColor} female={female} />
+      {kidItem !== 'none' && (
+        // ของที่กอดไว้หน้าอก (ตำแหน่งเดียวกับมือสองข้างที่ประคอง)
+        <group ref={kidChest} position={[0, 1.98, 0.2]} scale={1.5} visible={false}>
+          <KidItem kind={kidItem} />
+        </group>
+      )}
+      {child && appearance.kidBag && bag !== 'backpack' && <BodyBag bag="backpack" color="#f0a0b0" female={female} />}
       {shawl.id !== 'none' && <Shawl color={shawl.color} stripe={shawl.stripe} shoulder={shoulder} />}
 
       {/* ---------- หัว (เด็กหัวใหญ่กว่าตัว) ---------- */}
@@ -338,7 +365,11 @@ export function Character({ appearance, motion, action, tool }: Props) {
 
       <Hair style={appearance.hairStyle} color={hair} />
       {outfit.hat === 'straw' && accessory !== 'cap' && accessory !== 'beanie' && accessory !== 'beret' && <StrawHat />}
-      <Accessory kind={accessory} color={accColor} />
+      <Accessory kind={shownAccessory} color={accColor} />
+      {elder && appearance.elderGlasses && accessory !== 'glasses' && <Accessory kind="glasses" color="#6b5440" />}
+      {elder && appearance.elderHat && <Accessory kind="widehat" color="#d8cdb4" />}
+      {kidHead === 'bow' && accessory !== 'ribbon' && <Accessory kind="ribbon" color="#e58fa0" />}
+      {kidHead === 'hat' && <KidHat />}
       </group>
       </group>
       </group>
@@ -513,6 +544,53 @@ function KidItem({ kind }: { kind: KidItemId }) {
         <mesh key={sx} position={[sx * 0.035, 0.12, 0]}>
           <sphereGeometry args={[0.017, 6, 5]} />
           <meshStandardMaterial color="#8a5a36" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** หมวกเด็ก: หมวกทรงถัง สีสดใส มีดอกไม้เล็ก ๆ */
+function KidHat() {
+  return (
+    <group position={[0, 1.69, 0]}>
+      <mesh castShadow>
+        <cylinderGeometry args={[0.25, 0.27, 0.02, 18]} />
+        <meshStandardMaterial color="#f6d36b" flatShading />
+      </mesh>
+      <mesh position={[0, 0.07, 0]}>
+        <cylinderGeometry args={[0.15, 0.18, 0.13, 16]} />
+        <meshStandardMaterial color="#f6d36b" flatShading />
+      </mesh>
+      <mesh position={[0.13, 0.06, 0.1]}>
+        <sphereGeometry args={[0.035, 8, 6]} />
+        <meshStandardMaterial color="#e8746a" />
+      </mesh>
+    </group>
+  )
+}
+
+/** ตะกร้าสานใบเล็ก หิ้วในมือขวา (ไปวัด/ไปตลาด) */
+function Basket() {
+  return (
+    <group position={[0, -0.66, 0.02]}>
+      <mesh castShadow>
+        <cylinderGeometry args={[0.11, 0.08, 0.12, 10, 1, true]} />
+        <meshStandardMaterial color="#c9a06a" flatShading side={2} />
+      </mesh>
+      <mesh position={[0, -0.06, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.01, 10]} />
+        <meshStandardMaterial color="#a8824a" />
+      </mesh>
+      <mesh position={[0, 0.06, 0]} rotation={[0, 0, 0]}>
+        <torusGeometry args={[0.1, 0.008, 4, 14, Math.PI]} />
+        <meshStandardMaterial color="#a8824a" />
+      </mesh>
+      {/* ดอกไม้/ของใส่บาตรในตะกร้า */}
+      {['#f6d36b', '#f2a7b8'].map((c, i) => (
+        <mesh key={c} position={[i ? 0.03 : -0.03, 0.06, 0]}>
+          <sphereGeometry args={[0.03, 6, 5]} />
+          <meshStandardMaterial color={c} />
         </mesh>
       ))}
     </group>
