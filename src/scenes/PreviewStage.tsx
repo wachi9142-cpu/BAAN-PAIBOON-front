@@ -3,6 +3,7 @@ import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { useRef, type ReactNode } from 'react'
 import type { Group } from 'three'
 import { StageDecor, useRandomVariant } from './StageDecor'
+import { takePhoto } from '../game/photo'
 
 /**
  * ฉากแสดงตัวอย่าง (ตัวละคร/สัตว์/บ้าน)
@@ -49,9 +50,19 @@ export function PreviewStage({
       onPointerUp={() => (drag.current = null)}
       onPointerCancel={() => (drag.current = null)}
     >
-      <Canvas shadows camera={{ position: camera, fov: 35 }} dpr={[1, 2]} gl={{ alpha: true }}>
-        <hemisphereLight args={['#fff6e0', '#7a8a5a', 1.2]} />
-        <directionalLight position={[5, 10, 6]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} />
+      <Canvas shadows="soft" camera={{ position: camera, fov: 35 }} dpr={[1, 2]} gl={{ alpha: true, preserveDrawingBuffer: true }}>
+        {/* แสงนุ่มโทนอุ่น เงาจาง */}
+        <hemisphereLight args={['#fff6e0', '#9aa676', 1.5]} />
+        <ambientLight color="#ffe9c8" intensity={0.35} />
+        <directionalLight
+          position={[5, 10, 6]}
+          color="#ffe4bc"
+          intensity={1.15}
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+          shadow-intensity={0.5}
+          shadow-bias={-0.0005}
+        />
         <Turntable yaw={yaw}>{children}</Turntable>
         {decor && <StageDecor variant={variant} scale={decorScale} houses={decorScale < 1.5} />}
         {ground && !decor && (
@@ -60,7 +71,7 @@ export function PreviewStage({
             <meshStandardMaterial color="#a7b77a" />
           </mesh>
         )}
-        <ContactShadows position={[0, 0.01, 0]} opacity={ground ? 0.35 : 0.55} scale={14} blur={2.4} far={6} />
+        <ContactShadows position={[0, 0.01, 0]} opacity={ground ? 0.28 : 0.4} scale={14} blur={3.2} far={6} />
         <OrbitControls
           target={target}
           enablePan={false}
@@ -70,6 +81,16 @@ export function PreviewStage({
         />
       </Canvas>
       <div className="preview-hint" aria-hidden="true">↔ {hint}</div>
+      <button
+        type="button"
+        className="preview-snap"
+        title="ถ่ายภาพ"
+        aria-label="ถ่ายภาพตัวละคร"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => takePhoto(e.currentTarget.parentElement?.querySelector('canvas'), 'baan-paiboon-character')}
+      >
+        📷 ถ่ายภาพ
+      </button>
     </div>
   )
 }

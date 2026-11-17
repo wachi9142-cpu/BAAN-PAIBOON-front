@@ -46,7 +46,7 @@ export function Eye({
     // หันออกตามความโค้งของหน้า
     <group rotation={[-0.08, side * 0.36, 0]}>
       {disc(0.033, '#fffdf8', [0, 0], 0)}
-      {disc(0.0305, color, [0, -0.001], 1)}
+      {disc(0.0285, color, [0, -0.001], 1)}
       {disc(0.022, light, [0, -0.01], 2, 0.8)}
       {style === 'sparkle' ? (
         // ตาเป็นประกาย: ตาดำเป็นรูปดาว 4 แฉก
@@ -84,6 +84,11 @@ export function Eye({
           <meshBasicMaterial color={skin} />
         </mesh>
       )}
+      {/* ขอบตาล่าง: เส้นบางกว่าขอบบน */}
+      <mesh position={[0, -0.004, z(6)]} rotation={[0, 0, Math.PI * 1.2]} scale={[0.85, 1.1, 1]}>
+        <torusGeometry args={[0.033, 0.0014, 3, 14, Math.PI * 0.6]} />
+        <meshBasicMaterial color="#5a3a32" />
+      </mesh>
       {/* ขอบตาบน (ผู้หญิงหนากว่า) */}
       <mesh position={[0, style === 'sharp' ? 0.02 : style === 'gentle' ? 0.012 : 0.006, z(6)]} scale={[1, (style === 'gentle' || style === 'sharp') ? 0.5 : 1.25, 1]}>
         <torusGeometry args={[0.033, female ? 0.0045 : 0.0034, 4, 16, Math.PI]} />

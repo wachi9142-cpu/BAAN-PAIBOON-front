@@ -10,6 +10,9 @@ import { Player } from '../scenes/Player'
 import { PetFollower } from '../scenes/PetFollower'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu } from './GameMenu'
+import { takePhoto } from '../game/photo'
+import { gather, gatherHint } from '../game/inventory'
+import { ShopWindow } from './ShopWindow'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
@@ -41,6 +44,7 @@ export function WorldScreen() {
   const exitToTitle = useGame((s) => s.exitToTitle)
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
+  const [shop, setShop] = useState(false)
   const [pauseOpen, setPauseOpen] = useState(false)
   const [hidden, setHidden] = useState(document.hidden)
 
@@ -54,6 +58,13 @@ export function WorldScreen() {
         setMenu((m) => !m)
       }
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
+      if (e.code === 'KeyE' && !e.repeat) {
+        const g = useGame.getState()
+        if (g.paused) return
+        if (g.nearbyPlaceId === 'shop') setShop((o) => !o)
+        else if (g.gatherTarget) gather(g.gatherTarget)
+      }
+      if (e.code === 'KeyC' && (e.target as HTMLElement)?.tagName !== 'INPUT') snapWorld()
       if (e.code === 'KeyL') {
         const g = useGame.getState()
         if (g.save?.player.pet) g.setPetLeashed(!g.save.petLeashed)
@@ -82,12 +93,23 @@ export function WorldScreen() {
 
   return (
     <>
-      <Canvas shadows camera={{ fov: 50, near: 0.1, far: 400 }} style={{ position: 'absolute', inset: 0 }}>
-        <Sky sunPosition={[80, 30, 60]} turbidity={6} rayleigh={1.2} />
-        <hemisphereLight args={['#fff2d6', '#6d7f4a', 1]} />
+      <Canvas
+        shadows="soft"
+        camera={{ fov: 50, near: 0.1, far: 400 }}
+        gl={{ preserveDrawingBuffer: true }}
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        {/* แสงนุ่ม: ฟ้าสีอ่อน แสงแวดล้อมอุ่น แดดโทนเหลืองอ่อน เงาเบลอและจาง */}
+        <Sky sunPosition={[80, 30, 60]} turbidity={3.5} rayleigh={0.7} mieCoefficient={0.004} mieDirectionalG={0.75} />
+        <hemisphereLight args={['#fff4dc', '#8a9a62', 1.45]} />
+        <ambientLight color="#ffe9c8" intensity={0.35} />
         <directionalLight
           position={[60, 60, 30]}
-          intensity={1.6}
+          color="#ffe2b8"
+          intensity={1.15}
+          shadow-intensity={0.55}
+          shadow-radius={6}
+          shadow-bias={-0.0004}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-camera-left={-100}
@@ -96,7 +118,7 @@ export function WorldScreen() {
           shadow-camera-bottom={-100}
           shadow-camera-far={250}
         />
-        <fog attach="fog" args={['#dfe6d8', 70, 340]} />
+        <fog attach="fog" args={['#e8ead8', 60, 320]} />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
         <Player />
@@ -104,7 +126,8 @@ export function WorldScreen() {
         <PlayClock />
         <PetBond />
       </Canvas>
-      <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} />
+      <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} onShop={() => setShop(true)} />
+      {shop && !menu && <ShopWindow onClose={() => setShop(false)} />}
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
           <div className="menu pause-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="พักเกม">
@@ -205,7 +228,15 @@ function StatusPanel() {
   )
 }
 
-function Hud({ onMenu, onPause }: { onMenu: () => void; onPause: () => void }) {
+/** ถ่ายภาพฉากในเกม (เฉพาะภาพ 3D ไม่ติดแถบสถานะ) */
+function snapWorld() {
+  const canvas = document.querySelector<HTMLCanvasElement>('.screen canvas')
+  takePhoto(canvas, 'baan-paiboon')
+  useGame.getState().toast({ title: '📷 ถ่ายภาพแล้ว', body: 'บันทึกเป็นไฟล์รูปในเครื่อง (โฟลเดอร์ดาวน์โหลด)', tone: 'info' })
+}
+
+function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => void; onShop: () => void }) {
+  const gatherTarget = useGame((s) => s.gatherTarget)
   const save = useGame((s) => s.save)!
   const nearby = useGame((s) => s.nearbyPlaceId)
   const toasts = useGame((s) => s.toasts)
@@ -222,6 +253,9 @@ function Hud({ onMenu, onPause }: { onMenu: () => void; onPause: () => void }) {
         <div className="pill">
           <button className="btn small ghost pause-btn" onClick={onPause} aria-label="พักเกม" title="พักเกม (P)">
             ⏸ พัก
+          </button>
+          <button className="btn small ghost pause-btn" onClick={snapWorld} aria-label="ถ่ายภาพ" title="ถ่ายภาพ (C)">
+            📷
           </button>
           <span className="sep" />
           <span>วันที่ {save.day}</span>
@@ -252,7 +286,18 @@ function Hud({ onMenu, onPause }: { onMenu: () => void; onPause: () => void }) {
         <div className="interact">
           <h3>{place.name}</h3>
           {place.arriveText && <p>{place.arriveText}</p>}
-          {place.comingSoon && <div className="soon">เร็ว ๆ นี้: {place.comingSoon}</div>}
+          {place.id === 'shop' ? (
+            <button className="btn small" onClick={onShop}>
+              🛒 เข้าร้าน (E)
+            </button>
+          ) : (
+            place.comingSoon && <div className="soon">เร็ว ๆ นี้: {place.comingSoon}</div>
+          )}
+        </div>
+      )}
+      {!place && gatherTarget && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {gatherHint(gatherTarget).replace('กด E — ', '')}
         </div>
       )}
       {plot && (
@@ -264,7 +309,7 @@ function Hud({ onMenu, onPause }: { onMenu: () => void; onPause: () => void }) {
       )}
 
       <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม · <kbd>P</kbd> พัก · <kbd>L</kbd> จูงสัตว์ · <kbd>Esc</kbd> เมนู
+        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม · <kbd>P</kbd> พัก · <kbd>L</kbd> จูงสัตว์ · <kbd>E</kbd> เก็บของ/เข้าร้าน · <kbd>C</kbd> ถ่ายภาพ · <kbd>Esc</kbd> เมนู
       </div>
     </div>
   )

@@ -8,15 +8,19 @@ import { Character } from '../scenes/models/Character'
 import { AppearanceEditor } from './CreateCharacterScreen'
 import { SaveSlots } from './SaveSlots'
 import { KnowledgePanel } from './KnowledgePanel'
+import { BAG_LEVELS, bagSlots, ITEMS, RECIPES, SHOP, toSlots, type ItemId } from '../game/content/items'
+import { craft } from '../game/inventory'
 import { ReportPanel } from './ReportPanel'
 import { useUnreadReports } from '../game/feedback/reports'
+import { ItemIcon } from './ItemIcon'
 
-type Tab = 'character' | 'bag' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
+type Tab = 'character' | 'bag' | 'craft' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
 type Confirm = null | 'confirm-exit' | 'confirm-title' | 'exited'
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'character', icon: '👕', label: 'ตัวละคร' },
   { id: 'bag', icon: '🎒', label: 'กระเป๋า' },
+  { id: 'craft', icon: '🔨', label: 'คราฟของ' },
   { id: 'guide', icon: '📖', label: 'คู่มือ' },
   { id: 'knowledge', icon: '📜', label: 'เกร็ดความรู้' },
   { id: 'report', icon: '📮', label: 'แจ้งปัญหา' },
@@ -107,7 +111,8 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
 
         <div className="gm-body">
           {tab === 'character' && <CharacterTab onDone={onClose} />}
-          {tab === 'bag' && <BagTab />}
+          {tab === 'bag' && <BagTab onCraft={() => setTab('craft')} />}
+          {tab === 'craft' && <CraftTab />}
           {tab === 'guide' && <GuideTab />}
           {tab === 'knowledge' && (
             <>
@@ -172,18 +177,88 @@ function CharacterTab({ onDone }: { onDone: () => void }) {
 }
 
 /** กระเป๋า (ช่องใส่ของ) — ระบบของในกระเป๋ามาใน Part 7 */
-function BagTab() {
+function BagTab({ onCraft }: { onCraft: () => void }) {
   const save = useGame((s) => s.save)!
+  const cap = bagSlots(save.bagLevel)
+  const slots = toSlots(save.inventory)
+  const bag = BAG_LEVELS[save.bagLevel]
+  const next = BAG_LEVELS[save.bagLevel + 1]
   return (
     <div className="gm-bag">
-      <h3>กระเป๋าของ{save.player.name}</h3>
-      <p className="hint">ของที่ได้จากงานรับจ้าง ทำสวน ตกปลา และร้านค้า จะมาอยู่ที่นี่ (เร็ว ๆ นี้)</p>
+      <h3>
+        {bag.icon} {bag.name}ของ{save.player.name}
+      </h3>
+      <p className="hint">
+        ใช้ไป {slots.length}/{cap} ช่อง
+        {next ? ` · อัปเกรดเป็น${next.name} (${next.slots} ช่อง) ได้จากการคราฟหรือร้านป้าศรี` : ' · กระเป๋าใหญ่สุดแล้ว'}
+      </p>
       <div className="bag-grid">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div key={i} className="bag-slot" aria-label="ช่องว่าง" />
-        ))}
+        {Array.from({ length: cap }).map((_, k) => {
+          const it = slots[k]
+          if (!it) return <div key={k} className="bag-slot" aria-label="ช่องว่าง" />
+          const def = ITEMS[it.id]
+          return (
+            <div key={k} className="bag-slot filled" title={`${def.name} — ${def.note}`}>
+              <span className="bag-icon"><ItemIcon icon={def.icon} /></span>
+              <span className="bag-name">{def.name}</span>
+              {it.qty > 1 && <span className="bag-qty">×{it.qty}</span>}
+            </div>
+          )
+        })}
       </div>
-      <p className="hint">💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท</p>
+      <p className="hint">
+        💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท · เดินไปใกล้ต้นไม้หรือกองหินแล้วกด <kbd>E</kbd> เพื่อเก็บของ
+      </p>
+      <button type="button" className="btn small" onClick={onCraft}>
+        🔨 ไปคราฟของ
+      </button>
+    </div>
+  )
+}
+
+function CraftTab() {
+  const save = useGame((s) => s.save)!
+  const inv = save.inventory
+  return (
+    <div className="gm-craft">
+      <h3>คราฟของ</h3>
+      <p className="hint">ทำเองถูกกว่าซื้อที่ร้าน · เครื่องมือที่ "ต้องมี" ไม่ถูกใช้หมด แค่ต้องมีในกระเป๋า</p>
+      <ul className="shop-list">
+        {RECIPES.map((r) => {
+          const toolOk = !r.tool || (inv[r.tool] ?? 0) > 0
+          const enough = Object.entries(r.needs).every(([id, q]) => (inv[id as ItemId] ?? 0) >= (q ?? 0))
+          const bagDone = 'bagLevel' in r.gives && save.bagLevel >= r.gives.bagLevel
+          const price = SHOP.find((e) => e.id === r.id)?.price
+          return (
+            <li key={r.id} className="shop-row">
+              <span className="shop-icon"><ItemIcon icon={r.icon} /></span>
+              <span className="shop-name">
+                <strong>{r.name}</strong>
+                <small className="craft-needs">
+                  {Object.entries(r.needs).map(([id, q]) => {
+                    const have = inv[id as ItemId] ?? 0
+                    const ok = have >= (q ?? 0)
+                    return (
+                      <span key={id} className={ok ? 'ok' : 'miss'}>
+                        <ItemIcon icon={ITEMS[id as ItemId].icon} /> {ITEMS[id as ItemId].name} {have}/{q}
+                      </span>
+                    )
+                  })}
+                  {r.tool && (
+                    <span className={toolOk ? 'ok' : 'miss'}>
+                      ต้องมี <ItemIcon icon={ITEMS[r.tool].icon} /> {ITEMS[r.tool].name}
+                    </span>
+                  )}
+                  {price && <span className="price">ร้านขาย {price} บาท</span>}
+                </small>
+              </span>
+              <button type="button" className="btn small" disabled={bagDone || !enough || !toolOk} onClick={() => craft(r)}>
+                {bagDone ? 'มีแล้ว' : 'คราฟ'}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
@@ -202,6 +277,13 @@ function GuideTab() {
         </li>
         <li>
           <kbd>L</kbd> — จูง/ปล่อยสัตว์เลี้ยง
+        </li>
+        <li>
+          <kbd>E</kbd> — ใกล้ต้นไม้: เก็บกิ่งไม้ (มีขวาน = ตัดได้ไม้ท่อน) · ต้นกล้วย: ลอกเชือกกล้วย · กองหิน: เก็บก้อนหิน · หน้าร้านป้าศรี: เข้าร้าน
+        </li>
+        <li>เมนู → คราฟของ — ทำขวาน ค้อน มีดพร้า เลื่อย และกระเป๋าใบใหญ่ขึ้นเอง ถูกกว่าซื้อที่ร้าน</li>
+        <li>
+          <kbd>C</kbd> — ถ่ายภาพ
         </li>
         <li>
           <kbd>Esc</kbd> — เมนูนี้: เปลี่ยนการแต่งตัว ดูกระเป๋า บันทึก ตั้งค่า

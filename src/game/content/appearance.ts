@@ -141,6 +141,9 @@ export interface Appearance {
   topColor?: string
   bottomColor?: string
   eyeColor?: string
+  /** ลายผ้าถุง/ผ้าซิ่น (ชุดผ้าซิ่น ผ้าถุง) และสีลาย */
+  sarongPattern?: import('./sarong').SarongPatternId
+  sarongAccent?: string
   /** รูปหน้า (ไม่มี = หญิงรูปไข่ / ชายเหลี่ยม) */
   faceShape?: FaceShapeId
   /** ลักษณะดวงตา (ไม่มี = ตากลมโต) */

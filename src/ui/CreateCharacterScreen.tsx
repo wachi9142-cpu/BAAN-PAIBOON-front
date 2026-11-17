@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ACCESSORIES,
   AGE_GROUPS,
@@ -17,6 +17,7 @@ import {
   BAGS,
   BAG_COLORS,
   CLOTH_COLORS,
+  clothColor,
   DEFAULT_APPEARANCE,
   EYE_COLORS,
   EYE_STYLES,
@@ -49,6 +50,7 @@ import { Character } from '../scenes/models/Character'
 import { ColorWheel } from './ColorWheel'
 import { useRandomBackdrop } from './RandomBackdrop'
 import { EYES, FACE, MOUTH, useHairThumbs, useVariantThumbs } from './hairThumbs'
+import { SARONG_ACCENTS, SARONG_OUTFITS, SARONG_PATTERNS, sarongAccent, sarongSwatch, type SarongPatternId } from '../game/content/sarong'
 
 const MAX_NAME = 20
 /** ตัวเลือกที่แสดงก่อนกด "เพิ่มเติม" */
@@ -222,6 +224,9 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
           <ChipField label="ชุด" options={outfits} value={look.outfit} onChange={(o) => patch({ outfit: o, topColor: 'outfit', bottomColor: 'outfit' })} />
           <ColorChoiceField label="สีเสื้อ" options={outfitColorOptions} value={look.topColor ?? 'outfit'} onChange={(topColor) => patch({ topColor })} fallbackCustom="#c8a8dc" />
           <ColorChoiceField label={bottomLabel} options={bottomColorOptions} value={look.bottomColor ?? 'outfit'} onChange={(bottomColor) => patch({ bottomColor })} fallbackCustom="#3d4f6e" />
+          {SARONG_OUTFITS.includes(look.outfit) && (
+            <SarongFields look={look} bottom={clothColor(look.bottomColor, outfit.bottom)} onChange={patch} />
+          )}
           <ChipField label="รองเท้า" options={SHOES} value={look.shoes ?? 'sandals'} onChange={(id) => patch({ shoes: id as ShoeId })} />
           <ColorChoiceField label="สีรองเท้า" options={SHOE_COLORS} value={look.shoeColor ?? 'brown'} onChange={(shoeColor) => patch({ shoeColor })} fallbackCustom="#c4566a" />
   
@@ -384,5 +389,48 @@ function PictureField({
         ))}
       </div>
     </div>
+  )
+}
+
+/** เลือกลายผ้าถุง/ผ้าซิ่น (มีรูปลายผ้า) + สีลาย — บ้านไพบูลย์ขึ้นชื่อเรื่องผ้าไหม */
+function SarongFields({ look, bottom, onChange }: { look: Appearance; bottom: string; onChange: (p: Partial<Appearance>) => void }) {
+  const accent = sarongAccent(look.sarongAccent)
+  const value = look.sarongPattern ?? 'lukkaew'
+  const swatches = useMemo(
+    () => Object.fromEntries(SARONG_PATTERNS.map((p) => [p.id, sarongSwatch(p.id, bottom, accent)])),
+    [bottom, accent],
+  )
+  const current = SARONG_PATTERNS.find((p) => p.id === value)!
+  return (
+    <>
+      <div className="field">
+        <label>ลายผ้าถุง (ผ้าไหม)</label>
+        <div className="hair-grid" role="radiogroup" aria-label="ลายผ้าถุง">
+          {SARONG_PATTERNS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={value === p.id}
+              className="hair-card sarong-card"
+              onClick={() => onChange({ sarongPattern: p.id as SarongPatternId })}
+            >
+              <img src={swatches[p.id]} alt="" />
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="hint" style={{ margin: '6px 0 0' }}>
+          {current.note}
+        </p>
+      </div>
+      <ColorChoiceField
+        label="สีลายผ้า"
+        options={SARONG_ACCENTS}
+        value={look.sarongAccent ?? 'gold'}
+        onChange={(sarongAccent) => onChange({ sarongAccent })}
+        fallbackCustom="#d9a441"
+      />
+    </>
   )
 }

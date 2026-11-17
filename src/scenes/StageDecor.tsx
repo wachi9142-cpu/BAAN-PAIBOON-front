@@ -4,6 +4,7 @@ import { Tree } from './Village'
 import { VillagerHouse } from './models/House'
 import type { TreeSpot } from '../game/content/village'
 import { DecorHouses, GardenYardExtras, MangoYardExtras, MaybeHouse, MeadowYardExtras, TwoStoreyYardExtras } from './StageVariants'
+import { RBox } from './models/RBox'
 
 function MangoYard() {
   return (
@@ -140,7 +141,7 @@ function YardGround({ variant }: { variant: DecorVariant }) {
       {GRASS.map(([x, z, s], i) => (
         <mesh key={i} position={[x, 0.12 * s, z]} rotation={[0, i, 0]}>
           <coneGeometry args={[0.18 * s, 0.32 * s, 4]} />
-          <meshStandardMaterial color={i % 2 ? '#6f9a45' : '#82a852'} flatShading />
+          <meshStandardMaterial color={i % 2 ? '#6f9a45' : '#82a852'} />
         </mesh>
       ))}
     </group>
@@ -168,8 +169,8 @@ function Fence() {
         const a = from + ((to - from) * i) / (posts - 1)
         return (
           <mesh key={i} position={[Math.cos(a) * r, 0.45, Math.sin(a) * r]} castShadow>
-            <cylinderGeometry args={[0.05, 0.06, 0.9, 6]} />
-            <meshStandardMaterial color="#8a6a3e" flatShading />
+            <cylinderGeometry args={[0.05, 0.06, 0.9, 12]} />
+            <meshStandardMaterial color="#8a6a3e" />
           </mesh>
         )
       })}
@@ -218,12 +219,12 @@ function Plants() {
         z < 1.5 ? (
           <group key={i} position={[x, 0, z]} scale={s}>
             <mesh position={[0, 0.22, 0]} castShadow>
-              <icosahedronGeometry args={[0.3, 0]} />
-              <meshStandardMaterial color="#5f8f3e" flatShading />
+              <icosahedronGeometry args={[0.3, 3]} />
+              <meshStandardMaterial color="#5f8f3e" />
             </mesh>
             {[0, 1, 2].map((k) => (
               <mesh key={k} position={[Math.cos(k * 2.1) * 0.2, 0.42, Math.sin(k * 2.1) * 0.2]}>
-                <sphereGeometry args={[0.07, 6, 4]} />
+                <sphereGeometry args={[0.07, 14, 10]} />
                 <meshStandardMaterial color={FLOWERS[(i + k) % FLOWERS.length]} />
               </mesh>
             ))}
@@ -241,7 +242,7 @@ function Props() {
       {/* โอ่งมังกร */}
       <group position={[-3.4, 0, -3.2]}>
         <mesh position={[0, 0.42, 0]} castShadow>
-          <sphereGeometry args={[0.45, 12, 10]} />
+          <sphereGeometry args={[0.45, 14, 10]} />
           <meshStandardMaterial color="#7a4a2a" roughness={0.6} />
         </mesh>
         <mesh position={[0, 0.82, 0]}>
@@ -257,15 +258,15 @@ function Props() {
       ].map(([x, z, c], i) => (
         <group key={i} position={[x as number, 0, z as number]}>
           <mesh position={[0, 0.16, 0]} castShadow>
-            <cylinderGeometry args={[0.2, 0.15, 0.32, 8]} />
+            <cylinderGeometry args={[0.2, 0.15, 0.32, 12]} />
             <meshStandardMaterial color="#b5603a" />
           </mesh>
           <mesh position={[0, 0.42, 0]}>
-            <icosahedronGeometry args={[0.22, 0]} />
-            <meshStandardMaterial color="#5f8f3e" flatShading />
+            <icosahedronGeometry args={[0.22, 3]} />
+            <meshStandardMaterial color="#5f8f3e" />
           </mesh>
           <mesh position={[0, 0.58, 0]}>
-            <sphereGeometry args={[0.09, 6, 4]} />
+            <sphereGeometry args={[0.09, 14, 10]} />
             <meshStandardMaterial color={c as string} />
           </mesh>
         </group>
@@ -273,8 +274,8 @@ function Props() {
       {/* แคร่ไม้ไผ่ */}
       <group position={[4.4, 0, 1.2]} rotation={[0, -1.1, 0]}>
         <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.8, 0.08, 0.9]} />
-          <meshStandardMaterial color="#c9a866" flatShading />
+          <RBox args={[1.8, 0.08, 0.9]} />
+          <meshStandardMaterial color="#c9a866" />
         </mesh>
         {[
           [-0.8, -0.38],
@@ -283,7 +284,7 @@ function Props() {
           [0.8, 0.38],
         ].map(([x, z], i) => (
           <mesh key={i} position={[x, 0.21, z]}>
-            <cylinderGeometry args={[0.04, 0.04, 0.42, 5]} />
+            <cylinderGeometry args={[0.04, 0.04, 0.42, 12]} />
             <meshStandardMaterial color="#8a6a3e" />
           </mesh>
         ))}
@@ -326,8 +327,8 @@ function FarFields() {
         const s = 6 + ((i * 7) % 5)
         return (
           <mesh key={`t${i}`} position={[Math.cos(a) * d, s * 0.8, Math.sin(a) * d]}>
-            <icosahedronGeometry args={[s, 0]} />
-            <meshStandardMaterial color={i % 2 ? '#4f7a3e' : '#5d8a48'} flatShading />
+            <icosahedronGeometry args={[s, 3]} />
+            <meshStandardMaterial color={i % 2 ? '#4f7a3e' : '#5d8a48'} />
           </mesh>
         )
       })}
@@ -355,8 +356,8 @@ function Clouds() {
             [0.4, 0.45, 0, 0.7],
           ].map(([x, y, z, r], k) => (
             <mesh key={k} position={[x, y, z]}>
-              <icosahedronGeometry args={[r, 1]} />
-              <meshStandardMaterial color="#ffffff" flatShading emissive="#ffffff" emissiveIntensity={0.25} />
+              <icosahedronGeometry args={[r, 3]} />
+              <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.25} />
             </mesh>
           ))}
         </group>

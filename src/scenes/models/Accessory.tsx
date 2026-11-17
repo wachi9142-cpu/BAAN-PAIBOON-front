@@ -1,4 +1,5 @@
 import type { AccessoryId } from '../../game/content/appearance'
+import { RBox } from './RBox'
 
 const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} />
 
@@ -17,12 +18,12 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
             </mesh>
           ))}
           <mesh>
-            <boxGeometry args={[0.04, 0.006, 0.006]} />
+            <RBox args={[0.04, 0.006, 0.006]} />
             <M c={color} />
           </mesh>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.12, 0.005, -0.08]} rotation={[0, s * 0.2, 0]}>
-              <boxGeometry args={[0.006, 0.006, 0.16]} />
+              <RBox args={[0.006, 0.006, 0.16]} />
               <M c={color} />
             </mesh>
           ))}
@@ -34,12 +35,12 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
         <group position={[0, 1.73, -0.12]} rotation={[-0.5, 0, 0]}>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.06, 0, 0]} rotation={[0, 0, s * 0.3]} scale={[1.4, 0.8, 0.35]}>
-              <sphereGeometry args={[0.05, 8, 6]} />
+              <sphereGeometry args={[0.05, 14, 10]} />
               <M c={color} />
             </mesh>
           ))}
           <mesh>
-            <sphereGeometry args={[0.025, 6, 6]} />
+            <sphereGeometry args={[0.025, 14, 10]} />
             <M c={color} />
           </mesh>
         </group>
@@ -48,11 +49,11 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
       return (
         <group position={[0.11, 1.7, 0.1]} rotation={[0.5, 0.4, -0.5]}>
           <mesh>
-            <boxGeometry args={[0.08, 0.018, 0.012]} />
+            <RBox args={[0.08, 0.018, 0.012]} />
             <M c={color} />
           </mesh>
           <mesh position={[0.045, 0, 0]}>
-            <sphereGeometry args={[0.016, 6, 6]} />
+            <sphereGeometry args={[0.016, 14, 10]} />
             <M c="#f4f1ea" />
           </mesh>
         </group>
@@ -69,7 +70,7 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
             const a = (i / flowers.length) * Math.PI * 2
             return (
               <mesh key={i} position={[Math.sin(a) * 0.165, Math.cos(a) * 0.025, Math.cos(a) * 0.165]}>
-                <sphereGeometry args={[0.03, 6, 5]} />
+                <sphereGeometry args={[0.03, 14, 10]} />
                 <M c={c} />
               </mesh>
             )
@@ -92,11 +93,11 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
             <M c={color} />
           </mesh>
           <mesh position={[0, 0.0, 0.2]} rotation={[0.1, 0, 0]}>
-            <boxGeometry args={[0.24, 0.015, 0.16]} />
+            <RBox args={[0.24, 0.015, 0.16]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 0.19, 0]}>
-            <sphereGeometry args={[0.018, 6, 5]} />
+            <sphereGeometry args={[0.018, 14, 10]} />
             <M c={color} />
           </mesh>
         </group>
@@ -118,11 +119,11 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
       return (
         <group position={[0.03, 1.74, 0]} rotation={[0, 0, -0.25]}>
           <mesh castShadow scale={[1, 0.35, 1]}>
-            <sphereGeometry args={[0.2, 12, 8]} />
+            <sphereGeometry args={[0.2, 14, 10]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 0.07, 0]}>
-            <cylinderGeometry args={[0.008, 0.008, 0.03, 5]} />
+            <cylinderGeometry args={[0.008, 0.008, 0.03, 12]} />
             <M c={color} />
           </mesh>
         </group>
@@ -172,7 +173,7 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
           </mesh>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.11, -0.02, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.045, 0.045, 0.03, 10]} />
+              <cylinderGeometry args={[0.045, 0.045, 0.03, 12]} />
               <M c={color} />
             </mesh>
           ))}

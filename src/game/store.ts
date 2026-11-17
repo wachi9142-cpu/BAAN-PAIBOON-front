@@ -1,3 +1,4 @@
+import type { ItemId } from './content/items'
 import { create } from 'zustand'
 import type { Appearance } from './content/appearance'
 import type { PetChoice } from './content/pets'
@@ -41,6 +42,15 @@ export interface SaveData {
   petHearts: number
   /** จูงสัตว์เลี้ยงอยู่หรือไม่ */
   petLeashed: boolean
+  /** ของในกระเป๋า (จำนวนรวมต่อชนิด) */
+  inventory: Partial<Record<ItemId, number>>
+  /** ระดับกระเป๋า (ยิ่งสูงยิ่งมีช่องมาก) */
+  bagLevel: number
+}
+
+export interface GatherTarget {
+  kind: 'tree' | 'rock'
+  index: number
 }
 
 export interface PlayerStats {
@@ -76,6 +86,8 @@ function migrateSave(data: SaveData): SaveData {
     stats: { ...DEFAULT_STATS, ...data.stats },
     petHearts: data.petHearts ?? 0,
     petLeashed: data.petLeashed ?? false,
+    inventory: data.inventory ?? {},
+    bagLevel: data.bagLevel ?? 0,
     version: SAVE_VERSION,
   }
 }
@@ -97,6 +109,9 @@ interface GameState {
   draft: PlayerProfile | null
   toasts: Toast[]
   nearbyPlaceId: string | null
+  /** สิ่งที่เก็บได้ใกล้ตัว (ต้นไม้/กองหิน) */
+  gatherTarget: GatherTarget | null
+  setGatherTarget: (t: GatherTarget | null) => void
 
   goTo: (s: Screen) => void
   setDraft: (p: PlayerProfile) => void
@@ -154,6 +169,11 @@ export const useGame = create<GameState>()((set, get) => ({
   draft: null,
   toasts: [],
   nearbyPlaceId: null,
+  gatherTarget: null,
+  setGatherTarget: (gatherTarget) => {
+    const cur = get().gatherTarget
+    if (cur?.kind !== gatherTarget?.kind || cur?.index !== gatherTarget?.index) set({ gatherTarget })
+  },
 
   goTo: (screen) => set({ screen }),
   setDraft: (draft) => set({ draft }),
@@ -168,6 +188,8 @@ export const useGame = create<GameState>()((set, get) => ({
       home: { plotId: STARTING_PLOT_ID, houseDesignId },
       ownedPlotIds: [STARTING_PLOT_ID],
       coins: STARTING_COINS,
+      inventory: {},
+      bagLevel: 0,
       day: 1,
       minuteOfDay: STARTING_MINUTE,
       position: [...SPAWN],

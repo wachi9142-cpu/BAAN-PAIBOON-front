@@ -47,10 +47,10 @@ interface ThumbView {
 }
 /** มุมกล้อง: หัวอย่างเดียว (ทรงผม) / หัวถึงอก (สีผิว เพศ) */
 const HEAD: ThumbView = { eye: [0.32, 1.64, 0.9], at: [0, 1.56, 0], fov: 34 }
-export const FACE: ThumbView = { eye: [0.08, 1.58, 0.78], at: [0, 1.56, 0], fov: 28 }
+export const FACE: ThumbView = { eye: [0.08, 1.62, 0.82], at: [0, 1.6, 0], fov: 28 }
 /** ซูมใกล้: เห็นดวงตาชัด / เห็นปากชัด */
-export const EYES: ThumbView = { eye: [0, 1.575, 0.6], at: [0, 1.57, 0], fov: 24 }
-export const MOUTH: ThumbView = { eye: [0, 1.48, 0.55], at: [0, 1.49, 0], fov: 18 }
+export const EYES: ThumbView = { eye: [0, 1.61, 0.66], at: [0, 1.605, 0], fov: 27 }
+export const MOUTH: ThumbView = { eye: [0, 1.53, 0.6], at: [0, 1.54, 0], fov: 22 }
 export const BUST: ThumbView = { eye: [0.45, 1.5, 1.75], at: [0, 1.32, 0], fov: 34 }
 
 async function renderAll(items: { id: string; node: ReactNode }[], view: ThumbView): Promise<Record<string, string>> {

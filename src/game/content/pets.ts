@@ -129,6 +129,9 @@ export interface PetChoice {
   outfitColor?: string
   /** ของตกแต่ง (ถือ/กอดไว้ที่อก) */
   held?: PetHeldId
+  /** หมวก / ของบนหัว และสี */
+  hat?: PetHatId
+  hatColor?: string
   /** เสียงร้องที่เลือก (0–3) */
   voice?: number
 }
@@ -346,6 +349,21 @@ export function applyBreed(pet: PetChoice, breed: Breed): PetChoice {
     hump: breed.hump ?? false,
   }
 }
+
+// ---------- หมวก / ของบนหัวสัตว์เลี้ยง (ใส่คู่กับชุดได้) ----------
+export type PetHatId = 'none' | 'ngob' | 'strawhat' | 'beanie' | 'cap' | 'party' | 'crown' | 'beret' | 'bigbow' | 'catears'
+export const PET_HATS: { id: PetHatId; label: string; color?: string }[] = [
+  { id: 'none', label: 'ไม่ใส่' },
+  { id: 'ngob', label: 'งอบ', color: '#c9a06a' },
+  { id: 'strawhat', label: 'หมวกสาน', color: '#d23a3a' },
+  { id: 'beanie', label: 'หมวกไหมพรม', color: '#e58fa0' },
+  { id: 'cap', label: 'หมวกแก๊ป', color: '#4f6f95' },
+  { id: 'party', label: 'หมวกปาร์ตี้', color: '#8a5aa8' },
+  { id: 'crown', label: 'มงกุฎ', color: '#d9a441' },
+  { id: 'beret', label: 'หมวกเบเร่ต์', color: '#a8323a' },
+  { id: 'bigbow', label: 'โบว์ใหญ่', color: '#e58fa0' },
+  { id: 'catears', label: 'ที่คาดหูแมว', color: '#2b2a2c' },
+]
 
 // ---------- ชุดแต่งตัวสัตว์เลี้ยง ----------
 export type PetOutfitId = 'none' | 'collar' | 'scarf' | 'bow' | 'headbow' | 'flower' | 'flowercrown' | 'headscarf' | 'strawhat' | 'bunnyhood' | 'cowhood' | 'froghood' | 'headphones' | 'bee' | 'bag'

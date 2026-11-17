@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { CanvasTexture, SRGBColorSpace } from 'three'
 import type { BagId } from '../../game/content/appearance'
+import { RBox } from './RBox'
 
 /**
  * กระเป๋าที่ติดกับลำตัว (พิกัดเดียวกับ Character: ลำตัวกลางที่ y≈1.08, หน้าไปทาง +z, ไหล่ซ้ายที่ x ลบ)
@@ -21,7 +22,7 @@ function Strap({ a, b, w = 0.03, color }: { a: [number, number, number]; b: [num
   const rx = Math.atan2(dz, Math.hypot(dx, dy))
   return (
     <mesh position={mid} rotation={[rx, 0, rz]}>
-      <boxGeometry args={[w, len, 0.012]} />
+      <RBox args={[w, len, 0.012]} />
       <M c={color} />
     </mesh>
   )
@@ -59,15 +60,15 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
       return (
         <group>
           <mesh position={[0, 1.08, -0.21]} castShadow>
-            <boxGeometry args={[0.32, 0.4, 0.14]} />
+            <RBox args={[0.32, 0.4, 0.14]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 1.0, -0.29]} castShadow>
-            <boxGeometry args={[0.24, 0.18, 0.05]} />
+            <RBox args={[0.24, 0.18, 0.05]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 1.27, -0.21]}>
-            <boxGeometry args={[0.32, 0.04, 0.145]} />
+            <RBox args={[0.32, 0.04, 0.145]} />
             <M c={dark} />
           </mesh>
           {[-1, 1].map((s) => (
@@ -81,7 +82,7 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
         <group>
           <Strap a={[-sx + 0.04, 1.36, 0]} b={[sx + 0.07, 0.86, 0.06]} w={0.04} color={color} />
           <mesh position={[sx + 0.08, 0.72, 0.04]} rotation={[0, 0.2, 0]} castShadow>
-            <boxGeometry args={[0.26, 0.3, 0.05]} />
+            <RBox args={[0.26, 0.3, 0.05]} />
             <meshStandardMaterial map={yaamTex} />
           </mesh>
           {/* พู่ด้านล่าง */}
@@ -98,11 +99,11 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
       return (
         <group>
           <mesh position={[sx + 0.17, 0.92, 0]} castShadow>
-            <boxGeometry args={[0.05, 0.34, 0.3]} />
+            <RBox args={[0.05, 0.34, 0.3]} />
             <M c={color} />
           </mesh>
           <mesh position={[sx + 0.17, 0.82, 0]}>
-            <boxGeometry args={[0.052, 0.04, 0.3]} />
+            <RBox args={[0.052, 0.04, 0.3]} />
             <M c="#e8dcc0" />
           </mesh>
           {[-0.08, 0.08].map((z) => (
@@ -115,11 +116,11 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
         <group>
           <Strap a={[sx - 0.02, 1.36, 0]} b={[sx + 0.17, 0.98, 0.0]} color={dark} />
           <mesh position={[sx + 0.17, 0.9, 0.02]} rotation={[0, 0.1, 0]} castShadow>
-            <boxGeometry args={[0.08, 0.2, 0.28]} />
+            <RBox args={[0.08, 0.2, 0.28]} />
             <M c={color} />
           </mesh>
           <mesh position={[sx + 0.215, 0.93, 0.02]}>
-            <boxGeometry args={[0.01, 0.1, 0.27]} />
+            <RBox args={[0.01, 0.1, 0.27]} />
             <M c={dark} />
           </mesh>
         </group>
@@ -131,11 +132,11 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
           <Strap a={[-sx + 0.03, 1.36, 0.135]} b={[sx - 0.04, 0.86, 0.15]} color={dark} />
           <Strap a={[-sx + 0.03, 1.36, -0.135]} b={[sx - 0.02, 0.86, -0.13]} color={dark} />
           <mesh position={[sx - 0.02, 0.8, 0.16]} castShadow>
-            <boxGeometry args={[0.18, 0.14, 0.06]} />
+            <RBox args={[0.18, 0.14, 0.06]} />
             <M c={color} />
           </mesh>
           <mesh position={[sx - 0.02, 0.84, 0.192]}>
-            <boxGeometry args={[0.18, 0.06, 0.008]} />
+            <RBox args={[0.18, 0.06, 0.008]} />
             <M c={dark} />
           </mesh>
         </group>
@@ -148,7 +149,7 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
             <meshStandardMaterial color={dark} side={2} />
           </mesh>
           <mesh position={[0, 0.84, 0.19]} scale={[1, 0.7, 0.6]} castShadow>
-            <sphereGeometry args={[0.11, 8, 6]} />
+            <sphereGeometry args={[0.11, 14, 10]} />
             <M c={color} />
           </mesh>
         </group>
@@ -161,7 +162,7 @@ export function HandBag({ color }: { color: string }) {
   return (
     <group position={[0, -0.6, 0.02]}>
       <mesh position={[0, -0.1, 0]} castShadow>
-        <boxGeometry args={[0.1, 0.18, 0.24]} />
+        <RBox args={[0.1, 0.18, 0.24]} />
         <M c={color} />
       </mesh>
       <mesh position={[0, 0.02, 0]} rotation={[0, Math.PI / 2, 0]}>
@@ -169,7 +170,7 @@ export function HandBag({ color }: { color: string }) {
         <M c="#3a2a1e" />
       </mesh>
       <mesh position={[0.052, -0.04, 0]}>
-        <boxGeometry args={[0.01, 0.025, 0.05]} />
+        <RBox args={[0.01, 0.025, 0.05]} />
         <meshStandardMaterial color="#d9b65a" metalness={0.6} roughness={0.3} />
       </mesh>
     </group>

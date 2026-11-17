@@ -27,7 +27,9 @@ import { BodyBag, HandBag } from './Bag'
 import { Hair } from './Hair'
 import { Eye } from './Eye'
 import { Mouth } from './Mouth'
+import { SARONG_OUTFITS, sarongAccent, sarongTexture } from '../../game/content/sarong'
 import { Accessory } from './Accessory'
+import { RBox } from './RBox'
 
 interface Props {
   appearance: Appearance
@@ -62,6 +64,10 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const outfit = byId(OUTFITS, appearance.outfit)
   const top = clothColor(appearance.topColor, outfit.top)
   const bottom = clothColor(appearance.bottomColor, outfit.bottom)
+  // ผ้าถุง/ผ้าซิ่น: ลายผ้าไหม (ค่าเริ่มต้น = ลายลูกแก้ว ผ้าขึ้นชื่อของบ้านไพบูลย์)
+  const sarongTex = SARONG_OUTFITS.includes(outfit.id)
+    ? sarongTexture(appearance.sarongPattern ?? 'lukkaew', bottom, sarongAccent(appearance.sarongAccent))
+    : null
   const bib = outfit.bib ? (outfit.bib === outfit.bottom ? bottom : outfit.bib) : null
   const female = appearance.gender === 'female'
   const shoes = appearance.shoes ?? 'sandals'
@@ -154,7 +160,8 @@ export function Character({ appearance, motion, action, tool }: Props) {
 
   // ลักษณะชาย-หญิง: ชายไหล่กว้าง ตัวสูงกว่าเล็กน้อย · หญิงไหล่แคบ เอวคอด
   const shoulder = female ? 0.185 : 0.25
-  const eyeX = 0.06 * (age.eyeScale > 1 ? 1.12 : 1)
+  // ระยะห่างระหว่างตา ≈ ความกว้างตา 1 ดวง
+  const eyeX = 0.066 * (age.eyeScale > 1 ? 1.12 : 1)
   // ตำแหน่งตา: ต่ำกว่ากลางหัวเล็กน้อย ให้หน้าสมส่วน และคิ้วโผล่พ้นหน้าม้า
   const eyeY = age.eyeScale > 1 ? 1.55 : 1.563
   const brow = shade(hair, 0.8)
@@ -180,9 +187,16 @@ export function Character({ appearance, motion, action, tool }: Props) {
       {outfit.bottomShape === 'skirt' && (
         <>
           <mesh position={[0, 0.55, 0]} castShadow>
-            <cylinderGeometry args={[0.17, 0.24, 0.62, 20]} />
-            {bottomMat}
+            <cylinderGeometry args={[0.17, 0.24, 0.62, 24]} />
+            {sarongTex ? <meshStandardMaterial key={sarongTex.uuid} color="#ffffff" map={sarongTex} /> : bottomMat}
           </mesh>
+          {sarongTex && (
+            // ขอบผ้าถุงที่พับเหน็บเอว
+            <mesh position={[0, 0.85, 0]}>
+              <cylinderGeometry args={[0.175, 0.172, 0.045, 24]} />
+              <meshStandardMaterial color={bottom} />
+            </mesh>
+          )}
           {[legL, legR].map((ref, i) => (
             <group key={i} ref={ref} position={[i === 0 ? -legGap : legGap, 0.3, 0]}>
               <mesh position={[0, -0.15, 0]} castShadow>
@@ -277,24 +291,24 @@ export function Character({ appearance, motion, action, tool }: Props) {
         (OPEN_FRONT.includes(outfit.id) ? (
           // เสื้อตัวในที่เห็นตรงกลาง (แจ็กเก็ตเปิดหน้า)
           <mesh position={[0, 1.08, 0.131]}>
-            <boxGeometry args={[0.13, 0.54, 0.01]} />
+            <RBox args={[0.13, 0.54, 0.01]} />
             <meshStandardMaterial color={bib} />
           </mesh>
         ) : outfit.id === 'vest' ? (
           <mesh position={[0, 1.06, 0.002]}>
-            <boxGeometry args={[shoulder * 2 + 0.012, 0.5, 0.268]} />
+            <RBox args={[shoulder * 2 + 0.012, 0.5, 0.268]} />
             <meshStandardMaterial color={bib} />
           </mesh>
         ) : (
           // เอี๊ยม: แผ่นหน้า + สายสองข้าง
           <group>
             <mesh position={[0, 0.98, 0.132]}>
-              <boxGeometry args={[shoulder * 1.3, 0.32, 0.012]} />
+              <RBox args={[shoulder * 1.3, 0.32, 0.012]} />
               <meshStandardMaterial color={bib} />
             </mesh>
             {[-1, 1].map((s) => (
               <mesh key={s} position={[s * shoulder * 0.55, 1.22, 0.132]}>
-                <boxGeometry args={[0.04, 0.2, 0.012]} />
+                <RBox args={[0.04, 0.2, 0.012]} />
                 <meshStandardMaterial color={bib} />
               </mesh>
             ))}
@@ -319,7 +333,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
             {skinMat}
           </mesh>
           <mesh position={[0, -0.53, 0.005]} castShadow>
-            <sphereGeometry args={[0.05, 12, 10]} />
+            <sphereGeometry args={[0.05, 14, 10]} />
             {skinMat}
           </mesh>
           </group>
@@ -376,7 +390,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
               </mesh>
             ) : (
               <mesh>
-                <boxGeometry args={[0.052, thick * 2, 0.008]} />
+                <RBox args={[0.052, thick * 2, 0.008]} />
                 <meshBasicMaterial color={brow} />
               </mesh>
             )}
@@ -387,7 +401,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
         // ขนตา: ขีดเล็ก ๆ ที่หางตา
         [-1, 1].map((s) => (
           <mesh key={'l' + s} position={[s * (eyeX + 0.024 * age.eyeScale), eyeY + 0.014 * age.eyeScale, faceZ(eyeX + 0.024, eyeY) - 0.002]} rotation={[0, 0, s * 0.6]}>
-            <boxGeometry args={[0.02 * age.eyeScale, 0.006, 0.006]} />
+            <RBox args={[0.02 * age.eyeScale, 0.006, 0.006]} />
             <meshStandardMaterial color="#1c1714" />
           </mesh>
         ))}
@@ -412,22 +426,22 @@ export function Character({ appearance, motion, action, tool }: Props) {
         <group>
           {[1.632, 1.652].map((y) => (
             <mesh key={'f' + y} position={[0, y, 0.152]} rotation={[-0.35, 0, 0]}>
-              <boxGeometry args={[0.12, 0.006, 0.004]} />
+              <RBox args={[0.12, 0.006, 0.004]} />
               <meshStandardMaterial color={wrinkle} />
             </mesh>
           ))}
           {[-1, 1].map((s) => (
             <group key={'w' + s}>
               <mesh position={[s * 0.103, 1.573, 0.13]} rotation={[0, s * 0.6, s * 0.4]}>
-                <boxGeometry args={[0.03, 0.005, 0.004]} />
+                <RBox args={[0.03, 0.005, 0.004]} />
                 <meshStandardMaterial color={wrinkle} />
               </mesh>
               <mesh position={[s * 0.103, 1.558, 0.13]} rotation={[0, s * 0.6, -s * 0.2]}>
-                <boxGeometry args={[0.028, 0.005, 0.004]} />
+                <RBox args={[0.028, 0.005, 0.004]} />
                 <meshStandardMaterial color={wrinkle} />
               </mesh>
               <mesh position={[s * 0.06, 1.5, 0.15]} rotation={[0, s * 0.35, s * 0.5]}>
-                <boxGeometry args={[0.005, 0.045, 0.004]} />
+                <RBox args={[0.005, 0.045, 0.004]} />
                 <meshStandardMaterial color={wrinkle} />
               </mesh>
             </group>
@@ -437,12 +451,17 @@ export function Character({ appearance, motion, action, tool }: Props) {
       {/* แก้ม */}
       {[-0.095, 0.095].map((x) => (
         <mesh key={'c' + x} position={[x, 1.525, 0.137]} rotation={[0, x * 4, 0]} scale={[1, 0.6, 0.3]}>
-          <sphereGeometry args={[0.026, 8, 6]} />
+          <sphereGeometry args={[0.026, 14, 10]} />
           <meshStandardMaterial color="#e48f86" transparent opacity={0.55} />
         </mesh>
       ))}
 
-      <Hair style={appearance.hairStyle} color={hair} />
+      {/* ผมกว้างตามรูปหน้า (หน้าเหลี่ยม/กลมกว้างกว่า) ไม่ให้หนังหัวโผล่ */}
+      <group position={[0, 1.57, 0]} scale={[Math.max(1, faceScale[0]), 1, Math.max(1, faceScale[2])]}>
+        <group position={[0, -1.57, 0]}>
+          <Hair style={appearance.hairStyle} color={hair} />
+        </group>
+      </group>
       {outfit.hat === 'straw' && accessory !== 'cap' && accessory !== 'beanie' && accessory !== 'beret' && <StrawHat />}
       <Accessory kind={shownAccessory} color={accColor} />
       {elder && appearance.elderGlasses && accessory !== 'glasses' && <Accessory kind="glasses" color="#6b5440" />}
@@ -474,7 +493,7 @@ function Tool({ kind }: { kind: ToolId }) {
     return (
       <group position={[0, -0.52, 0.02]}>
         <mesh position={[0, -0.45, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.95, 6]} />
+          <cylinderGeometry args={[0.018, 0.018, 0.95, 12]} />
           <meshStandardMaterial color="#a8824a" />
         </mesh>
         <mesh position={[0, -1.0, 0]}>
@@ -488,11 +507,11 @@ function Tool({ kind }: { kind: ToolId }) {
   return (
     <group position={[0, -0.52, 0.02]}>
       <mesh position={[0, -0.45, 0]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.95, 6]} />
+        <cylinderGeometry args={[0.02, 0.02, 0.95, 12]} />
         <meshStandardMaterial color="#8a6a42" />
       </mesh>
       <mesh position={[0, -0.93, 0.08]}>
-        <boxGeometry args={[0.16, 0.04, 0.18]} />
+        <RBox args={[0.16, 0.04, 0.18]} />
         <meshStandardMaterial color="#6a6e72" metalness={0.5} roughness={0.4} />
       </mesh>
     </group>
@@ -522,13 +541,13 @@ function Cane({ kind }: { kind: CaneId }) {
         <meshStandardMaterial color={wood} />
       </mesh>
       <mesh position={[0, -0.4, 0]}>
-        <cylinderGeometry args={[0.014, 0.016, 0.82, 6]} />
+        <cylinderGeometry args={[0.014, 0.016, 0.82, 12]} />
         <meshStandardMaterial color={wood} />
       </mesh>
       {kind === 'wood' &&
         [-0.15, -0.35, -0.55].map((y) => (
           <mesh key={y} position={[0, y, 0]}>
-            <cylinderGeometry args={[0.019, 0.019, 0.025, 6]} />
+            <cylinderGeometry args={[0.019, 0.019, 0.025, 12]} />
             <meshStandardMaterial color="#4a2f1a" />
           </mesh>
         ))}
@@ -536,7 +555,7 @@ function Cane({ kind }: { kind: CaneId }) {
         <group position={[0, -0.06, 0.03]}>
           {['#f2a7b8', '#f6d36b', '#ffffff'].map((c, i) => (
             <mesh key={c} position={[Math.cos(i * 2.1) * 0.025, 0, Math.sin(i * 2.1) * 0.025]}>
-              <sphereGeometry args={[0.022, 6, 5]} />
+              <sphereGeometry args={[0.022, 14, 10]} />
               <meshStandardMaterial color={c} />
             </mesh>
           ))}
@@ -544,7 +563,7 @@ function Cane({ kind }: { kind: CaneId }) {
       )}
       {/* ปลายยาง */}
       <mesh position={[0, -0.82, 0]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.04, 6]} />
+        <cylinderGeometry args={[0.02, 0.02, 0.04, 12]} />
         <meshStandardMaterial color="#2b2a2c" />
       </mesh>
     </group>
@@ -557,23 +576,23 @@ function Shawl({ color, stripe, shoulder }: { color: string; stripe?: string; sh
   return (
     <group>
       <mesh position={[0, 1.31, 0]} castShadow>
-        <boxGeometry args={[w, 0.08, 0.3]} />
+        <RBox args={[w, 0.08, 0.3]} />
         <meshStandardMaterial color={color} />
       </mesh>
       <mesh position={[0, 1.2, -0.138]}>
-        <boxGeometry args={[w, 0.22, 0.02]} />
+        <RBox args={[w, 0.22, 0.02]} />
         <meshStandardMaterial color={color} />
       </mesh>
       {[-1, 1].map((sx) => (
         <group key={sx}>
           <mesh position={[sx * shoulder * 0.55, 1.12, 0.14]} rotation={[0, 0, sx * 0.08]}>
-            <boxGeometry args={[0.1, 0.36, 0.02]} />
+            <RBox args={[0.1, 0.36, 0.02]} />
             <meshStandardMaterial color={color} />
           </mesh>
           {stripe &&
             [1.2, 1.04].map((y) => (
               <mesh key={y} position={[sx * shoulder * 0.55, y, 0.152]} rotation={[0, 0, sx * 0.08]}>
-                <boxGeometry args={[0.102, 0.025, 0.004]} />
+                <RBox args={[0.102, 0.025, 0.004]} />
                 <meshStandardMaterial color={stripe} />
               </mesh>
             ))}
@@ -589,19 +608,19 @@ function KidItem({ kind }: { kind: KidItemId }) {
     return (
       <group position={[0, -0.56, 0.05]} rotation={[0.3, 0, 0]}>
         <mesh>
-          <cylinderGeometry args={[0.035, 0.035, 0.12, 10]} />
+          <cylinderGeometry args={[0.035, 0.035, 0.12, 12]} />
           <meshStandardMaterial color="#fbfaf4" transparent opacity={0.9} />
         </mesh>
         <mesh position={[0, -0.02, 0]}>
-          <cylinderGeometry args={[0.036, 0.036, 0.07, 10]} />
+          <cylinderGeometry args={[0.036, 0.036, 0.07, 12]} />
           <meshStandardMaterial color="#ffffff" />
         </mesh>
         <mesh position={[0, 0.07, 0]}>
-          <cylinderGeometry args={[0.038, 0.038, 0.025, 10]} />
+          <cylinderGeometry args={[0.038, 0.038, 0.025, 12]} />
           <meshStandardMaterial color="#8fc4e8" />
         </mesh>
         <mesh position={[0, 0.1, 0]}>
-          <coneGeometry args={[0.02, 0.05, 8]} />
+          <coneGeometry args={[0.02, 0.05, 12]} />
           <meshStandardMaterial color="#e8c48a" />
         </mesh>
       </group>
@@ -617,16 +636,16 @@ function KidItem({ kind }: { kind: KidItemId }) {
   return (
     <group position={[0, -0.6, 0.07]}>
       <mesh>
-        <sphereGeometry args={[0.06, 8, 6]} />
+        <sphereGeometry args={[0.06, 14, 10]} />
         <meshStandardMaterial color="#b88456" />
       </mesh>
       <mesh position={[0, 0.08, 0]}>
-        <sphereGeometry args={[0.045, 8, 6]} />
+        <sphereGeometry args={[0.045, 14, 10]} />
         <meshStandardMaterial color="#b88456" />
       </mesh>
       {[-1, 1].map((sx) => (
         <mesh key={sx} position={[sx * 0.035, 0.12, 0]}>
-          <sphereGeometry args={[0.017, 6, 5]} />
+          <sphereGeometry args={[0.017, 14, 10]} />
           <meshStandardMaterial color="#8a5a36" />
         </mesh>
       ))}
@@ -647,7 +666,7 @@ function KidHat() {
         <meshStandardMaterial color="#f6d36b" />
       </mesh>
       <mesh position={[0.13, 0.06, 0.1]}>
-        <sphereGeometry args={[0.035, 8, 6]} />
+        <sphereGeometry args={[0.035, 14, 10]} />
         <meshStandardMaterial color="#e8746a" />
       </mesh>
     </group>
@@ -663,7 +682,7 @@ function Basket() {
         <meshStandardMaterial color="#c9a06a" side={2} />
       </mesh>
       <mesh position={[0, -0.06, 0]}>
-        <cylinderGeometry args={[0.08, 0.08, 0.01, 10]} />
+        <cylinderGeometry args={[0.08, 0.08, 0.01, 12]} />
         <meshStandardMaterial color="#a8824a" />
       </mesh>
       <mesh position={[0, 0.06, 0]} rotation={[0, 0, 0]}>
@@ -673,7 +692,7 @@ function Basket() {
       {/* ดอกไม้/ของใส่บาตรในตะกร้า */}
       {['#f6d36b', '#f2a7b8'].map((c, i) => (
         <mesh key={c} position={[i ? 0.03 : -0.03, 0.06, 0]}>
-          <sphereGeometry args={[0.03, 6, 5]} />
+          <sphereGeometry args={[0.03, 14, 10]} />
           <meshStandardMaterial color={c} />
         </mesh>
       ))}

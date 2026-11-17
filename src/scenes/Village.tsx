@@ -5,6 +5,7 @@ import {
   PLOTS,
   ROADS,
   TREES,
+  ROCKS,
   type Place,
   type Plot,
   type Road,
@@ -13,6 +14,7 @@ import {
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
 import { House, VillagerHouse, GableRoof } from './models/House'
+import { RBox } from './models/RBox'
 
 /** ฉากหมู่บ้านทั้งหมด (สิ่งที่อยู่นิ่ง) */
 export function Village({ playerHouseId, playerName }: { playerHouseId?: string; playerName?: string }) {
@@ -29,6 +31,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
         <PlotMesh key={p.id} plot={p} houseId={playerHouseId} ownerName={playerName} />
       ))}
       <Trees />
+      <Rocks />
       <Mountains />
     </group>
   )
@@ -65,8 +68,8 @@ function Mountains() {
     <group>
       {peaks.map((p, i) => (
         <mesh key={i} position={[p.x, p.h / 2 - 2, p.z]} rotation={[0, i, 0]}>
-          <coneGeometry args={[p.r, p.h, 7]} />
-          <meshStandardMaterial color={p.c} flatShading />
+          <coneGeometry args={[p.r, p.h, 12]} />
+          <meshStandardMaterial color={p.c} />
         </mesh>
       ))}
     </group>
@@ -112,13 +115,13 @@ function PlaceMesh({ place }: { place: Place }) {
           </mesh>
           {/* ฐาน */}
           <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
-            <boxGeometry args={[w * 0.75, 1.2, d * 0.8]} />
-            <meshStandardMaterial color="#f1ece2" flatShading />
+            <RBox args={[w * 0.75, 1.2, d * 0.8]} />
+            <meshStandardMaterial color="#f1ece2" />
           </mesh>
           {/* ตัวโบสถ์ */}
           <mesh position={[0, 3.2, 0]} castShadow receiveShadow>
-            <boxGeometry args={[w * 0.6, 4, d * 0.65]} />
-            <meshStandardMaterial color="#faf6ee" flatShading />
+            <RBox args={[w * 0.6, 4, d * 0.65]} />
+            <meshStandardMaterial color="#faf6ee" />
           </mesh>
           {/* หลังคาซ้อนชั้น */}
           <group rotation={[0, Math.PI / 2, 0]}>
@@ -128,19 +131,19 @@ function PlaceMesh({ place }: { place: Place }) {
           {/* ช่อฟ้า */}
           {[-1, 1].map((s) => (
             <mesh key={s} position={[0, 9.1, s * d * 0.25]} rotation={[s * 0.4, 0, 0]}>
-              <coneGeometry args={[0.15, 1.2, 6]} />
+              <coneGeometry args={[0.15, 1.2, 12]} />
               <meshStandardMaterial color="#d9a441" metalness={0.5} roughness={0.3} />
             </mesh>
           ))}
           {/* ต้นโพธิ์ */}
           <group position={[w * 0.6, 0, 6]}>
             <mesh position={[0, 2, 0]} castShadow>
-              <cylinderGeometry args={[0.4, 0.6, 4, 8]} />
-              <meshStandardMaterial color="#6b5440" flatShading />
+              <cylinderGeometry args={[0.4, 0.6, 4, 12]} />
+              <meshStandardMaterial color="#6b5440" />
             </mesh>
             <mesh position={[0, 5.5, 0]} castShadow>
-              <icosahedronGeometry args={[3.2, 0]} />
-              <meshStandardMaterial color="#4f7d3c" flatShading />
+              <icosahedronGeometry args={[3.2, 3]} />
+              <meshStandardMaterial color="#4f7d3c" />
             </mesh>
           </group>
         </group>
@@ -150,14 +153,14 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 0.25, 0]} receiveShadow castShadow>
-            <boxGeometry args={[w, 0.5, d]} />
-            <meshStandardMaterial color="#c8b48f" flatShading />
+            <RBox args={[w, 0.5, d]} />
+            <meshStandardMaterial color="#c8b48f" />
           </mesh>
           {[-1, 1].flatMap((sx) =>
             [-1, 1].map((sz) => (
               <mesh key={`${sx}${sz}`} position={[sx * (w / 2 - 0.4), 2, sz * (d / 2 - 0.4)]} castShadow>
-                <boxGeometry args={[0.3, 3.2, 0.3]} />
-                <meshStandardMaterial color="#efe7d6" flatShading />
+                <RBox args={[0.3, 3.2, 0.3]} />
+                <meshStandardMaterial color="#efe7d6" />
               </mesh>
             )),
           )}
@@ -165,8 +168,8 @@ function PlaceMesh({ place }: { place: Place }) {
           {/* ม้านั่ง */}
           {[-1.5, 0, 1.5].map((bz) => (
             <mesh key={bz} position={[0, 0.85, bz]} castShadow>
-              <boxGeometry args={[w * 0.6, 0.12, 0.5]} />
-              <meshStandardMaterial color="#7a5236" flatShading />
+              <RBox args={[w * 0.6, 0.12, 0.5]} />
+              <meshStandardMaterial color="#7a5236" />
             </mesh>
           ))}
         </group>
@@ -178,13 +181,13 @@ function PlaceMesh({ place }: { place: Place }) {
         <group>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 1.2, 1.1, 0]} castShadow>
-              <boxGeometry args={[0.15, 2.2, 0.15]} />
+              <RBox args={[0.15, 2.2, 0.15]} />
               <meshStandardMaterial color="#5a3b26" />
             </mesh>
           ))}
           <mesh position={[0, 1.7, 0]} castShadow>
-            <boxGeometry args={[2.6, 1.4, 0.12]} />
-            <meshStandardMaterial color="#8a6340" flatShading />
+            <RBox args={[2.6, 1.4, 0.12]} />
+            <meshStandardMaterial color="#8a6340" />
           </mesh>
           {[
             [-0.7, 1.85, '#fff6d8'],
@@ -197,7 +200,7 @@ function PlaceMesh({ place }: { place: Place }) {
             </mesh>
           ))}
           <mesh position={[0, 2.55, 0]} castShadow>
-            <boxGeometry args={[3, 0.12, 0.5]} />
+            <RBox args={[3, 0.12, 0.5]} />
             <meshStandardMaterial color="#7b3b2a" />
           </mesh>
         </group>
@@ -207,22 +210,22 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-            <boxGeometry args={[w, 3, d]} />
-            <meshStandardMaterial color="#e8d9b8" flatShading />
+            <RBox args={[w, 3, d]} />
+            <meshStandardMaterial color="#e8d9b8" />
           </mesh>
           <mesh position={[0, 2.9, d / 2 + 0.8]} rotation={[0.25, 0, 0]} castShadow>
-            <boxGeometry args={[w + 0.4, 0.1, 1.8]} />
-            <meshStandardMaterial color="#3f7a8c" flatShading />
+            <RBox args={[w + 0.4, 0.1, 1.8]} />
+            <meshStandardMaterial color="#3f7a8c" />
           </mesh>
           <mesh position={[0, 1.2, d / 2 + 0.05]}>
-            <boxGeometry args={[w * 0.6, 2.2, 0.1]} />
+            <RBox args={[w * 0.6, 2.2, 0.1]} />
             <meshStandardMaterial color="#4a3a2a" />
           </mesh>
           {/* ตู้เย็นเครื่องดื่ม/ลังของหน้าร้าน */}
           {[-2.2, 2.2].map((cx) => (
             <mesh key={cx} position={[cx, 0.5, d / 2 + 0.8]} castShadow>
-              <boxGeometry args={[0.9, 1, 0.7]} />
-              <meshStandardMaterial color={cx < 0 ? '#c2412d' : '#d9a441'} flatShading />
+              <RBox args={[0.9, 1, 0.7]} />
+              <meshStandardMaterial color={cx < 0 ? '#c2412d' : '#d9a441'} />
             </mesh>
           ))}
           <GableRoof width={w} depth={d} height={1.2} y={3} color="#8b8f86" overhang={0.3} />
@@ -233,24 +236,24 @@ function PlaceMesh({ place }: { place: Place }) {
       body = (
         <group>
           <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
-            <boxGeometry args={[w, 3.2, d]} />
-            <meshStandardMaterial color="#efe3c8" flatShading />
+            <RBox args={[w, 3.2, d]} />
+            <meshStandardMaterial color="#efe3c8" />
           </mesh>
           <GableRoof width={w} depth={d} height={2} y={3.2} color="#5c4a8a" overhang={0.6} />
           {/* กี่ทอผ้าหน้าอาคาร */}
           <group position={[-3, 0, d / 2 + 2]}>
             <mesh position={[0, 0.9, 0]} castShadow>
-              <boxGeometry args={[1.6, 0.1, 1.2]} />
+              <RBox args={[1.6, 0.1, 1.2]} />
               <meshStandardMaterial color="#7a5236" />
             </mesh>
             <mesh position={[0, 0.96, 0]}>
-              <boxGeometry args={[1.2, 0.02, 0.9]} />
+              <RBox args={[1.2, 0.02, 0.9]} />
               <meshStandardMaterial color="#b0304a" />
             </mesh>
             {[-1, 1].flatMap((sx) =>
               [-1, 1].map((sz) => (
                 <mesh key={`${sx}${sz}`} position={[sx * 0.75, 0.6, sz * 0.55]}>
-                  <boxGeometry args={[0.08, 1.2, 0.08]} />
+                  <RBox args={[0.08, 1.2, 0.08]} />
                   <meshStandardMaterial color="#5a3b26" />
                 </mesh>
               )),
@@ -273,8 +276,8 @@ function PlaceMesh({ place }: { place: Place }) {
           </mesh>
           {/* ท่าน้ำไม้ */}
           <mesh position={[w / 2 - 1, 0.25, 0]} castShadow receiveShadow>
-            <boxGeometry args={[4, 0.15, 1.4]} />
-            <meshStandardMaterial color="#8a6340" flatShading />
+            <RBox args={[4, 0.15, 1.4]} />
+            <meshStandardMaterial color="#8a6340" />
           </mesh>
           {/* บัว */}
           {[
@@ -323,13 +326,13 @@ function RiceField({ w, d }: { w: number; d: number }) {
           <group key={i} position={[cx, 0, cz]}>
             {/* คันนา */}
             <mesh position={[0, 0.12, 0]} receiveShadow>
-              <boxGeometry args={[pw, 0.24, pd]} />
+              <RBox args={[pw, 0.24, pd]} />
               <meshStandardMaterial color="#8b7a52" />
             </mesh>
             {/* แปลงข้าว */}
             <mesh position={[0, 0.3, 0]} receiveShadow castShadow>
-              <boxGeometry args={[pw - 0.8, 0.35, pd - 0.8]} />
-              <meshStandardMaterial color={i % 2 ? '#7fb24a' : '#9cc457'} flatShading />
+              <RBox args={[pw - 0.8, 0.35, pd - 0.8]} />
+              <meshStandardMaterial color={i % 2 ? '#7fb24a' : '#9cc457'} />
             </mesh>
           </group>
         )
@@ -339,13 +342,13 @@ function RiceField({ w, d }: { w: number; d: number }) {
         {[-1, 1].flatMap((sx) =>
           [-1, 1].map((sz) => (
             <mesh key={`${sx}${sz}`} position={[sx * 1.1, 1.1, sz * 1.1]}>
-              <boxGeometry args={[0.15, 2.2, 0.15]} />
+              <RBox args={[0.15, 2.2, 0.15]} />
               <meshStandardMaterial color="#5a3b26" />
             </mesh>
           )),
         )}
         <mesh position={[0, 0.8, 0]} castShadow>
-          <boxGeometry args={[2.4, 0.1, 2.4]} />
+          <RBox args={[2.4, 0.1, 2.4]} />
           <meshStandardMaterial color="#a07a4a" />
         </mesh>
         <GableRoof width={2.4} depth={2.4} height={1.1} y={2.2} color="#c9a65a" overhang={0.3} />
@@ -381,8 +384,8 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
       {/* รั้วไม้ไผ่ แสดงขอบเขตที่ดิน */}
       {posts.map(([px, pz], i) => (
         <mesh key={i} position={[px, 0.5, pz]} castShadow>
-          <cylinderGeometry args={[0.06, 0.06, 1, 5]} />
-          <meshStandardMaterial color="#c2a560" flatShading />
+          <cylinderGeometry args={[0.06, 0.06, 1, 12]} />
+          <meshStandardMaterial color="#c2a560" />
         </mesh>
       ))}
       {houseId && (
@@ -393,6 +396,30 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
       <group position={[-w / 2 + 1.5, 0, 0]}>
         <Label text={ownerName ? `บ้านของ${ownerName}` : plot.name} y={houseId ? 8 : 2} color="#2b4a28" />
       </group>
+    </group>
+  )
+}
+
+/** กองหินเล็ก ๆ ริมทาง (เก็บก้อนหินได้) */
+function Rocks() {
+  return (
+    <group>
+      {ROCKS.map(([x, z], i) => (
+        <group key={i} position={[x, 0, z]} rotation={[0, i * 1.7, 0]}>
+          <mesh position={[0, 0.18, 0]} scale={[1.2, 0.75, 1]} castShadow receiveShadow>
+            <dodecahedronGeometry args={[0.32, 0]} />
+            <meshStandardMaterial color="#8d8a84" />
+          </mesh>
+          <mesh position={[0.36, 0.1, 0.12]} scale={[1, 0.7, 1]} castShadow>
+            <dodecahedronGeometry args={[0.18, 0]} />
+            <meshStandardMaterial color="#a19d96" />
+          </mesh>
+          <mesh position={[-0.28, 0.08, -0.18]} castShadow>
+            <dodecahedronGeometry args={[0.13, 0]} />
+            <meshStandardMaterial color="#7a766f" />
+          </mesh>
+        </group>
+      ))}
     </group>
   )
 }
@@ -412,46 +439,67 @@ export function Tree({ tree }: { tree: TreeSpot }) {
   const s = tree.scale
   switch (tree.kind) {
     case 'coconut':
+      // มะพร้าว: ลำต้นเรียว ใบโค้งเป็นทางยาว ปลายตกลง
       return (
         <group position={[x, 0, z]} scale={s}>
           <mesh position={[0, 3, 0]} rotation={[0, 0, 0.08]} castShadow>
-            <cylinderGeometry args={[0.15, 0.25, 6, 6]} />
-            <meshStandardMaterial color="#7a6248" flatShading />
+            <cylinderGeometry args={[0.14, 0.24, 6, 12]} />
+            <meshStandardMaterial color="#8a7058" roughness={0.9} />
           </mesh>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <mesh key={i} position={[0.25, 6, 0]} rotation={[0, (i / 6) * Math.PI * 2, -0.9]} castShadow>
-              <boxGeometry args={[0.35, 0.06, 2.6]} />
-              <meshStandardMaterial color="#4f8a3a" flatShading />
-            </mesh>
+          {Array.from({ length: 7 }).map((_, k) => (
+            <group key={k} position={[0.24, 6, 0]} rotation={[0, (k / 7) * Math.PI * 2, 0]}>
+              <mesh position={[0, -0.35, 1.15]} rotation={[0.45, 0, 0]} scale={[0.32, 0.05, 1.35]} castShadow>
+                <sphereGeometry args={[1, 16, 10]} />
+                <meshStandardMaterial color={k % 2 ? '#5a9a42' : '#4f8a3a'} />
+              </mesh>
+            </group>
           ))}
+          <mesh position={[0.24, 5.9, 0]}>
+            <sphereGeometry args={[0.32, 14, 10]} />
+            <meshStandardMaterial color="#6a8a3a" />
+          </mesh>
         </group>
       )
     case 'banana':
+      // กล้วย: ใบกว้างโค้งออกรอบต้น
       return (
         <group position={[x, 0, z]} scale={s}>
           <mesh position={[0, 1, 0]} castShadow>
-            <cylinderGeometry args={[0.18, 0.22, 2, 6]} />
-            <meshStandardMaterial color="#8aa055" flatShading />
+            <cylinderGeometry args={[0.17, 0.23, 2, 14]} />
+            <meshStandardMaterial color="#8aa055" />
           </mesh>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <mesh key={i} position={[0, 2.2, 0]} rotation={[0.9, (i / 5) * Math.PI * 2, 0]} castShadow>
-              <boxGeometry args={[0.6, 0.04, 1.8]} />
-              <meshStandardMaterial color="#6fa64a" flatShading />
-            </mesh>
+          {Array.from({ length: 6 }).map((_, k) => (
+            <group key={k} position={[0, 2.05, 0]} rotation={[0, (k / 6) * Math.PI * 2 + 0.3, 0]}>
+              <mesh position={[0, 0.25, 0.75]} rotation={[-0.55, 0, 0]} scale={[0.4, 0.035, 0.95]} castShadow>
+                <sphereGeometry args={[1, 16, 10]} />
+                <meshStandardMaterial color={k % 2 ? '#7ab452' : '#6fa64a'} />
+              </mesh>
+            </group>
           ))}
         </group>
       )
     case 'mango':
+      // มะม่วง: พุ่มกลมหลายก้อนซ้อนกัน (ไม่เป็นเหลี่ยม)
       return (
         <group position={[x, 0, z]} scale={s}>
           <mesh position={[0, 1.2, 0]} castShadow>
-            <cylinderGeometry args={[0.25, 0.35, 2.4, 6]} />
-            <meshStandardMaterial color="#6b5440" flatShading />
+            <cylinderGeometry args={[0.24, 0.36, 2.4, 14]} />
+            <meshStandardMaterial color="#6b5440" roughness={0.9} />
           </mesh>
-          <mesh position={[0, 3.3, 0]} castShadow>
-            <icosahedronGeometry args={[2, 0]} />
-            <meshStandardMaterial color="#3f6e33" flatShading />
-          </mesh>
+          {(
+            [
+              [0, 3.3, 0, 1.7, '#3f6e33'],
+              [1.05, 3.0, 0.35, 1.15, '#4a7d3a'],
+              [-1.0, 3.05, -0.25, 1.2, '#467a37'],
+              [0.15, 4.15, -0.3, 1.15, '#4f8640'],
+              [-0.2, 3.1, 1.0, 1.0, '#437535'],
+            ] as const
+          ).map(([px, py, pz, r, c], k) => (
+            <mesh key={k} position={[px, py, pz]} castShadow receiveShadow>
+              <icosahedronGeometry args={[r, 3]} />
+              <meshStandardMaterial color={c} roughness={0.95} />
+            </mesh>
+          ))}
         </group>
       )
   }

@@ -1,4 +1,5 @@
-import type { PetChoice, PetHeldId, PetOutfitId, PetSpecies } from '../../game/content/pets'
+import type { PetChoice, PetHatId, PetHeldId, PetOutfitId, PetSpecies } from '../../game/content/pets'
+import { RBox } from './RBox'
 
 /**
  * ชุดแต่งตัวสัตว์เลี้ยง — วางตาม "จุดยึด" ของแต่ละชนิด (พิกัดเดียวกับโมเดลใน Pet.tsx)
@@ -33,7 +34,7 @@ export const PET_ANCHORS: Record<PetSpecies, Anchor> = {
   turtle: { head: [0, 0.1, 0.24], headR: 0.055, neck: [0.1, 0.2], neckR: 0.04, body: [0.1, 0], bodyW: 0.34, bodyL: 0.4 },
 }
 
-const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} flatShading />
+const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} />
 
 export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string; kind: PetOutfitId }) {
   const a = PET_ANCHORS[pet.species]
@@ -53,7 +54,7 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
             <M c={color} />
           </mesh>
           <mesh position={[0, -nr * 0.95, nr * 0.45]}>
-            <sphereGeometry args={[nr * 0.28, 8, 7]} />
+            <sphereGeometry args={[nr * 0.28, 14, 10]} />
             <meshStandardMaterial color="#e8b830" metalness={0.6} roughness={0.3} />
           </mesh>
         </group>
@@ -76,17 +77,17 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group position={[0, ny - nr * 0.2, nz + nr * 0.8]}>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * nr * 0.75, 0, 0]} rotation={[0, 0, s * 0.35]} scale={[1.5, 0.9, 0.4]}>
-              <sphereGeometry args={[nr * 0.55, 8, 6]} />
+              <sphereGeometry args={[nr * 0.55, 14, 10]} />
               <M c={color} />
             </mesh>
           ))}
           <mesh>
-            <sphereGeometry args={[nr * 0.28, 6, 6]} />
+            <sphereGeometry args={[nr * 0.28, 14, 10]} />
             <M c={color} />
           </mesh>
           {[-1, 1].map((s) => (
             <mesh key={'t' + s} position={[s * nr * 0.35, -nr * 0.6, 0]} rotation={[0, 0, s * 0.3]}>
-              <boxGeometry args={[nr * 0.25, nr * 0.9, nr * 0.08]} />
+              <RBox args={[nr * 0.25, nr * 0.9, nr * 0.08]} />
               <M c={color} />
             </mesh>
           ))}
@@ -98,12 +99,12 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group position={[hx + hr * 0.45, hy + hr * 0.9, hz]} rotation={[0, 0, -0.35]}>
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * hr * 0.32, 0, 0]} rotation={[0, 0, s * 0.35]} scale={[1.4, 0.85, 0.45]}>
-              <sphereGeometry args={[hr * 0.28, 8, 6]} />
+              <sphereGeometry args={[hr * 0.28, 14, 10]} />
               <M c={color} />
             </mesh>
           ))}
           <mesh>
-            <sphereGeometry args={[hr * 0.13, 6, 6]} />
+            <sphereGeometry args={[hr * 0.13, 14, 10]} />
             <M c={color} />
           </mesh>
         </group>
@@ -115,13 +116,13 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
             const t = (d * Math.PI) / 180
             return (
               <mesh key={d} position={[Math.sin(t) * hr * 0.18, Math.cos(t) * hr * 0.18, 0]} scale={[1, 1, 0.4]}>
-                <sphereGeometry args={[hr * 0.14, 6, 5]} />
+                <sphereGeometry args={[hr * 0.14, 14, 10]} />
                 <M c={color} />
               </mesh>
             )
           })}
           <mesh position={[0, 0, hr * 0.04]}>
-            <sphereGeometry args={[hr * 0.1, 6, 5]} />
+            <sphereGeometry args={[hr * 0.1, 14, 10]} />
             <M c="#f2c94a" />
           </mesh>
         </group>
@@ -138,7 +139,7 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
             const t = (i / cols.length) * Math.PI * 2
             return (
               <mesh key={i} position={[Math.sin(t) * hr * 0.75, Math.cos(t) * hr * 0.1, Math.cos(t) * hr * 0.75]}>
-                <sphereGeometry args={[hr * 0.16, 6, 5]} />
+                <sphereGeometry args={[hr * 0.16, 14, 10]} />
                 <M c={c} />
               </mesh>
             )
@@ -158,13 +159,13 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
             const t = (i / 6) * Math.PI * 2
             return (
               <mesh key={i} position={[Math.sin(t) * hr * 0.75, hr * 0.85, Math.cos(t) * hr * 0.6]}>
-                <sphereGeometry args={[hr * 0.1, 5, 4]} />
+                <sphereGeometry args={[hr * 0.1, 14, 10]} />
                 <meshBasicMaterial color="#ffffff" />
               </mesh>
             )
           })}
           <mesh position={[hr * 0.6, -hr * 0.85, hr * 0.4]}>
-            <sphereGeometry args={[hr * 0.2, 6, 5]} />
+            <sphereGeometry args={[hr * 0.2, 14, 10]} />
             <M c={color} />
           </mesh>
         </group>
@@ -192,16 +193,16 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group position={[hx, hy, hz - hr * 0.1]}>
           <mesh castShadow>
             <sphereGeometry args={[hr * 1.22, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-            <meshStandardMaterial color={color} flatShading side={2} />
+            <meshStandardMaterial color={color} side={2} />
           </mesh>
           {[-1, 1].map((s) => (
             <group key={s} position={[s * hr * 0.5, hr * 1.1, -hr * 0.1]} rotation={[-0.2, 0, s * -0.25]}>
               <mesh position={[0, hr * 0.7, 0]} scale={[0.45, 1.4, 0.3]}>
-                <sphereGeometry args={[hr * 0.6, 8, 6]} />
+                <sphereGeometry args={[hr * 0.6, 14, 10]} />
                 <M c={color} />
               </mesh>
               <mesh position={[0, hr * 0.7, hr * 0.12]} scale={[0.28, 1.1, 0.2]}>
-                <sphereGeometry args={[hr * 0.6, 8, 6]} />
+                <sphereGeometry args={[hr * 0.6, 14, 10]} />
                 <M c="#f2b8c0" />
               </mesh>
             </group>
@@ -214,7 +215,7 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group position={[hx, hy, hz - hr * 0.1]}>
           <mesh castShadow>
             <sphereGeometry args={[hr * 1.22, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-            <meshStandardMaterial color="#fbf6f0" flatShading side={2} />
+            <meshStandardMaterial color="#fbf6f0" side={2} />
           </mesh>
           {[
             [0.5, 0.85, 0.5],
@@ -222,19 +223,19 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
             [0.2, 0.7, -0.8],
           ].map(([x, y, z], i) => (
             <mesh key={i} position={[x * hr, y * hr, z * hr]} scale={[1, 0.6, 1]}>
-              <sphereGeometry args={[hr * 0.38, 7, 5]} />
+              <sphereGeometry args={[hr * 0.38, 14, 10]} />
               <M c={color} />
             </mesh>
           ))}
           {[-1, 1].map((s) => (
             <mesh key={'h' + s} position={[s * hr * 0.55, hr * 1.1, 0]} rotation={[0, 0, s * -0.4]}>
-              <coneGeometry args={[hr * 0.12, hr * 0.4, 6]} />
+              <coneGeometry args={[hr * 0.12, hr * 0.4, 12]} />
               <M c="#f2d34a" />
             </mesh>
           ))}
           {[-1, 1].map((s) => (
             <mesh key={'e' + s} position={[s * hr * 1.2, hr * 0.55, 0]} rotation={[0, 0, s * -0.5]} scale={[1.4, 0.5, 0.8]}>
-              <sphereGeometry args={[hr * 0.28, 7, 5]} />
+              <sphereGeometry args={[hr * 0.28, 14, 10]} />
               <M c="#f2b8c0" />
             </mesh>
           ))}
@@ -246,20 +247,20 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group position={[hx, hy, hz - hr * 0.1]}>
           <mesh castShadow>
             <sphereGeometry args={[hr * 1.22, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-            <meshStandardMaterial color={color} flatShading side={2} />
+            <meshStandardMaterial color={color} side={2} />
           </mesh>
           {[-1, 1].map((s) => (
             <group key={s} position={[s * hr * 0.55, hr * 1.05, hr * 0.15]}>
               <mesh>
-                <sphereGeometry args={[hr * 0.32, 8, 7]} />
+                <sphereGeometry args={[hr * 0.32, 14, 10]} />
                 <M c={color} />
               </mesh>
               <mesh position={[0, hr * 0.05, hr * 0.24]}>
-                <sphereGeometry args={[hr * 0.16, 7, 6]} />
+                <sphereGeometry args={[hr * 0.16, 14, 10]} />
                 <meshBasicMaterial color="#fbf8f2" />
               </mesh>
               <mesh position={[0, hr * 0.05, hr * 0.36]}>
-                <sphereGeometry args={[hr * 0.08, 6, 5]} />
+                <sphereGeometry args={[hr * 0.08, 14, 10]} />
                 <meshBasicMaterial color="#1a1612" />
               </mesh>
             </group>
@@ -289,24 +290,24 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
         <group>
           {[-0.18, 0.12].map((t) => (
             <mesh key={t} position={[0, by, bz + t * l]}>
-              <boxGeometry args={[w * 1.06, w * 1.0, l * 0.13]} />
+              <RBox args={[w * 1.06, w * 1.0, l * 0.13]} />
               <M c="#2b2a2c" />
             </mesh>
           ))}
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * w * 0.35, by + w * 0.55, bz]} rotation={[0.3, 0, s * -0.6]} scale={[1, 0.15, 0.7]}>
-              <sphereGeometry args={[w * 0.4, 8, 6]} />
+              <sphereGeometry args={[w * 0.4, 14, 10]} />
               <meshStandardMaterial color="#dff1fb" transparent opacity={0.75} />
             </mesh>
           ))}
           {[-1, 1].map((s) => (
             <group key={'a' + s} position={[hx + s * hr * 0.35, hy + hr * 0.9, hz]} rotation={[0.2, 0, s * -0.3]}>
               <mesh position={[0, hr * 0.35, 0]}>
-                <cylinderGeometry args={[hr * 0.04, hr * 0.04, hr * 0.7, 5]} />
+                <cylinderGeometry args={[hr * 0.04, hr * 0.04, hr * 0.7, 12]} />
                 <M c="#2b2a2c" />
               </mesh>
               <mesh position={[0, hr * 0.72, 0]}>
-                <sphereGeometry args={[hr * 0.14, 6, 5]} />
+                <sphereGeometry args={[hr * 0.14, 14, 10]} />
                 <M c={color} />
               </mesh>
             </group>
@@ -319,7 +320,7 @@ export function PetOutfit({ pet, color, kind }: { pet: PetChoice; color: string;
       return (
         <group>
           <mesh position={[w * 0.58, by - w * 0.1, bz + a.bodyL * 0.05]} castShadow>
-            <boxGeometry args={[w * 0.12, w * 0.35, w * 0.45]} />
+            <RBox args={[w * 0.12, w * 0.35, w * 0.45]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, by, bz + a.bodyL * 0.05]} rotation={[0, 0, 0.5]}>
@@ -344,12 +345,12 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
       return (
         <group position={pos} rotation={[0.4, 0, 0.6]}>
           <mesh>
-            <coneGeometry args={[s * 0.22, s * 0.9, 8]} />
+            <coneGeometry args={[s * 0.22, s * 0.9, 12]} />
             <M c="#f08a2a" />
           </mesh>
           {[-1, 0, 1].map((i) => (
             <mesh key={i} position={[i * s * 0.08, s * 0.55, 0]} rotation={[0, 0, i * 0.4]}>
-              <boxGeometry args={[s * 0.06, s * 0.3, s * 0.06]} />
+              <RBox args={[s * 0.06, s * 0.3, s * 0.06]} />
               <M c="#5c9a3a" />
             </mesh>
           ))}
@@ -364,7 +365,7 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
           </mesh>
           {[[-0.08, -0.2], [0.08, -0.22], [0, -0.18]].map(([x, y], i) => (
             <mesh key={i} position={[x * s, y * s, s * 0.17]}>
-              <sphereGeometry args={[s * 0.05, 5, 4]} />
+              <sphereGeometry args={[s * 0.05, 14, 10]} />
               <M c="#3a2a20" />
             </mesh>
           ))}
@@ -373,7 +374,7 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
             <meshStandardMaterial color="#ffffff" transparent opacity={0.8} />
           </mesh>
           <mesh position={[s * 0.06, s * 0.5, 0]} rotation={[0, 0, -0.2]}>
-            <cylinderGeometry args={[s * 0.03, s * 0.03, s * 0.45, 5]} />
+            <cylinderGeometry args={[s * 0.03, s * 0.03, s * 0.45, 12]} />
             <M c="#e86a8a" />
           </mesh>
         </group>
@@ -382,14 +383,14 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
       return (
         <group position={pos}>
           <mesh position={[0, -s * 0.15, 0]}>
-            <coneGeometry args={[s * 0.22, s * 0.5, 8]} />
+            <coneGeometry args={[s * 0.22, s * 0.5, 12]} />
             <M c="#f6d0dc" />
           </mesh>
           {['#f08aa0', '#fbf6f0', '#f2c94a', '#f08aa0', '#c9b3e6'].map((c, i) => {
             const t = (i / 5) * Math.PI * 2
             return (
               <mesh key={i} position={[Math.sin(t) * s * 0.15, s * 0.18 + (i % 2) * s * 0.06, Math.cos(t) * s * 0.1]}>
-                <sphereGeometry args={[s * 0.12, 6, 5]} />
+                <sphereGeometry args={[s * 0.12, 14, 10]} />
                 <M c={c} />
               </mesh>
             )
@@ -406,7 +407,7 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
             </mesh>
           ))}
           <mesh>
-            <sphereGeometry args={[s * 0.18, 8, 6]} />
+            <sphereGeometry args={[s * 0.18, 14, 10]} />
             <M c="#f6d860" />
           </mesh>
         </group>
@@ -415,21 +416,21 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
       return (
         <group position={pos}>
           <mesh>
-            <sphereGeometry args={[s * 0.25, 8, 7]} />
+            <sphereGeometry args={[s * 0.25, 14, 10]} />
             <M c="#a8743f" />
           </mesh>
           <mesh position={[0, s * 0.32, 0]}>
-            <sphereGeometry args={[s * 0.18, 8, 7]} />
+            <sphereGeometry args={[s * 0.18, 14, 10]} />
             <M c="#a8743f" />
           </mesh>
           {[-1, 1].map((k) => (
             <mesh key={k} position={[k * s * 0.14, s * 0.46, 0]}>
-              <sphereGeometry args={[s * 0.07, 6, 5]} />
+              <sphereGeometry args={[s * 0.07, 14, 10]} />
               <M c="#a8743f" />
             </mesh>
           ))}
           <mesh position={[0, s * 0.29, s * 0.16]}>
-            <sphereGeometry args={[s * 0.06, 6, 5]} />
+            <sphereGeometry args={[s * 0.06, 14, 10]} />
             <M c="#e8c8a0" />
           </mesh>
         </group>
@@ -439,12 +440,12 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
         <group position={pos} scale={[1, 1, 0.45]}>
           {[-1, 1].map((k) => (
             <mesh key={k} position={[k * s * 0.13, s * 0.08, 0]}>
-              <sphereGeometry args={[s * 0.19, 8, 7]} />
+              <sphereGeometry args={[s * 0.19, 14, 10]} />
               <M c="#f4a8c0" />
             </mesh>
           ))}
           <mesh position={[0, -s * 0.12, 0]} rotation={[0, 0, Math.PI]}>
-            <coneGeometry args={[s * 0.3, s * 0.38, 8]} />
+            <coneGeometry args={[s * 0.3, s * 0.38, 12]} />
             <M c="#f4a8c0" />
           </mesh>
         </group>
@@ -465,6 +466,169 @@ export function PetHeld({ pet, kind }: { pet: PetChoice; kind: PetHeldId }) {
             <cylinderGeometry args={[s * 0.32, s * 0.32, s * 0.2, 3, 1, false, 0, Math.PI * 0.5]} />
             <M c="#f6c84a" />
           </mesh>
+        </group>
+      )
+  }
+}
+
+/** หมวก / ของบนหัว — วางบนกลางหัวของแต่ละชนิด */
+export function PetHat({ pet, kind, color }: { pet: PetChoice; kind: PetHatId; color: string }) {
+  const a = PET_ANCHORS[pet.species]
+  const [hx, hy, hz] = a.head
+  const r = a.headR
+  const top: [number, number, number] = [hx, hy + r * 0.82, hz - r * 0.05]
+  switch (kind) {
+    case 'none':
+      return null
+    case 'ngob':
+      // งอบ: หมวกสานทรงกรวยปีกกว้างแบบไทย
+      return (
+        <group position={top}>
+          <mesh position={[0, r * 0.25, 0]} castShadow>
+            <coneGeometry args={[r * 1.6, r * 0.75, 20, 1, true]} />
+            <meshStandardMaterial color={color} side={2} />
+          </mesh>
+          <mesh position={[0, r * 0.05, 0]}>
+            <torusGeometry args={[r * 0.75, r * 0.06, 6, 18]} />
+            <M c="#7a4f2e" />
+          </mesh>
+        </group>
+      )
+    case 'strawhat':
+      return (
+        <group position={top}>
+          <mesh castShadow>
+            <cylinderGeometry args={[r * 1.6, r * 1.6, r * 0.08, 18]} />
+            <M c="#e2c27a" />
+          </mesh>
+          <mesh position={[0, r * 0.3, 0]}>
+            <cylinderGeometry args={[r * 0.72, r * 0.85, r * 0.56, 16]} />
+            <M c="#e2c27a" />
+          </mesh>
+          <mesh position={[0, r * 0.12, 0]}>
+            <cylinderGeometry args={[r * 0.86, r * 0.86, r * 0.18, 16]} />
+            <M c={color} />
+          </mesh>
+        </group>
+      )
+    case 'beanie':
+      // หมวกไหมพรม มีลูกปอมบนยอด
+      return (
+        <group position={[top[0], top[1] - r * 0.15, top[2]]}>
+          <mesh castShadow>
+            <sphereGeometry args={[r * 0.95, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.005, 0]}>
+            <cylinderGeometry args={[r * 0.97, r * 0.97, r * 0.22, 16]} />
+            <M c="#f4f1ea" />
+          </mesh>
+          <mesh position={[0, r * 0.98, 0]}>
+            <sphereGeometry args={[r * 0.28, 14, 10]} />
+            <M c="#f4f1ea" />
+          </mesh>
+        </group>
+      )
+    case 'cap':
+      return (
+        <group position={[top[0], top[1] - r * 0.1, top[2]]}>
+          <mesh castShadow>
+            <sphereGeometry args={[r * 0.9, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.005, r * 0.95]} scale={[1, 0.12, 1]}>
+            <cylinderGeometry args={[r * 0.6, r * 0.6, r * 0.2, 16, 1, false, -Math.PI / 2, Math.PI]} />
+            <M c={color} />
+          </mesh>
+        </group>
+      )
+    case 'party':
+      // หมวกปาร์ตี้ทรงกรวย ลายจุด + ปอมปอม
+      return (
+        <group position={top} rotation={[0, 0, 0.15]}>
+          <mesh position={[0, r * 0.55, 0]} castShadow>
+            <coneGeometry args={[r * 0.5, r * 1.2, 16]} />
+            <M c={color} />
+          </mesh>
+          {[0, 1, 2].map((k) => (
+            <mesh key={k} position={[Math.cos(k * 2.1) * r * 0.33, r * 0.3 + k * r * 0.18, Math.sin(k * 2.1) * r * 0.33]}>
+              <sphereGeometry args={[r * 0.08, 14, 10]} />
+              <M c="#f6d36b" />
+            </mesh>
+          ))}
+          <mesh position={[0, r * 1.2, 0]}>
+            <sphereGeometry args={[r * 0.16, 14, 10]} />
+            <M c="#f6d36b" />
+          </mesh>
+        </group>
+      )
+    case 'crown':
+      // มงกุฎ 5 แฉก ประดับพลอย
+      return (
+        <group position={top}>
+          <mesh position={[0, r * 0.12, 0]}>
+            <cylinderGeometry args={[r * 0.6, r * 0.6, r * 0.25, 18, 1, true]} />
+            <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} side={2} />
+          </mesh>
+          {Array.from({ length: 5 }).map((_, k) => {
+            const ang = (k / 5) * Math.PI * 2
+            return (
+              <group key={k}>
+                <mesh position={[Math.sin(ang) * r * 0.6, r * 0.34, Math.cos(ang) * r * 0.6]}>
+                  <coneGeometry args={[r * 0.11, r * 0.22, 4]} />
+                  <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} />
+                </mesh>
+                <mesh position={[Math.sin(ang) * r * 0.62, r * 0.12, Math.cos(ang) * r * 0.62]}>
+                  <sphereGeometry args={[r * 0.06, 14, 10]} />
+                  <M c={k % 2 ? '#d23a3a' : '#3f7fc0'} />
+                </mesh>
+              </group>
+            )
+          })}
+        </group>
+      )
+    case 'beret':
+      return (
+        <group position={top} rotation={[0, 0, -0.25]}>
+          <mesh scale={[1, 0.35, 1]} castShadow>
+            <sphereGeometry args={[r * 0.95, 16, 10]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, r * 0.32, 0]}>
+            <cylinderGeometry args={[r * 0.05, r * 0.05, r * 0.15, 12]} />
+            <M c={color} />
+          </mesh>
+        </group>
+      )
+    case 'bigbow':
+      return (
+        <group position={[top[0], top[1] + r * 0.05, top[2]]}>
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * r * 0.38, 0, 0]} rotation={[0, 0, s * 0.35]} scale={[1.3, 1, 0.5]}>
+              <sphereGeometry args={[r * 0.32, 14, 10]} />
+              <M c={color} />
+            </mesh>
+          ))}
+          <mesh>
+            <sphereGeometry args={[r * 0.16, 14, 10]} />
+            <M c={color} />
+          </mesh>
+        </group>
+      )
+    case 'catears':
+      // ที่คาดผมหูแมว
+      return (
+        <group position={[top[0], top[1] - r * 0.12, top[2]]}>
+          <mesh rotation={[Math.PI / 2 - 0.1, 0, 0]}>
+            <torusGeometry args={[r * 0.9, r * 0.06, 6, 20, Math.PI]} />
+            <M c={color} />
+          </mesh>
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * r * 0.55, r * 0.6, 0]} rotation={[0, 0, -s * 0.3]}>
+              <coneGeometry args={[r * 0.26, r * 0.45, 4]} />
+              <M c={color} />
+            </mesh>
+          ))}
         </group>
       )
   }

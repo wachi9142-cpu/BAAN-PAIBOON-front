@@ -7,6 +7,7 @@ import { AGE_RULES, CANE_WALK } from '../game/content/appearance'
 import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character } from './models/Character'
+import { findGatherTarget } from '../game/inventory'
 
 /** เก็บปุ่มที่กดค้าง (ใช้ e.code จึงใช้ได้แม้คีย์บอร์ดเป็นภาษาไทย) */
 function useKeys() {
@@ -83,6 +84,7 @@ export function Player() {
   const updatePosition = useGame((s) => s.updatePosition)
   const discoverPlace = useGame((s) => s.discoverPlace)
   const setNearby = useGame((s) => s.setNearby)
+  const setGatherTarget = useGame((s) => s.setGatherTarget)
   const toast = useGame((s) => s.toast)
 
   const keys = useKeys()
@@ -180,6 +182,7 @@ export function Player() {
         if (Math.abs(x - p.center[0]) < p.size[0] / 2 && Math.abs(z - p.center[1]) < p.size[1] / 2) near = 'plot:' + p.id
       }
       setNearby(near)
+      setGatherTarget(findGatherTarget(x, z))
       if (near && !near.startsWith('plot:') && discoverPlace(near)) {
         const place = PLACES.find((p) => p.id === near)!
         toast({ title: `ค้นพบสถานที่ใหม่: ${place.name}`, body: place.arriveText, tone: 'discover' })

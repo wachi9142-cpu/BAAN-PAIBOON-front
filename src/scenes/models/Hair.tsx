@@ -1,16 +1,24 @@
 import { useEffect, useMemo } from 'react'
 import { CatmullRomCurve3, Quaternion, TubeGeometry, Vector3 } from 'three'
 import type { Appearance } from '../../game/content/appearance'
+import { RBox } from './RBox'
 
 /** ทรงผม — พิกัดเดียวกับหัวของ Character (หัวกลางที่ y 1.57, รัศมี 0.17, หน้าไปทาง +z) */
 export function Hair({ style, color }: { style: Appearance['hairStyle']; color: string }) {
   const mat = <meshStandardMaterial color={color} />
   const cap = (
-    <mesh position={[0, 1.62, -0.01]} castShadow>
-      {/* ขอบผมด้านหน้าสูงกว่าคิ้ว (คิ้วโผล่ทุกทรง) */}
-      <sphereGeometry args={[0.18, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2.12]} />
-      {mat}
-    </mesh>
+    <group>
+      <mesh position={[0, 1.62, -0.01]} castShadow>
+        {/* ขอบผมด้านหน้าสูงกว่าคิ้ว (คิ้วโผล่ทุกทรง) */}
+        <sphereGeometry args={[0.18, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2.12]} />
+        {mat}
+      </mesh>
+      {/* ผมด้านหลังและข้างหู: คลุมลงมาถึงท้ายทอย ไม่เห็นหนังหัว (หน้ายังเปิดโล่ง) */}
+      <mesh position={[0, 1.6, -0.005]} castShadow>
+        <sphereGeometry args={[0.18, 28, 16, Math.PI - 0.25, Math.PI + 0.5, 0, Math.PI * 0.78]} />
+        <meshStandardMaterial color={color} side={2} />
+      </mesh>
+    </group>
   )
   /** หน้าม้า */
   const bangs = (
@@ -46,7 +54,7 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
         <group>
           {cap}
           <mesh position={[0, 1.6, -0.06]}>
-            <boxGeometry args={[0.34, 0.16, 0.24]} />
+            <RBox args={[0.34, 0.16, 0.24]} />
             {mat}
           </mesh>
         </group>
@@ -92,7 +100,7 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
           {longBack(0.52)}
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.16, 1.5, 0.02]}>
-              <boxGeometry args={[0.05, 0.3, 0.1]} />
+              <RBox args={[0.05, 0.3, 0.1]} />
               {mat}
             </mesh>
           ))}
@@ -305,7 +313,7 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
           })}
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.05, 1.79, 0.02]} rotation={[0, 0, s * 0.5]}>
-              <boxGeometry args={[0.07, 0.045, 0.03]} />
+              <RBox args={[0.07, 0.045, 0.03]} />
               <meshStandardMaterial color="#c0392b" />
             </mesh>
           ))}
@@ -317,13 +325,13 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
         <group>
           {cap}
           <mesh position={[0, 1.68, 0.13]} rotation={[0.25, 0, 0]}>
-            <boxGeometry args={[0.32, 0.09, 0.06]} />
+            <RBox args={[0.32, 0.09, 0.06]} />
             {mat}
           </mesh>
           {longBack(0.6)}
           {[-1, 1].map((s) => (
             <mesh key={s} position={[s * 0.165, 1.5, 0.05]}>
-              <boxGeometry args={[0.05, 0.24, 0.08]} />
+              <RBox args={[0.05, 0.24, 0.08]} />
               {mat}
             </mesh>
           ))}

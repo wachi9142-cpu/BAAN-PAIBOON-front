@@ -97,7 +97,7 @@ export const PLACES: Place[] = [
     pos: [14, -10],
     size: [7, 6],
     arriveText: 'ร้านขายของชำประจำหมู่บ้าน',
-    comingSoon: 'ซื้อขายของ (Part 3)',
+    comingSoon: 'ซื้อเครื่องมือ กระเป๋า และขายของที่เก็บมา',
     solidRadius: 4,
   },
   {
@@ -196,5 +196,22 @@ export const TREES: TreeSpot[] = (() => {
     if (out.some((t) => Math.hypot(t.pos[0] - p[0], t.pos[1] - p[1]) < 4)) continue
     out.push({ pos: p, kind: kinds[Math.floor(rand() * kinds.length)], scale: 0.8 + rand() * 0.5 })
   }
+  return out
+})()
+
+/** กองหินริมทาง/ริมนา — เก็บก้อนหินได้ (สุ่มแบบคงที่) */
+export const ROCKS: Vec2[] = (() => {
+  const rand = mulberry32(7741)
+  const out: Vec2[] = []
+  let guard = 0
+  while (out.length < 36 && guard++ < 3000) {
+    const p: Vec2 = [(rand() * 2 - 1) * (WORLD_HALF_SIZE - 6), (rand() * 2 - 1) * (WORLD_HALF_SIZE - 6)]
+    if (isBlockedForDecor(p)) continue
+    if (TREES.some((t) => Math.hypot(t.pos[0] - p[0], t.pos[1] - p[1]) < 2.5)) continue
+    if (out.some((r) => Math.hypot(r[0] - p[0], r[1] - p[1]) < 6)) continue
+    out.push(p)
+  }
+  // กองหินใกล้จุดเกิด ให้หาเจอง่าย
+  out.unshift([6, 14], [-8, 16])
   return out
 })()

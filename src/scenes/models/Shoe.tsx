@@ -1,11 +1,12 @@
 import type { ShoeId } from '../../game/content/appearance'
+import { RBox } from './RBox'
 
 /**
  * รองเท้า 1 ข้าง — จุดกำเนิดอยู่ที่พื้นใต้ข้อเท้า, ปลายเท้าชี้ไปทาง +z
  */
 export function Shoe({ style, color, skin }: { style: ShoeId; color: string; skin: string }) {
   const M = ({ c, shiny }: { c: string; shiny?: boolean }) => (
-    <meshStandardMaterial color={c} flatShading roughness={shiny ? 0.35 : 0.8} metalness={shiny ? 0.15 : 0} />
+    <meshStandardMaterial color={c} roughness={shiny ? 0.35 : 0.8} metalness={shiny ? 0.15 : 0} />
   )
   switch (style) {
     case 'sandals':
@@ -13,15 +14,15 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.012, 0.03]} castShadow>
-            <boxGeometry args={[0.12, 0.024, 0.24]} />
+            <RBox args={[0.12, 0.024, 0.24]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 0.05, 0.03]}>
-            <boxGeometry args={[0.095, 0.05, 0.2]} />
+            <RBox args={[0.095, 0.05, 0.2]} />
             <M c={skin} />
           </mesh>
           <mesh position={[0, 0.07, 0.06]} rotation={[0, 0, 0]}>
-            <boxGeometry args={[0.105, 0.012, 0.035]} />
+            <RBox args={[0.105, 0.012, 0.035]} />
             <M c={color} />
           </mesh>
         </group>
@@ -31,20 +32,20 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.018, 0.03]} castShadow>
-            <boxGeometry args={[0.13, 0.036, 0.26]} />
+            <RBox args={[0.13, 0.036, 0.26]} />
             <M c="#f4f2ee" />
           </mesh>
           <mesh position={[0, 0.07, 0.02]} castShadow>
-            <boxGeometry args={[0.12, 0.07, 0.23]} />
+            <RBox args={[0.12, 0.07, 0.23]} />
             <M c={color} />
           </mesh>
           <mesh position={[0, 0.06, 0.135]}>
-            <boxGeometry args={[0.115, 0.05, 0.03]} />
+            <RBox args={[0.115, 0.05, 0.03]} />
             <M c={color} />
           </mesh>
           {[0.02, 0.05, 0.08].map((z) => (
             <mesh key={z} position={[0, 0.107, z]}>
-              <boxGeometry args={[0.07, 0.008, 0.012]} />
+              <RBox args={[0.07, 0.008, 0.012]} />
               <M c="#ffffff" />
             </mesh>
           ))}
@@ -55,15 +56,15 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.012, 0.03]}>
-            <boxGeometry args={[0.115, 0.024, 0.24]} />
+            <RBox args={[0.115, 0.024, 0.24]} />
             <M c="#2a1f1a" />
           </mesh>
           <mesh position={[0, 0.055, 0.02]} castShadow>
-            <boxGeometry args={[0.105, 0.06, 0.21]} />
+            <RBox args={[0.105, 0.06, 0.21]} />
             <M c={color} shiny />
           </mesh>
           <mesh position={[0, 0.045, 0.13]} scale={[1, 0.6, 0.8]}>
-            <sphereGeometry args={[0.055, 8, 6]} />
+            <sphereGeometry args={[0.055, 14, 10]} />
             <M c={color} shiny />
           </mesh>
         </group>
@@ -73,7 +74,7 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.012, 0.03]}>
-            <boxGeometry args={[0.115, 0.024, 0.23]} />
+            <RBox args={[0.115, 0.024, 0.23]} />
             <M c="#2a1f1a" />
           </mesh>
           <mesh position={[0, 0.045, 0.06]} castShadow scale={[1, 0.7, 1.3]}>
@@ -81,15 +82,15 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
             <M c={color} shiny />
           </mesh>
           <mesh position={[0, 0.045, -0.04]} castShadow>
-            <boxGeometry args={[0.1, 0.05, 0.1]} />
+            <RBox args={[0.1, 0.05, 0.1]} />
             <M c={color} shiny />
           </mesh>
           <mesh position={[0, 0.08, 0.01]}>
-            <boxGeometry args={[0.11, 0.012, 0.028]} />
+            <RBox args={[0.11, 0.012, 0.028]} />
             <M c={color} shiny />
           </mesh>
           <mesh position={[0.056, 0.08, 0.01]}>
-            <sphereGeometry args={[0.01, 6, 5]} />
+            <sphereGeometry args={[0.01, 14, 10]} />
             <M c="#e8d9a8" shiny />
           </mesh>
         </group>
@@ -99,19 +100,19 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.018, 0.03]} castShadow>
-            <boxGeometry args={[0.125, 0.036, 0.25]} />
+            <RBox args={[0.125, 0.036, 0.25]} />
             <M c="#2a1f1a" />
           </mesh>
           <mesh position={[0, 0.065, 0.04]} castShadow>
-            <boxGeometry args={[0.115, 0.06, 0.22]} />
+            <RBox args={[0.115, 0.06, 0.22]} />
             <M c={color} shiny />
           </mesh>
           <mesh position={[0, 0.16, -0.01]} castShadow>
-            <cylinderGeometry args={[0.062, 0.058, 0.24, 8]} />
+            <cylinderGeometry args={[0.062, 0.058, 0.24, 12]} />
             <M c={color} shiny />
           </mesh>
           <mesh position={[0, 0.275, -0.01]}>
-            <cylinderGeometry args={[0.066, 0.066, 0.02, 8]} />
+            <cylinderGeometry args={[0.066, 0.066, 0.02, 12]} />
             <M c="#2a1f1a" />
           </mesh>
         </group>
@@ -121,20 +122,20 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
       return (
         <group>
           <mesh position={[0, 0.045, -0.075]} castShadow>
-            <cylinderGeometry args={[0.012, 0.018, 0.09, 6]} />
+            <cylinderGeometry args={[0.012, 0.018, 0.09, 12]} />
             <M c={color} shiny />
           </mesh>
           <group position={[0, 0.06, 0.02]} rotation={[0.32, 0, 0]}>
             <mesh castShadow>
-              <boxGeometry args={[0.095, 0.035, 0.2]} />
+              <RBox args={[0.095, 0.035, 0.2]} />
               <M c={color} shiny />
             </mesh>
             <mesh position={[0, 0.03, -0.03]}>
-              <boxGeometry args={[0.085, 0.03, 0.12]} />
+              <RBox args={[0.085, 0.03, 0.12]} />
               <M c={skin} />
             </mesh>
             <mesh position={[0, 0.0, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-              <coneGeometry args={[0.045, 0.06, 6]} />
+              <coneGeometry args={[0.045, 0.06, 12]} />
               <M c={color} shiny />
             </mesh>
           </group>

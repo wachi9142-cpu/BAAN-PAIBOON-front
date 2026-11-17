@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { colorsFor, PET_HELD, PET_OUTFITS, PET_OUTFIT_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
+import { colorsFor, PET_HATS, PET_HELD, PET_OUTFITS, PET_OUTFIT_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
 import { useGame } from '../game/store'
 import { playPetSound, voicesFor } from '../game/audio/petSounds'
 import { PreviewStage } from '../scenes/PreviewStage'
@@ -31,7 +31,7 @@ export function ChoosePetScreen() {
       const fresh = defaultPet(species)
       const customName = x.name.trim() && x.name !== defaultPet(x.species).name
       const keepPattern = patternsFor(species).some((p) => p.id === x.pattern)
-      return { ...fresh, name: customName ? x.name : fresh.name, pattern: keepPattern ? x.pattern : 'plain', outfit: x.outfit, outfitColor: x.outfitColor, held: x.held }
+      return { ...fresh, name: customName ? x.name : fresh.name, pattern: keepPattern ? x.pattern : 'plain', outfit: x.outfit, outfitColor: x.outfitColor, held: x.held, hat: x.hat, hatColor: x.hatColor }
     })
 
   const finish = (withPet: boolean) => {
@@ -196,6 +196,31 @@ export function ChoosePetScreen() {
                 ))}
               </div>
             </div>
+            <div className="field">
+              <label>หมวก / ของบนหัว</label>
+              <div className="chips">
+                {PET_HATS.map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    className="chip"
+                    aria-pressed={(pet.hat ?? 'none') === h.id}
+                    onClick={() => patch({ hat: h.id, hatColor: h.color ?? pet.hatColor })}
+                  >
+                    {h.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {pet.hat && pet.hat !== 'none' && (
+              <ColorChoiceField
+                label="สีหมวก"
+                options={PET_OUTFIT_COLORS}
+                value={colorChoice(pet.hatColor ?? '#e58fa0', PET_OUTFIT_COLORS)}
+                onChange={(v) => patch({ hatColor: resolveColor(v, PET_OUTFIT_COLORS) })}
+                fallbackCustom="#c9b3e6"
+              />
+            )}
             <div className="field">
               <label>ของตกแต่ง</label>
               <div className="chips">
