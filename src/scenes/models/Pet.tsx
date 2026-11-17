@@ -47,6 +47,23 @@ function drawPattern(base: string, pattern: PetPattern, accent: string) {
       g.closePath()
       g.fill()
     }
+  } else if (pattern === 'calico') {
+    // สามสี: พื้นขาว + ด่างส้ม + ด่างดำ
+    const blob = (color: string, n: number) => {
+      g.fillStyle = color
+      for (let i = 0; i < n; i++) {
+        const cx = rand() * 128
+        const cy = rand() * 128
+        g.beginPath()
+        for (let a = 0; a <= Math.PI * 2 + 0.01; a += Math.PI / 6) {
+          const r = 12 + rand() * 14
+          g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
+        }
+        g.fill()
+      }
+    }
+    blob(accent, 4)
+    blob('#2b2a2c', 3)
   } else if (pattern === 'patches') {
     for (let i = 0; i < 5; i++) {
       const cx = rand() * 128
@@ -67,7 +84,10 @@ function drawPattern(base: string, pattern: PetPattern, accent: string) {
 
 function useFur(pet: PetChoice): Texture | null {
   const tex = useMemo(
-    () => (pet.pattern === 'plain' ? null : drawPattern(pet.color, pet.pattern, pet.patternColor)),
+    () =>
+      pet.pattern === 'plain' || pet.pattern === 'colorpoint' || pet.pattern === 'tuxedo'
+        ? null // ลายเหล่านี้โมเดลลงสีเป็นส่วน ๆ เอง
+        : drawPattern(pet.color, pet.pattern, pet.patternColor),
     [pet.color, pet.pattern, pet.patternColor],
   )
   // คืนหน่วยความจำของลายเก่าเมื่อเปลี่ยนลาย (ไม่ dispose ใน cleanup ของ effect
@@ -200,35 +220,75 @@ function Dog({ pet, tex, motion }: Props & { tex: Texture | null }) {
 }
 
 function Cat({ pet, tex, motion }: Props & { tex: Texture | null }) {
+  const point = pet.pattern === 'colorpoint'
+  const tux = pet.pattern === 'tuxedo'
+  const long = pet.fur === 'long'
+  const hairless = pet.fur === 'hairless'
+  const folded = pet.ears === 'folded'
+  // แต้มสี: หน้า หู ขา หาง เป็นสีรอง / ขาวดำ: เท้าและอกเป็นสีรอง
+  const ears = <Mat c={point || pet.pattern === 'plain' ? pet.patternColor : pet.color} />
+  const legMat = point || tux ? <Mat c={pet.patternColor} /> : <Fur pet={pet} tex={tex} />
+  const tailMat = point || pet.pattern === 'plain' ? <Mat c={pet.patternColor} /> : <Fur pet={pet} tex={tex} />
+  const bodyScale: [number, number, number] = long ? [1.25, 1.25, 1.1] : [1, 1, 1]
   return (
     <group>
-      <mesh position={[0, 0.27, 0]} castShadow>
+      <mesh position={[0, 0.27, 0]} scale={bodyScale} castShadow>
         <boxGeometry args={[0.2, 0.18, 0.4]} />
         <Fur pet={pet} tex={tex} />
       </mesh>
+      {/* ขนยาว: แผงคอฟู */}
+      {long && (
+        <mesh position={[0, 0.36, 0.16]} scale={[1.2, 1, 0.8]}>
+          <sphereGeometry args={[0.13, 8, 6]} />
+          <Fur pet={pet} tex={tex} />
+        </mesh>
+      )}
+      {/* ขาวดำ: อกขาว */}
+      {tux && (
+        <mesh position={[0, 0.3, 0.17]}>
+          <boxGeometry args={[0.12, 0.14, 0.08]} />
+          <Mat c={pet.patternColor} />
+        </mesh>
+      )}
       <group position={[0, 0.42, 0.22]}>
         <mesh castShadow>
           <boxGeometry args={[0.18, 0.16, 0.15]} />
           <Fur pet={pet} tex={tex} />
         </mesh>
-        {[-1, 1].map((s) => (
-          <mesh key={s} position={[s * 0.06, 0.11, 0]} rotation={[0, 0, s * -0.2]}>
-            <coneGeometry args={[0.04, 0.08, 4]} />
-            <Fur pet={pet} tex={tex} />
+        {/* หน้ากากแต้มสี */}
+        {point && (
+          <mesh position={[0, -0.015, 0.072]}>
+            <boxGeometry args={[0.12, 0.1, 0.012]} />
+            <Mat c={pet.patternColor} />
           </mesh>
-        ))}
+        )}
+        {[-1, 1].map((s) =>
+          folded ? (
+            <mesh key={s} position={[s * 0.06, 0.085, 0.01]} rotation={[0.9, 0, s * -0.3]}>
+              <boxGeometry args={[0.05, 0.015, 0.05]} />
+              {ears}
+            </mesh>
+          ) : (
+            <mesh key={s} position={[s * 0.06, 0.11, 0]} rotation={[0, 0, s * -0.2]} scale={hairless ? 1.4 : 1}>
+              <coneGeometry args={[0.04, 0.08, 4]} />
+              {ears}
+            </mesh>
+          ),
+        )}
         <mesh position={[0, -0.02, 0.08]}>
           <boxGeometry args={[0.03, 0.025, 0.02]} />
           <Mat c="#e48f86" />
         </mesh>
-        <Eyes y={0.03} z={0.076} gap={0.045} r={0.018} />
+        <Eyes y={0.03} z={0.08} gap={0.045} r={0.018} />
       </group>
-      <mesh position={[0, 0.42, -0.3]} rotation={[0.35, 0, 0]}>
-        <cylinderGeometry args={[0.02, 0.025, 0.36, 6]} />
-        <Fur pet={pet} tex={tex} />
-      </mesh>
+      {pet.tail !== 'none' && (
+        <mesh position={[0, 0.42, -0.3]} rotation={[0.35, 0, 0]}>
+          <cylinderGeometry args={long ? [0.04, 0.05, 0.36, 6] : hairless ? [0.012, 0.02, 0.36, 6] : [0.02, 0.025, 0.36, 6]} />
+          {tailMat}
+        </mesh>
+      )}
       <Legs4 motion={motion} x={0.07} zf={0.14} zb={-0.14} top={0.19} len={0.19} w={0.05}>
-        <Fur pet={pet} tex={tex} />
+        {legMat}
       </Legs4>
     </group>
   )
@@ -248,7 +308,7 @@ function Buffalo({ pet, tex, motion }: Props & { tex: Texture | null }) {
         </mesh>
         <mesh position={[0, -0.1, 0.22]}>
           <boxGeometry args={[0.3, 0.2, 0.12]} />
-          <Mat c="#2b2a2c" />
+          <Mat c={pet.patternColor} />
         </mesh>
         {/* เขาโค้ง */}
         {[-1, 1].map((s) => (
@@ -260,7 +320,7 @@ function Buffalo({ pet, tex, motion }: Props & { tex: Texture | null }) {
         {[-1, 1].map((s) => (
           <mesh key={'e' + s} position={[s * 0.25, 0.08, 0]}>
             <boxGeometry args={[0.12, 0.06, 0.08]} />
-            <Fur pet={pet} tex={tex} />
+            <Mat c={pet.patternColor} />
           </mesh>
         ))}
         <Eyes y={0.06} z={0.215} gap={0.13} r={0.03} />
@@ -372,7 +432,7 @@ function Rabbit({ pet, tex }: Props & { tex: Texture | null }) {
         {[-1, 1].map((s) => (
           <mesh key={s} position={[s * 0.035, 0.14, -0.02]} rotation={[-0.15, 0, s * 0.12]} scale={[0.5, 1, 0.3]}>
             <sphereGeometry args={[0.1, 6, 6]} />
-            <Fur pet={pet} tex={tex} />
+            <Mat c={pet.patternColor} />
           </mesh>
         ))}
         <mesh position={[0, -0.01, 0.085]}>
@@ -383,7 +443,7 @@ function Rabbit({ pet, tex }: Props & { tex: Texture | null }) {
       </group>
       <mesh position={[0, 0.17, -0.16]}>
         <sphereGeometry args={[0.045, 6, 6]} />
-        <Mat c="#ffffff" />
+        <Mat c={pet.patternColor} />
       </mesh>
     </group>
   )
@@ -483,7 +543,7 @@ function Duck({ pet, tex, motion }: Props & { tex: Texture | null }) {
       <group position={[0, 0.38, 0.11]}>
         <mesh castShadow>
           <sphereGeometry args={[0.07, 8, 7]} />
-          <Mat c={pet.pattern === 'plain' ? pet.color : pet.patternColor} />
+          <Mat c={pet.patternColor} />
         </mesh>
         <mesh position={[0, -0.015, 0.08]} scale={[1, 0.35, 1]}>
           <boxGeometry args={[0.07, 0.05, 0.08]} />
@@ -526,12 +586,12 @@ function Turtle({ pet, tex, motion }: Props & { tex: Texture | null }) {
       <group position={[0, 0.1, 0.24]}>
         <mesh scale={[0.9, 0.8, 1.1]}>
           <sphereGeometry args={[0.055, 7, 6]} />
-          <Mat c="#a8b878" />
+          <Mat c={pet.patternColor} />
         </mesh>
         <Eyes y={0.015} z={0.05} gap={0.03} r={0.01} />
       </group>
       <Legs4 motion={motion} x={0.13} zf={0.13} zb={-0.13} top={0.08} len={0.07} w={0.05}>
-        <Mat c="#a8b878" />
+        <Mat c={pet.patternColor} />
       </Legs4>
     </group>
   )

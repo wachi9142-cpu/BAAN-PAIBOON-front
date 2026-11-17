@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PET_COLORS, PET_PATTERNS, PET_SPECIES, defaultPet, getSpecies, type PetChoice, type PetSpecies } from '../game/content/pets'
+import { PET_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
 import { useGame } from '../game/store'
 import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
@@ -28,7 +28,8 @@ export function ChoosePetScreen() {
       // เปลี่ยนชนิด: ใช้สีเริ่มต้นของชนิดนั้น แต่ถ้าผู้เล่นตั้งชื่อเองแล้ว ให้คงชื่อเดิม
       const fresh = defaultPet(species)
       const customName = x.name.trim() && x.name !== defaultPet(x.species).name
-      return { ...fresh, name: customName ? x.name : fresh.name, pattern: x.pattern }
+      const keepPattern = patternsFor(species).some((p) => p.id === x.pattern)
+      return { ...fresh, name: customName ? x.name : fresh.name, pattern: keepPattern ? x.pattern : 'plain' }
     })
 
   const finish = (withPet: boolean) => {
@@ -38,6 +39,8 @@ export function ChoosePetScreen() {
 
   const flies = pet.species === 'bird'
   const sp = getSpecies(pet.species)
+  const breeds = breedsFor(pet.species)
+  const currentBreed = breeds.find((b) => b.id === pet.breed)
   // สีธรรมชาติของสัตว์ชนิดนั้นเป็นตัวเลือกแรกเสมอ
   const bodyColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.color }, ...PET_COLORS]
   const accentColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.patternColor }, ...PET_COLORS]
@@ -84,6 +87,36 @@ export function ChoosePetScreen() {
               </div>
             </div>
 
+            {breeds.length > 0 && (
+              <div className="field">
+                <label>พันธุ์</label>
+                <div className="chips">
+                  <button
+                    type="button"
+                    className="chip"
+                    aria-pressed={!pet.breed}
+                    onClick={() => patch({ breed: undefined, fur: 'short', ears: 'normal', tail: 'normal' })}
+                  >
+                    ไม่ระบุพันธุ์
+                  </button>
+                  {breeds.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      className="chip"
+                      title={b.note}
+                      aria-pressed={pet.breed === b.id}
+                      onClick={() => setPet((x) => applyBreed(x, b))}
+                    >
+                      <span className="swatch" style={{ background: b.color, borderColor: b.patternColor, borderWidth: 3 }} />
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+                {currentBreed && <p className="hint" style={{ margin: '6px 0 0' }}>{currentBreed.note} — ปรับสีและลายต่อได้ด้านล่าง</p>}
+              </div>
+            )}
+
             <div className="field">
               <label htmlFor="petname">ชื่อสัตว์เลี้ยง</label>
               <input
@@ -108,7 +141,7 @@ export function ChoosePetScreen() {
             <div className="field">
               <label>ลาย</label>
               <div className="chips">
-                {PET_PATTERNS.map((p) => (
+                {patternsFor(pet.species).map((p) => (
                   <button key={p.id} type="button" className="chip" aria-pressed={p.id === pet.pattern} onClick={() => patch({ pattern: p.id })}>
                     {p.label}
                   </button>
@@ -118,7 +151,7 @@ export function ChoosePetScreen() {
 
             <ColorChoiceField
               key={'p' + pet.species}
-              label={pet.pattern === 'plain' ? 'สีส่วนประกอบ (หู หาง ปีก)' : 'สีลาย'}
+              label={pet.pattern === 'plain' ? `สี${sp.accentParts}` : `สีลาย และสี${sp.accentParts}`}
               options={accentColors}
               value={colorChoice(pet.patternColor, accentColors)}
               onChange={(v) => patch({ patternColor: resolveColor(v, accentColors) })}
