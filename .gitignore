@@ -3,3 +3,6 @@ dist
 *.local
 .DS_Store
 *.tsbuildinfo
+
+# ข้อมูลส่วนตัว/ภาพจริงของหมู่บ้าน — เก็บไว้ในเครื่องเท่านั้น ห้ามขึ้น GitHub
+docs/private/

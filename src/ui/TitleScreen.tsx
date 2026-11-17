@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { formatSavedAt, useGame } from '../game/store'
 import { SaveSlots } from './SaveSlots'
 import { KnowledgePanel } from './KnowledgePanel'
+import { ReportPanel } from './ReportPanel'
+import { useUnreadReports } from '../game/feedback/reports'
 import { useTitleSoundscape } from '../game/audio/useSoundscape'
 import './title.css'
 
@@ -30,6 +32,7 @@ export function TitleScreen() {
   const continueLife = useGame((s) => s.continueLife)
   const deleteSave = useGame((s) => s.deleteSave)
   const [dialog, setDialog] = useState<Dialog>(null)
+  const unread = useUnreadReports()
   useTitleSoundscape()
 
   const startNew = () => (save ? setDialog('confirm-new') : goTo('create'))
@@ -40,9 +43,16 @@ export function TitleScreen() {
       <div className="ts-bg" aria-hidden="true" />
       <div className="ts-sun" aria-hidden="true" />
 
-      <button className="ts-knowledge" onClick={() => setDialog('knowledge')}>
-        📜 เกร็ดความรู้
-      </button>
+      <div className="ts-corner">
+        {unread > 0 && (
+          <button className="ts-bell" onClick={() => setDialog('report')} aria-label={`มีคำตอบใหม่จากผู้พัฒนา ${unread} เรื่อง`}>
+            🔔<span className="badge">{unread}</span>
+          </button>
+        )}
+        <button className="ts-knowledge" onClick={() => setDialog('knowledge')}>
+          📜 เกร็ดความรู้
+        </button>
+      </div>
 
       {/* ป้ายไม้แขวนมุมซ้ายบน */}
       <div className="ts-hang" aria-hidden="true">
@@ -107,7 +117,9 @@ export function TitleScreen() {
           <button className="ts-btn cream" onClick={() => setDialog('report')}>
             <ClipboardIcon />
             <span>
-              <strong>แจ้งปัญหาเกม</strong>
+              <strong>
+                แจ้งปัญหาเกม{unread > 0 && <span className="ts-badge">{unread}</span>}
+              </strong>
               <small>รายงานปัญหาหรือข้อเสนอแนะ</small>
             </span>
           </button>
@@ -171,7 +183,7 @@ export function TitleScreen() {
 
       {dialog === 'report' && (
         <Modal title="แจ้งปัญหาเกม" onClose={() => setDialog(null)}>
-          <p>ระบบแจ้งปัญหาและข้อเสนอแนะจะเปิดให้ใช้งานเร็ว ๆ นี้</p>
+          <ReportPanel />
           <p className="hint">ขอบคุณที่ช่วยกันทำให้หมู่บ้านไพบูลย์ดีขึ้น</p>
         </Modal>
       )}

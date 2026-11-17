@@ -8,8 +8,10 @@ import { Character } from '../scenes/models/Character'
 import { AppearanceEditor } from './CreateCharacterScreen'
 import { SaveSlots } from './SaveSlots'
 import { KnowledgePanel } from './KnowledgePanel'
+import { ReportPanel } from './ReportPanel'
+import { useUnreadReports } from '../game/feedback/reports'
 
-type Tab = 'character' | 'bag' | 'guide' | 'knowledge' | 'save' | 'settings'
+type Tab = 'character' | 'bag' | 'guide' | 'knowledge' | 'report' | 'save' | 'settings'
 type Confirm = null | 'confirm-exit' | 'confirm-title' | 'exited'
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
@@ -17,6 +19,7 @@ const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'bag', icon: '🎒', label: 'กระเป๋า' },
   { id: 'guide', icon: '📖', label: 'คู่มือ' },
   { id: 'knowledge', icon: '📜', label: 'เกร็ดความรู้' },
+  { id: 'report', icon: '📮', label: 'แจ้งปัญหา' },
   { id: 'save', icon: '💾', label: 'บันทึก' },
   { id: 'settings', icon: '⚙️', label: 'ตั้งค่า' },
 ]
@@ -27,6 +30,7 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
   const exitToTitle = useGame((s) => s.exitToTitle)
   const lastSavedAt = useGame((s) => s.lastSavedAt)
   const [tab, setTab] = useState<Tab>('character')
+  const unread = useUnreadReports()
   const [confirm, setConfirm] = useState<Confirm>(null)
 
   // ออกจากเกม / กลับหน้าหลัก: บันทึกก่อนเสมอ ถ้าไม่สำเร็จให้ยืนยัน
@@ -89,6 +93,7 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
             <button key={t.id} role="tab" aria-selected={tab === t.id} className="gm-tab" onClick={() => setTab(t.id)}>
               <span aria-hidden="true">{t.icon}</span>
               {t.label}
+              {t.id === 'report' && unread > 0 && <span className="gm-badge">{unread}</span>}
             </button>
           ))}
           <span className="gm-spacer" />
@@ -108,6 +113,12 @@ export function GameMenu({ onClose }: { onClose: () => void }) {
             <>
               <h3>เกร็ดความรู้ บ้านไพบูลย์</h3>
               <KnowledgePanel />
+            </>
+          )}
+          {tab === 'report' && (
+            <>
+              <h3>แจ้งปัญหาเกม · คุยกับผู้พัฒนา</h3>
+              <ReportPanel />
             </>
           )}
           {tab === 'save' && <SaveTab onLoaded={onClose} />}
