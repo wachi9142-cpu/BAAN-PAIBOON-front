@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { formatSavedAt, useGame } from '../game/store'
 import { SaveSlots } from './SaveSlots'
+import { KnowledgePanel } from './KnowledgePanel'
 import { useTitleSoundscape } from '../game/audio/useSoundscape'
 import './title.css'
 
@@ -9,7 +10,7 @@ import './title.css'
  * ป้ายและปุ่มทั้งหมดเป็น UI จริง → ข้อความแก้ได้ ไม่สะกดผิด และพอดีทุกขนาดจอ
  */
 
-type Dialog = null | 'howto' | 'report' | 'support' | 'slots' | 'confirm-new'
+type Dialog = null | 'howto' | 'report' | 'support' | 'slots' | 'confirm-new' | 'knowledge'
 
 /** ใบไม้ที่ปลิว (ค่าคงที่ ให้หน้าตาเหมือนเดิมทุกครั้ง) */
 const LEAVES = [
@@ -38,6 +39,10 @@ export function TitleScreen() {
       {/* พื้นหลัง: ซูมเข้า-ออกช้า ๆ */}
       <div className="ts-bg" aria-hidden="true" />
       <div className="ts-sun" aria-hidden="true" />
+
+      <button className="ts-knowledge" onClick={() => setDialog('knowledge')}>
+        📜 เกร็ดความรู้
+      </button>
 
       {/* ป้ายไม้แขวนมุมซ้ายบน */}
       <div className="ts-hang" aria-hidden="true">
@@ -139,6 +144,12 @@ export function TitleScreen() {
         ))}
       </div>
 
+      {dialog === 'knowledge' && (
+        <Modal title="เกร็ดความรู้ บ้านไพบูลย์" wide onClose={() => setDialog(null)}>
+          <KnowledgePanel />
+        </Modal>
+      )}
+
       {dialog === 'howto' && (
         <Modal title="วิธีการเล่น" onClose={() => setDialog(null)}>
           <ul className="howto">
@@ -227,10 +238,10 @@ function SupportQr() {
   )
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   return (
     <div className="menu-backdrop" onClick={onClose}>
-      <div className="menu tt-modal" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div className={`menu tt-modal${wide ? ' wide' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <h2>{title}</h2>
         {children}
         <button className="btn ghost small" onClick={onClose}>

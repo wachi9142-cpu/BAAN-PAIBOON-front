@@ -1,5 +1,6 @@
 import { useGame } from './game/store'
 import { useAudioSettings } from './game/audio/useSoundscape'
+import { useSettings } from './game/settings'
 import { TitleScreen } from './ui/TitleScreen'
 import { CreateCharacterScreen } from './ui/CreateCharacterScreen'
 import { ChooseHouseScreen } from './ui/ChooseHouseScreen'
@@ -17,10 +18,11 @@ const SCREENS = {
 export function App() {
   const screen = useGame((s) => s.screen)
   useAudioSettings()
+  const displaySize = useSettings((st) => st.displaySize)
   const Screen = SCREENS[screen]
   // ห่อแต่ละหน้าด้วย div ที่มี key เพื่อให้ Canvas เก่าถูกถอดออกทั้งก้อนอย่างสะอาด
   return (
-    <div key={screen} className="screen">
+    <div key={screen} className={`screen size-${displaySize}`}>
       <Screen />
     </div>
   )

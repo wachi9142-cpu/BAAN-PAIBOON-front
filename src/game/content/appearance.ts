@@ -105,6 +105,8 @@ export const OUTFITS: Outfit[] = [
 
 export interface Appearance {
   gender: Gender
+  /** วัย (เซฟเก่าที่ไม่มีค่านี้ = ผู้ใหญ่) */
+  age?: AgeGroup
   skin: string
   hairStyle: HairStyleId
   hairColor: string
@@ -257,4 +259,70 @@ export const POSES: (Option & { id: PoseId })[] = [
   { id: 'shy', label: 'ประสานมือ' },
   { id: 'behind', label: 'ไขว้มือหลัง' },
   { id: 'cheer', label: 'ชูมือดีใจ' },
+]
+
+// ---------- วัยของตัวละคร ----------
+export type AgeGroup = 'child' | 'adult' | 'elder'
+
+export interface AgeRules {
+  label: string
+  /** คำอธิบายข้อจำกัด แสดงตอนสร้างตัวละคร */
+  note: string
+  /** สัดส่วนตัว (ความสูง) และขนาดหัว */
+  bodyScale: number
+  headScale: number
+  /** หลังค่อมเล็กน้อย (เรเดียน) */
+  hunch: number
+  /** ความเร็วเดิน/วิ่ง เทียบผู้ใหญ่ */
+  walkSpeed: number
+  runSpeed: number
+  /** ต้องเข้าบ้าน/นอนก่อนเวลานี้ (ชั่วโมง) — ใช้เมื่อมีระบบเวลา (Part 4) */
+  curfewHour?: number
+  /** ทำงานหนักได้ไหม — ใช้กับงานรับจ้าง/อาชีพ (Part 5, 9) */
+  heavyWork: boolean
+  /** ความเหนื่อยเพิ่มขึ้นกี่เท่าเมื่อทำงาน — ใช้กับค่าสถานะ (Part 3) */
+  fatigue: number
+}
+
+export const AGE_RULES: Record<AgeGroup, AgeRules> = {
+  child: {
+    label: 'เด็ก',
+    note: 'ต้องเข้าบ้านหรือเข้านอนก่อนมืด (ก่อน 19:00 น.) · ทำงานหนักไม่ได้',
+    bodyScale: 0.72,
+    headScale: 1.22,
+    hunch: 0,
+    walkSpeed: 1,
+    runSpeed: 1,
+    curfewHour: 19,
+    heavyWork: false,
+    fatigue: 1,
+  },
+  adult: {
+    label: 'ผู้ใหญ่',
+    note: 'ทำงานได้ทุกอย่าง ไม่มีข้อจำกัด',
+    bodyScale: 1,
+    headScale: 1,
+    hunch: 0,
+    walkSpeed: 1,
+    runSpeed: 1,
+    heavyWork: true,
+    fatigue: 1,
+  },
+  elder: {
+    label: 'ผู้สูงอายุ',
+    note: 'ทำงานหนักไม่ได้ · เมื่อยง่าย เหนื่อยง่าย · เดินและวิ่งช้าลง',
+    bodyScale: 0.97,
+    headScale: 1,
+    hunch: 0.14,
+    walkSpeed: 0.8,
+    runSpeed: 0.65,
+    heavyWork: false,
+    fatigue: 1.8,
+  },
+}
+
+export const AGE_GROUPS: (Option & { id: AgeGroup })[] = [
+  { id: 'child', label: 'เด็ก' },
+  { id: 'adult', label: 'ผู้ใหญ่' },
+  { id: 'elder', label: 'ผู้สูงอายุ' },
 ]

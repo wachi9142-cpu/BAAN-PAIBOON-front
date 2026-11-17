@@ -1,0 +1,103 @@
+// ชาวบ้านบรรยากาศ (ยังไม่มีบทพูด/อาชีพ) — อ้างอิงภาพ "วันทำความสะอาดหมู่บ้าน" ใน docs/ref/
+// พิกัดเหมือน village.ts: x = ตะวันออก(+), z = ใต้(+)
+// ตำแหน่งตอนนี้เป็นชั่วคราว รอผู้สร้างเล่าแผนที่จริง
+import type { Appearance } from './appearance'
+import type { PetChoice } from './pets'
+import type { Vec2 } from './village'
+
+export type VillagerBehavior =
+  /** เดินไปกลับตามจุด แวะยืนพักเป็นระยะ */
+  | { kind: 'walk'; path: Vec2[]; pauseSec?: number }
+  /** ยืนทำงานกับที่ ค่อย ๆ ขยับไปตามแนวถนน */
+  | { kind: 'work'; action: 'sweep' | 'hoe'; pos: Vec2; heading: number; drift?: number }
+  /** ยืนเฉย ๆ / ยืนคุย หันหน้าเข้าหาจุด */
+  | { kind: 'stand'; pos: Vec2; faceTo: Vec2; talk?: boolean }
+
+export interface Villager {
+  id: string
+  appearance: Appearance
+  behavior: VillagerBehavior
+  tool?: 'broom' | 'hoe'
+}
+
+// ชุดชาวบ้าน: เสื้อแขนยาวสีฟ้า ม่วง แดง ขาว · กางเกงสีเข้ม · หมวกปีกกว้าง
+const woman = (top: string, extra: Partial<Appearance> = {}): Appearance => ({
+  gender: 'female',
+  skin: 'tan',
+  hairStyle: 'bun',
+  hairColor: 'black',
+  outfit: 'farmer',
+  topColor: top,
+  bottomColor: '#2e2c2a',
+  shoes: 'sandals',
+  accessory: 'strawhat',
+  ...extra,
+})
+const man = (top: string, extra: Partial<Appearance> = {}): Appearance => ({
+  gender: 'male',
+  skin: 'dark',
+  hairStyle: 'short',
+  hairColor: 'black',
+  outfit: 'farmer',
+  topColor: top,
+  bottomColor: '#33302c',
+  shoes: 'boots',
+  ...extra,
+})
+
+export const VILLAGERS: Villager[] = [
+  // คนเดินไปมาตามถนน
+  { id: 'walk-1', appearance: woman('#6f8fc4'), behavior: { kind: 'walk', path: [[-60, 1.2], [20, 1.2]], pauseSec: 4 } },
+  {
+    id: 'walk-2',
+    appearance: man('#f1ede4', { age: 'elder', hairColor: 'gray', shoes: 'sandals' }),
+    behavior: { kind: 'walk', path: [[40, -1.4], [-25, -1.4]], pauseSec: 6 },
+  },
+  {
+    id: 'walk-3',
+    appearance: woman('#8a5aa8', { age: 'child', hairStyle: 'long', accessory: 'none', outfit: 'tshirt' }),
+    behavior: { kind: 'walk', path: [[0.8, -55], [0.8, -4], [12, -1]], pauseSec: 3 },
+  },
+  {
+    id: 'walk-4',
+    appearance: man('#b8463e', { accessory: 'cap', shoes: 'sneakers' }),
+    behavior: { kind: 'walk', path: [[30.8, 50], [30.8, 2], [-10, 2]], pauseSec: 5 },
+  },
+
+  // ยืนกวาดถนน (ไม้กวาดด้ามยาว)
+  { id: 'sweep-1', appearance: woman('#9fc2e6'), tool: 'broom', behavior: { kind: 'work', action: 'sweep', pos: [-20, 2.2], heading: Math.PI / 2, drift: 2.5 } },
+  {
+    id: 'sweep-2',
+    appearance: woman('#c0504a', { age: 'elder', hairColor: 'silver' }),
+    tool: 'broom',
+    behavior: { kind: 'work', action: 'sweep', pos: [-16, -2.2], heading: -Math.PI / 2, drift: 2 },
+  },
+  { id: 'sweep-3', appearance: woman('#7a5aa0'), tool: 'broom', behavior: { kind: 'work', action: 'sweep', pos: [-1.6, -30], heading: 0, drift: 2 } },
+
+  // ถางหญ้าริมรั้ว (จอบด้ามยาว)
+  { id: 'hoe-1', appearance: man('#4f6f9a'), tool: 'hoe', behavior: { kind: 'work', action: 'hoe', pos: [12, 3.2], heading: 0, drift: 1.5 } },
+  { id: 'hoe-2', appearance: man('#e8e4da', { accessory: 'strawhat' }), tool: 'hoe', behavior: { kind: 'work', action: 'hoe', pos: [16, 3.4], heading: 0, drift: 1.5 } },
+
+  // จับกลุ่มยืนคุยกัน
+  { id: 'chat-1', appearance: woman('#5d86c0'), behavior: { kind: 'stand', pos: [-6, 3.4], faceTo: [-5, 4.4], talk: true } },
+  {
+    id: 'chat-2',
+    appearance: woman('#d8d4cc', { age: 'elder', hairColor: 'gray' }),
+    behavior: { kind: 'stand', pos: [-4, 3.6], faceTo: [-5, 4.4], talk: true },
+  },
+  { id: 'chat-3', appearance: man('#8a4a8a', { accessory: 'strawhat', shoes: 'sandals' }), behavior: { kind: 'stand', pos: [-5, 5.6], faceTo: [-5, 4.4] } },
+]
+
+/** หมาในหมู่บ้าน เดินปนกับคน */
+export const VILLAGE_DOGS: { id: string; pet: PetChoice; path: Vec2[] }[] = [
+  {
+    id: 'dog-1',
+    pet: { species: 'dog', name: '', color: '#d8a868', pattern: 'plain', patternColor: '#f2e6cf' },
+    path: [[-24, 0.4], [-2, 0.4], [-2, 2.6], [-24, 2.6]],
+  },
+  {
+    id: 'dog-2',
+    pet: { species: 'dog', name: '', color: '#2a2622', pattern: 'blacktan', patternColor: '#b8743a' },
+    path: [[8, -1], [24, -1], [24, 1.6]],
+  },
+]

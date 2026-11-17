@@ -114,6 +114,8 @@ interface GameState {
   changeStats: (delta: Partial<PlayerStats>) => void
   addPetHeart: () => void
   setPetLeashed: (v: boolean) => void
+  /** เปลี่ยนการแต่งตัวระหว่างเล่น (บันทึกทันที) */
+  updateAppearance: (a: Appearance) => void
   /** หยุดเกมชั่วคราว (เปิดเมนู / กดพัก / สลับไปหน้าต่างอื่น) — ไม่ถูกบันทึก */
   paused: boolean
   setPaused: (v: boolean) => void
@@ -263,6 +265,13 @@ export const useGame = create<GameState>()((set, get) => ({
     if (!save || save.petHearts >= MAX_PET_HEARTS) return
     set({ save: { ...save, petHearts: save.petHearts + 1 }, dirty: true })
     get().toast({ title: `💗 ${save.player.pet?.name ?? 'สัตว์เลี้ยง'} รักคุณมากขึ้น`, body: `ความผูกพัน ${save.petHearts + 1}/${MAX_PET_HEARTS} หัวใจ`, tone: 'discover' })
+  },
+
+  updateAppearance: (appearance) => {
+    const save = get().save
+    if (!save) return
+    set({ save: { ...save, player: { ...save.player, appearance } }, dirty: true })
+    get().saveNow('event')
   },
 
   setPetLeashed: (petLeashed) => {

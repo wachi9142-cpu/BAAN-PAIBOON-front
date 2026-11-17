@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Sky } from '@react-three/drei'
-import { formatClock, formatSavedAt, markCleanExit, MAX_PET_HEARTS, periodOfDay, useGame } from '../game/store'
-import { AUTO_SAVE_CHOICES, useSettings } from '../game/settings'
+import { formatClock, MAX_PET_HEARTS, periodOfDay, useGame } from '../game/store'
+import { useSettings } from '../game/settings'
 import { PLACES, PLOTS } from '../game/content/village'
-import { SOUND_PERIODS } from '../game/content/soundscape'
 import { useVillageSoundscape } from '../game/audio/useSoundscape'
 import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
 import { PetFollower } from '../scenes/PetFollower'
-import { SaveSlots } from './SaveSlots'
+import { Villagers } from '../scenes/Villagers'
+import { GameMenu } from './GameMenu'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
@@ -98,6 +98,7 @@ export function WorldScreen() {
         />
         <fog attach="fog" args={['#dfe6d8', 70, 340]} />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
+        <Villagers />
         <Player />
         {save.player.pet && <PetFollower pet={save.player.pet} start={save.position} />}
         <PlayClock />
@@ -285,232 +286,5 @@ function SaveIndicator() {
     <span className={`save-ind ${status === 'error' ? 'err' : dirty ? 'dirty' : 'ok'}`} title={cloudText[cloud]}>
       {text}
     </span>
-  )
-}
-
-function VolumeRow({
-  label,
-  value,
-  disabled,
-  onChange,
-}: {
-  label: string
-  value: number
-  disabled?: boolean
-  onChange: (v: number) => void
-}) {
-  return (
-    <label className="setting">
-      <span>{label}</span>
-      <span className="vol">
-        <input type="range" min={0} max={1} step={0.05} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} />
-        <output>{Math.round(value * 100)}</output>
-      </span>
-    </label>
-  )
-}
-
-type MenuView = 'main' | 'settings' | 'slots' | 'confirm-exit' | 'confirm-title' | 'exited'
-
-function GameMenu({ onClose }: { onClose: () => void }) {
-  const save = useGame((s) => s.save)!
-  const saveNow = useGame((s) => s.saveNow)
-  const exitToTitle = useGame((s) => s.exitToTitle)
-  const status = useGame((s) => s.saveStatus)
-  const lastSavedAt = useGame((s) => s.lastSavedAt)
-  const cloud = useGame((s) => s.cloudStatus)
-  const settings = useSettings()
-  const [view, setView] = useState<MenuView>('main')
-  const [flash, setFlash] = useState<string | null>(null)
-
-  const doSave = () => {
-    const ok = saveNow('manual')
-    setFlash(ok ? 'บันทึกเกมเรียบร้อย' : 'บันทึกไม่สำเร็จ — เซฟก่อนหน้ายังปลอดภัย')
-  }
-
-  // ออกจากเกม / กลับหน้าหลัก: บันทึกก่อนเสมอ ถ้าไม่สำเร็จให้ยืนยัน
-  const tryLeave = (target: 'exit' | 'title') => {
-    const ok = useGame.getState().saveNow('exit')
-    if (!ok) {
-      setView(target === 'exit' ? 'confirm-exit' : 'confirm-title')
-      return
-    }
-    if (target === 'title') exitToTitle()
-    else {
-      markCleanExit()
-      setView('exited')
-    }
-  }
-
-  if (view === 'exited') {
-    return (
-      <div className="menu-backdrop">
-        <div className="menu">
-          <h2>บันทึกเรียบร้อย</h2>
-          <p style={{ margin: 0 }}>
-            ความคืบหน้าของ {save.player.name} ถูกบันทึกแล้วเมื่อ {formatSavedAt(lastSavedAt)}
-            <br />
-            ปิดแท็บนี้ได้อย่างปลอดภัย กลับมาเมื่อไรก็เล่นต่อได้ทันที
-          </p>
-          <button className="btn" onClick={() => exitToTitle()}>
-            ไปหน้าหลัก
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="menu-backdrop" onClick={onClose}>
-      <div className="menu" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="เมนูเกม">
-        {view === 'main' && (
-          <>
-            <h2>เมนูเกม</h2>
-            <button className="menu-item primary" onClick={doSave}>
-              <span className="mi-icon">💾</span>
-              <span className="mi-text">
-                <strong>บันทึกเกม</strong>
-                <small>Save Game · ล่าสุด {formatSavedAt(lastSavedAt)}</small>
-              </span>
-              <span className={`badge ${status === 'error' ? 'err' : ''}`}>{status === 'error' ? 'มีปัญหา' : 'พร้อมใช้งาน'}</span>
-            </button>
-            {flash && <div className="hint" role="status">{flash}</div>}
-            <div className="menu-sep" />
-            <button className="menu-item" onClick={() => setView('slots')}>
-              <span className="mi-icon">🗂</span>
-              <span className="mi-text">
-                <strong>ไฟล์สำรอง</strong>
-                <small>
-                  Save 1–3 ·{' '}
-                  {cloud === 'disabled' ? 'เซิร์ฟเวอร์: ยังไม่เชื่อม' : cloud === 'offline' ? 'ออฟไลน์ เก็บไว้รอส่ง' : 'เซิร์ฟเวอร์: ' + cloud}
-                </small>
-              </span>
-            </button>
-            <button className="menu-item" onClick={() => setView('settings')}>
-              <span className="mi-icon">⚙</span>
-              <span className="mi-text">
-                <strong>ตั้งค่าเกม</strong>
-              </span>
-            </button>
-            <button className="menu-item" onClick={() => tryLeave('title')}>
-              <span className="mi-icon">🏠</span>
-              <span className="mi-text">
-                <strong>กลับหน้าหลัก</strong>
-              </span>
-            </button>
-            <button className="menu-item" onClick={() => tryLeave('exit')}>
-              <span className="mi-icon">🚪</span>
-              <span className="mi-text">
-                <strong>ออกจากเกม</strong>
-                <small>บันทึกอัตโนมัติก่อนออก</small>
-              </span>
-            </button>
-            <button className="btn ghost small" onClick={onClose}>
-              เล่นต่อ (Esc)
-            </button>
-          </>
-        )}
-
-        {view === 'settings' && (
-          <>
-            <h2>ตั้งค่าเกม</h2>
-            <div className="setting-group">เสียงและดนตรี</div>
-            <label className="setting">
-              <span>เปิดเพลง</span>
-              <input type="checkbox" checked={settings.musicOn} onChange={(e) => settings.set({ musicOn: e.target.checked })} />
-            </label>
-            <VolumeRow label="ระดับเสียงเพลง" value={settings.musicVolume} disabled={!settings.musicOn} onChange={(musicVolume) => settings.set({ musicVolume })} />
-            <VolumeRow label="เสียงธรรมชาติ" value={settings.ambienceVolume} onChange={(ambienceVolume) => settings.set({ ambienceVolume })} />
-            <VolumeRow label="เสียงเอฟเฟกต์" value={settings.sfxVolume} onChange={(sfxVolume) => settings.set({ sfxVolume })} />
-            <label className="setting">
-              <span>ทดลองฟังช่วงเวลา</span>
-              <select value={settings.soundPreview} onChange={(e) => settings.set({ soundPreview: e.target.value as typeof settings.soundPreview })}>
-                <option value="auto">ตามเวลาในเกม</option>
-                {SOUND_PERIODS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="setting-group">การเล่น</div>
-            <label className="setting">
-              <span>บันทึกอัตโนมัติ</span>
-              <input type="checkbox" checked={settings.autoSave} onChange={(e) => settings.set({ autoSave: e.target.checked })} />
-            </label>
-            <label className="setting">
-              <span>บันทึกทุก</span>
-              <select
-                value={settings.autoSaveMinutes}
-                disabled={!settings.autoSave}
-                onChange={(e) => settings.set({ autoSaveMinutes: Number(e.target.value) })}
-              >
-                {AUTO_SAVE_CHOICES.map((m) => (
-                  <option key={m} value={m}>
-                    {m} นาที
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="setting">
-              <span>แสดงป้ายชื่อสถานที่</span>
-              <input type="checkbox" checked={settings.showLabels} onChange={(e) => settings.set({ showLabels: e.target.checked })} />
-            </label>
-            <label className="setting">
-              <span>ความไวเมาส์</span>
-              <input
-                type="range"
-                min={0.3}
-                max={2}
-                step={0.1}
-                value={settings.mouseSensitivity}
-                onChange={(e) => settings.set({ mouseSensitivity: Number(e.target.value) })}
-              />
-            </label>
-            <button className="btn ghost small" onClick={() => setView('main')}>
-              ย้อนกลับ
-            </button>
-          </>
-        )}
-
-        {view === 'slots' && (
-          <>
-            <h2>ไฟล์สำรอง</h2>
-            <p className="hint" style={{ margin: 0 }}>
-              เซฟใหม่จะเขียนทับช่องที่เก่าที่สุดเสมอ ถ้าการบันทึกล้มเหลว เซฟล่าสุดที่สมบูรณ์จะไม่ถูกแตะ
-            </p>
-            <SaveSlots onLoaded={onClose} />
-            <button className="btn ghost small" onClick={() => setView('main')}>
-              ย้อนกลับ
-            </button>
-          </>
-        )}
-
-        {(view === 'confirm-exit' || view === 'confirm-title') && (
-          <>
-            <h2>บันทึกไม่สำเร็จ</h2>
-            <p style={{ margin: 0 }}>
-              บันทึกความคืบหน้าล่าสุดไม่สำเร็จ (พื้นที่เบราว์เซอร์อาจเต็มหรือถูกปิดกั้น)
-              <br />
-              ถ้าออกตอนนี้ จะกลับมาเล่นต่อจากจุดบันทึกล่าสุดที่สำเร็จ: <strong>{formatSavedAt(lastSavedAt)}</strong>
-            </p>
-            <button className="btn" onClick={() => tryLeave(view === 'confirm-exit' ? 'exit' : 'title')}>
-              ลองบันทึกอีกครั้ง
-            </button>
-            <button
-              className="btn ghost"
-              onClick={() => {
-                exitToTitle(true)
-              }}
-            >
-              ออกโดยไม่บันทึก
-            </button>
-            <button className="btn ghost small" onClick={() => setView('main')}>
-              ยกเลิก
-            </button>
-          </>
-        )}
-      </div>
-    </div>
   )
 }

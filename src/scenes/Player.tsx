@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
 import { saveOnUnload, useGame } from '../game/store'
 import { useSettings } from '../game/settings'
+import { AGE_RULES } from '../game/content/appearance'
 import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character } from './models/Character'
@@ -124,7 +125,8 @@ export function Player() {
     if (len > 0) {
       mx /= len
       mz /= len
-      const speed = running ? RUN : WALK
+      const age = AGE_RULES[save.player.appearance.age ?? 'adult']
+      const speed = running ? RUN * age.runSpeed : WALK * age.walkSpeed
       pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], colliders)
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current
@@ -147,10 +149,11 @@ export function Player() {
 
     // กล้องตาม
     const { pitch, dist } = orbit.current
-    camTarget.set(x, 1.5, z)
+    const eye = 1.5 * AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale
+    camTarget.set(x, eye, z)
     camPos.set(
       x + Math.sin(yaw) * Math.cos(pitch) * dist,
-      1.5 + Math.sin(pitch) * dist,
+      eye + Math.sin(pitch) * dist,
       z + Math.cos(yaw) * Math.cos(pitch) * dist,
     )
     state.camera.position.lerp(camPos, 1 - Math.exp(-dt * 10))

@@ -16,6 +16,8 @@ interface Settings {
   sfxVolume: number
   /** ทดลองฟังเสียงของช่วงเวลาอื่น ('auto' = ตามเวลาในเกม) */
   soundPreview: 'auto' | SoundPeriod['id']
+  /** ขนาดหน้าจอเกม: ใหญ่ = เต็มหน้าต่าง, กลาง = กรอบกลางจอ (เต็มจอจริงใช้ Fullscreen API แยก) */
+  displaySize: 'large' | 'medium'
   set: (p: Partial<Omit<Settings, 'set'>>) => void
 }
 
@@ -33,6 +35,7 @@ export const useSettings = create<Settings>()(
       ambienceVolume: 0.8,
       sfxVolume: 1,
       soundPreview: 'auto',
+      displaySize: 'large',
       set: (p) => set(p),
     }),
     {

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import {
   accessoryColorValue,
+  AGE_RULES,
   bagColorValue,
   byId,
   clothColor,
@@ -24,7 +25,14 @@ interface Props {
   appearance: Appearance
   /** 0 = ยืน, 1 = เดิน, 2 = วิ่ง */
   motion?: React.RefObject<number>
+  /** งานที่ทำอยู่ตอนยืน (ชาวบ้าน): กวาด / ถางหญ้า / คุย */
+  action?: CharacterAction
+  /** ของในมือขวา */
+  tool?: ToolId
 }
+
+export type CharacterAction = 'sweep' | 'hoe' | 'talk'
+export type ToolId = 'broom' | 'hoe'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -40,7 +48,7 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion }: Props) {
+export function Character({ appearance, motion, action, tool }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -56,6 +64,7 @@ export function Character({ appearance, motion }: Props) {
   const accessory = appearance.accessory ?? 'none'
   const accColor = accessoryColorValue(appearance.accessoryColor)
   const pose = appearance.pose ?? 'stand'
+  const age = AGE_RULES[appearance.age ?? 'adult']
 
   const legL = useRef<Group>(null)
   const legR = useRef<Group>(null)
@@ -78,6 +87,22 @@ export function Character({ appearance, motion }: Props) {
     // แขน: เดิน = แกว่ง, ยืน = ตามท่าที่เลือก
     let [lx, lz, rx, rz] = m > 0 ? [-swing * 0.8, 0.05, swing * 0.8, -0.05] : POSE_ARMS[pose]
     if (m === 0 && pose === 'wave') rz += Math.sin(idle.current * 7) * 0.25
+    // งานของชาวบ้าน (ยืนทำอยู่กับที่)
+    if (m === 0 && action === 'sweep') {
+      // กวาด: แขนสองข้างยื่นไปข้างหน้า แกว่งซ้าย-ขวาพร้อมกัน
+      const sw = Math.sin(idle.current * 3.2) * 0.35
+      ;[lx, lz, rx, rz] = [-0.6, -0.2 + sw, -0.55, 0.2 + sw]
+    } else if (m === 0 && action === 'hoe') {
+      // ถางหญ้า: ยกขึ้นช้า ๆ แล้วสับลงเร็ว
+      const p = (idle.current * 0.9) % 1
+      const up = p < 0.75 ? p / 0.75 : 1 - (p - 0.75) / 0.25
+      const x = -0.5 - up * 1.6
+      ;[lx, lz, rx, rz] = [x, -0.25, x, 0.25]
+    } else if (m === 0 && action === 'talk') {
+      // คุย: ยกมือประกอบเป็นพัก ๆ
+      const g = Math.max(0, Math.sin(idle.current * 1.3)) * 0.5
+      ;[lx, lz, rx, rz] = [0, 0.05, -0.2 - g, -0.1 - g * 0.3]
+    }
     if (m === 0 && pose === 'cheer') {
       const b = Math.sin(idle.current * 5) * 0.12
       lz -= b
@@ -100,7 +125,7 @@ export function Character({ appearance, motion }: Props) {
   const bottomMat = <meshStandardMaterial color={bottom} flatShading />
 
   return (
-    <group ref={body}>
+    <group ref={body} scale={age.bodyScale}>
       {/* ---------- ท่อนล่าง ---------- */}
       {outfit.bottomShape === 'skirt' && (
         <>
@@ -169,6 +194,9 @@ export function Character({ appearance, motion }: Props) {
           </group>
         ))}
 
+      {/* ---------- ท่อนบน (ผู้สูงอายุหลังค่อมเล็กน้อย หมุนรอบสะโพก) ---------- */}
+      <group position={[0, 0.82, 0]} rotation={[age.hunch, 0, 0]}>
+      <group position={[0, -0.82, 0]}>
       {/* ---------- ลำตัว ---------- */}
       <mesh position={[0, 1.08, 0]} castShadow>
         <boxGeometry args={[shoulder * 2, 0.55, 0.26]} />
@@ -214,12 +242,15 @@ export function Character({ appearance, motion }: Props) {
             {skinMat}
           </mesh>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
+          {i === 1 && tool && <Tool kind={tool} />}
         </group>
       ))}
 
       <BodyBag bag={bag} color={bagColor} female={female} />
 
-      {/* ---------- หัว ---------- */}
+      {/* ---------- หัว (เด็กหัวใหญ่กว่าตัว) ---------- */}
+      <group position={[0, 1.4, 0]} scale={age.headScale}>
+      <group position={[0, -1.4, 0]}>
       <mesh position={[0, 1.4, 0]}>
         <cylinderGeometry args={[0.06, 0.07, 0.1, 8]} />
         {skinMat}
@@ -257,6 +288,10 @@ export function Character({ appearance, motion }: Props) {
       <Hair style={appearance.hairStyle} color={hair} />
       {outfit.hat === 'straw' && accessory !== 'cap' && accessory !== 'beanie' && accessory !== 'beret' && <StrawHat />}
       <Accessory kind={accessory} color={accColor} />
+      </group>
+      </group>
+      </group>
+      </group>
     </group>
   )
 }
@@ -268,5 +303,37 @@ function StrawHat() {
       <coneGeometry args={[0.38, 0.22, 14]} />
       <meshStandardMaterial color="#d8b56a" flatShading />
     </mesh>
+  )
+}
+
+/** เครื่องมือในมือขวา (จุดกำเนิด = มือ, ด้ามยาวต่อลงไปตามแนวแขน) */
+function Tool({ kind }: { kind: ToolId }) {
+  if (kind === 'broom') {
+    // ไม้กวาดทางมะพร้าวด้ามยาว
+    return (
+      <group position={[0, -0.52, 0.02]}>
+        <mesh position={[0, -0.45, 0]}>
+          <cylinderGeometry args={[0.018, 0.018, 0.95, 6]} />
+          <meshStandardMaterial color="#a8824a" flatShading />
+        </mesh>
+        <mesh position={[0, -1.0, 0]}>
+          <coneGeometry args={[0.13, 0.32, 8, 1, true]} />
+          <meshStandardMaterial color="#c8a85a" flatShading side={2} />
+        </mesh>
+      </group>
+    )
+  }
+  // จอบด้ามยาว
+  return (
+    <group position={[0, -0.52, 0.02]}>
+      <mesh position={[0, -0.45, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.95, 6]} />
+        <meshStandardMaterial color="#8a6a42" flatShading />
+      </mesh>
+      <mesh position={[0, -0.93, 0.08]}>
+        <boxGeometry args={[0.16, 0.04, 0.18]} />
+        <meshStandardMaterial color="#6a6e72" metalness={0.5} roughness={0.4} />
+      </mesh>
+    </group>
   )
 }

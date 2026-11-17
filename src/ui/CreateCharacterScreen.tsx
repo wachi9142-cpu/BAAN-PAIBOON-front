@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import {
   ACCESSORIES,
+  AGE_GROUPS,
+  AGE_RULES,
+  type AgeGroup,
   ACCESSORY_COLORS,
   BAGS,
   BAG_COLORS,
@@ -27,6 +30,7 @@ import { useGame } from '../game/store'
 import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
 import { ColorWheel } from './ColorWheel'
+import { useRandomBackdrop } from './RandomBackdrop'
 
 const MAX_NAME = 20
 /** ตัวเลือกที่แสดงก่อนกด "เพิ่มเติม" */
@@ -39,9 +43,9 @@ export function CreateCharacterScreen() {
 
   const [name, setName] = useState(draft?.name ?? '')
   const [look, setLook] = useState<Appearance>(draft?.appearance ?? DEFAULT_APPEARANCE.female)
+  // พื้นหลังสุ่ม 1 ใน 4 ภาพทุกครั้งที่เข้าหน้านี้ (public/images/create-bg-1..4.jpg)
+  const backdrop = useRandomBackdrop('create-bg')
 
-  const patch = (p: Partial<Appearance>) => setLook((l) => ({ ...l, ...p }))
-  const chooseGender = (g: Gender) => setLook((l) => (l.gender === g ? l : { ...DEFAULT_APPEARANCE[g] }))
 
   const trimmed = name.trim()
   const canNext = trimmed.length > 0
@@ -52,17 +56,11 @@ export function CreateCharacterScreen() {
     goTo('pet')
   }
 
-  // ชุดของเพศที่เลือก (และชุดทุกเพศ) ขึ้นก่อน ชุดอื่นอยู่ใน "เพิ่มเติม"
-  const outfits = [...OUTFITS].sort((a, b) => rank(a.for, look.gender) - rank(b.for, look.gender))
-  const outfit = byId(OUTFITS, look.outfit)
-  const bottomLabel = outfit.bottomShape === 'pants' || outfit.bottomShape === 'shorts' ? 'สีกางเกง' : 'สีกระโปรง'
-  const outfitColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.top }, ...CLOTH_COLORS]
-  const bottomColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.bottom }, ...CLOTH_COLORS]
 
   return (
     <div className="setup">
-      <div className="setup-stage">
-        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={1.6} maxDistance={7}>
+      <div className="setup-stage" style={backdrop ? { background: `url(${backdrop}) center / cover no-repeat` } : undefined}>
+        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={1.6} maxDistance={7} ground={!backdrop}>
           <Character appearance={look} />
         </PreviewStage>
       </div>
@@ -93,31 +91,7 @@ export function CreateCharacterScreen() {
           />
         </div>
 
-        <ChipField label="เพศ" options={GENDERS} value={look.gender} onChange={(id) => chooseGender(id as Gender)} />
-        <ChipField label="สีผิว" options={SKIN_TONES} value={look.skin} onChange={(skin) => patch({ skin })} />
-        <ColorChoiceField label="สีตา" options={EYE_COLORS} value={look.eyeColor ?? 'black'} onChange={(eyeColor) => patch({ eyeColor })} fallbackCustom="#8a4fc0" />
-        <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
-
-        <div className="setup-section">ทรงผม</div>
-        <ChipField label="ทรงผม" options={HAIR_STYLES} value={look.hairStyle} onChange={(id) => patch({ hairStyle: id as Appearance['hairStyle'] })} />
-        <ColorChoiceField label="สีผม" options={HAIR_COLORS} value={look.hairColor} onChange={(hairColor) => patch({ hairColor })} />
-
-        <div className="setup-section">การแต่งตัว</div>
-        <ChipField label="ชุด" options={outfits} value={look.outfit} onChange={(o) => patch({ outfit: o, topColor: 'outfit', bottomColor: 'outfit' })} />
-        <ColorChoiceField label="สีเสื้อ" options={outfitColorOptions} value={look.topColor ?? 'outfit'} onChange={(topColor) => patch({ topColor })} fallbackCustom="#c8a8dc" />
-        <ColorChoiceField label={bottomLabel} options={bottomColorOptions} value={look.bottomColor ?? 'outfit'} onChange={(bottomColor) => patch({ bottomColor })} fallbackCustom="#3d4f6e" />
-        <ChipField label="รองเท้า" options={SHOES} value={look.shoes ?? 'sandals'} onChange={(id) => patch({ shoes: id as ShoeId })} />
-        <ColorChoiceField label="สีรองเท้า" options={SHOE_COLORS} value={look.shoeColor ?? 'brown'} onChange={(shoeColor) => patch({ shoeColor })} fallbackCustom="#c4566a" />
-
-        <div className="setup-section">เครื่องประดับ</div>
-        <ChipField label="บนศีรษะ / ใบหน้า" options={ACCESSORIES} value={look.accessory ?? 'none'} onChange={(id) => patch({ accessory: id as AccessoryId })} />
-        {look.accessory && look.accessory !== 'none' && (
-          <ColorChoiceField label="สีเครื่องประดับ" options={ACCESSORY_COLORS} value={look.accessoryColor ?? 'navy'} onChange={(accessoryColor) => patch({ accessoryColor })} fallbackCustom="#e58fa0" />
-        )}
-        <ChipField label="กระเป๋า" options={BAGS} value={look.bag ?? 'none'} onChange={(id) => patch({ bag: id as BagId })} />
-        {look.bag && look.bag !== 'none' && (
-          <ColorChoiceField label="สีกระเป๋า" options={BAG_COLORS} value={look.bagColor ?? 'indigo'} onChange={(bagColor) => patch({ bagColor })} fallbackCustom="#5c7a3a" />
-        )}
+        <AppearanceEditor look={look} setLook={setLook} />
 
 
         <p className="hint">ลากเมาส์บนตัวละครเพื่อหมุนดูรอบตัว · ล้อเมาส์เพื่อซูมดูใบหน้า</p>
@@ -132,6 +106,54 @@ export function CreateCharacterScreen() {
         </div>
       </form>
     </div>
+  )
+}
+
+/** ตัวเลือกรูปลักษณ์ทั้งหมด (ใช้ทั้งหน้าสร้างตัวละคร และแท็บ "ตัวละคร" ในเมนูเกม) */
+export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook: React.Dispatch<React.SetStateAction<Appearance>> }) {
+  const patch = (p: Partial<Appearance>) => setLook((l) => ({ ...l, ...p }))
+  const chooseGender = (g: Gender) => setLook((l) => (l.gender === g ? l : { ...DEFAULT_APPEARANCE[g], age: l.age }))
+  // ผู้สูงอายุ: เปลี่ยนผมดำเป็นสีเทาให้ก่อน (เปลี่ยนเองต่อได้)
+  const chooseAge = (age: AgeGroup) =>
+    setLook((l) => ({ ...l, age, hairColor: age === 'elder' && l.hairColor === 'black' ? 'gray' : age !== 'elder' && l.hairColor === 'gray' ? 'black' : l.hairColor }))
+
+  // ชุดของเพศที่เลือก (และชุดทุกเพศ) ขึ้นก่อน ชุดอื่นอยู่ใน "เพิ่มเติม"
+  const outfits = [...OUTFITS].sort((a, b) => rank(a.for, look.gender) - rank(b.for, look.gender))
+  const outfit = byId(OUTFITS, look.outfit)
+  const bottomLabel = outfit.bottomShape === 'pants' || outfit.bottomShape === 'shorts' ? 'สีกางเกง' : 'สีกระโปรง'
+  const outfitColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.top }, ...CLOTH_COLORS]
+  const bottomColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.bottom }, ...CLOTH_COLORS]
+
+  return (
+    <>
+          <ChipField label="เพศ" options={GENDERS} value={look.gender} onChange={(id) => chooseGender(id as Gender)} />
+          <ChipField label="วัย" options={AGE_GROUPS} value={look.age ?? 'adult'} onChange={(id) => chooseAge(id as AgeGroup)} />
+          {(look.age ?? 'adult') !== 'adult' && <p className="age-note">⚠️ {AGE_RULES[look.age!].note}</p>}
+          <ChipField label="สีผิว" options={SKIN_TONES} value={look.skin} onChange={(skin) => patch({ skin })} />
+          <ColorChoiceField label="สีตา" options={EYE_COLORS} value={look.eyeColor ?? 'black'} onChange={(eyeColor) => patch({ eyeColor })} fallbackCustom="#8a4fc0" />
+          <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
+  
+          <div className="setup-section">ทรงผม</div>
+          <ChipField label="ทรงผม" options={HAIR_STYLES} value={look.hairStyle} onChange={(id) => patch({ hairStyle: id as Appearance['hairStyle'] })} />
+          <ColorChoiceField label="สีผม" options={HAIR_COLORS} value={look.hairColor} onChange={(hairColor) => patch({ hairColor })} />
+  
+          <div className="setup-section">การแต่งตัว</div>
+          <ChipField label="ชุด" options={outfits} value={look.outfit} onChange={(o) => patch({ outfit: o, topColor: 'outfit', bottomColor: 'outfit' })} />
+          <ColorChoiceField label="สีเสื้อ" options={outfitColorOptions} value={look.topColor ?? 'outfit'} onChange={(topColor) => patch({ topColor })} fallbackCustom="#c8a8dc" />
+          <ColorChoiceField label={bottomLabel} options={bottomColorOptions} value={look.bottomColor ?? 'outfit'} onChange={(bottomColor) => patch({ bottomColor })} fallbackCustom="#3d4f6e" />
+          <ChipField label="รองเท้า" options={SHOES} value={look.shoes ?? 'sandals'} onChange={(id) => patch({ shoes: id as ShoeId })} />
+          <ColorChoiceField label="สีรองเท้า" options={SHOE_COLORS} value={look.shoeColor ?? 'brown'} onChange={(shoeColor) => patch({ shoeColor })} fallbackCustom="#c4566a" />
+  
+          <div className="setup-section">เครื่องประดับ</div>
+          <ChipField label="บนศีรษะ / ใบหน้า" options={ACCESSORIES} value={look.accessory ?? 'none'} onChange={(id) => patch({ accessory: id as AccessoryId })} />
+          {look.accessory && look.accessory !== 'none' && (
+            <ColorChoiceField label="สีเครื่องประดับ" options={ACCESSORY_COLORS} value={look.accessoryColor ?? 'navy'} onChange={(accessoryColor) => patch({ accessoryColor })} fallbackCustom="#e58fa0" />
+          )}
+          <ChipField label="กระเป๋า" options={BAGS} value={look.bag ?? 'none'} onChange={(id) => patch({ bag: id as BagId })} />
+          {look.bag && look.bag !== 'none' && (
+            <ColorChoiceField label="สีกระเป๋า" options={BAG_COLORS} value={look.bagColor ?? 'indigo'} onChange={(bagColor) => patch({ bagColor })} fallbackCustom="#5c7a3a" />
+          )}
+    </>
   )
 }
 
