@@ -45,7 +45,7 @@ export function ChoosePetScreen() {
   return (
     <div className="setup">
       <div className="setup-stage">
-        <PreviewStage camera={[1.2, 1.4, 4.4]} target={[0.4, 0.7, 0]} minDistance={2} maxDistance={8}>
+        <PreviewStage camera={[1.4, 1.5, 6.2]} target={[0.2, 0.8, 0]} minDistance={2.5} maxDistance={10}>
           <group position={[-0.4, 0, 0]}>
             <Character appearance={draft.appearance} />
           </group>

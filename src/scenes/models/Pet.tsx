@@ -70,7 +70,13 @@ function useFur(pet: PetChoice): Texture | null {
     () => (pet.pattern === 'plain' ? null : drawPattern(pet.color, pet.pattern, pet.patternColor)),
     [pet.color, pet.pattern, pet.patternColor],
   )
-  useEffect(() => () => tex?.dispose(), [tex])
+  // คืนหน่วยความจำของลายเก่าเมื่อเปลี่ยนลาย (ไม่ dispose ใน cleanup ของ effect
+  // เพราะ StrictMode จะเรียก cleanup ระหว่างที่ texture ยังถูกใช้อยู่ ทำให้ตัวสัตว์เป็นสีดำ)
+  const prev = useRef<Texture | null>(null)
+  useEffect(() => {
+    if (prev.current && prev.current !== tex) prev.current.dispose()
+    prev.current = tex
+  }, [tex])
   return tex
 }
 

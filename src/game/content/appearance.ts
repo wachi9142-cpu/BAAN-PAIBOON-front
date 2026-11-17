@@ -91,7 +91,7 @@ export const LIP_COLORS: (Option & { color: string })[] = [
 export const lipColorValue = (v: string | undefined) =>
   !v ? LIP_COLORS[0].color : isCustomColor(v) ? v : byId(LIP_COLORS, v).color
 
-export type ShoeId = 'sandals' | 'heels' | 'sneakers' | 'maryjane' | 'kachu'
+export type ShoeId = 'sandals' | 'heels' | 'sneakers' | 'maryjane' | 'kachu' | 'boots'
 
 export const SHOES: (Option & { id: ShoeId })[] = [
   { id: 'sandals', label: 'รองเท้าแตะ' },
@@ -99,6 +99,7 @@ export const SHOES: (Option & { id: ShoeId })[] = [
   { id: 'kachu', label: 'รองเท้าคัชชู' },
   { id: 'maryjane', label: 'รองเท้าแมรี่เจน' },
   { id: 'heels', label: 'รองเท้าส้นสูง' },
+  { id: 'boots', label: 'รองเท้าบูท' },
 ]
 
 export const SHOE_COLORS: (Option & { color: string })[] = [

@@ -94,6 +94,28 @@ export function Shoe({ style, color, skin }: { style: ShoeId; color: string; ski
           </mesh>
         </group>
       )
+    case 'boots':
+      // รองเท้าบูท: ข้อสูงคลุมข้อเท้า พื้นหนา
+      return (
+        <group>
+          <mesh position={[0, 0.018, 0.03]} castShadow>
+            <boxGeometry args={[0.125, 0.036, 0.25]} />
+            <M c="#2a1f1a" />
+          </mesh>
+          <mesh position={[0, 0.065, 0.04]} castShadow>
+            <boxGeometry args={[0.115, 0.06, 0.22]} />
+            <M c={color} shiny />
+          </mesh>
+          <mesh position={[0, 0.16, -0.01]} castShadow>
+            <cylinderGeometry args={[0.062, 0.058, 0.24, 8]} />
+            <M c={color} shiny />
+          </mesh>
+          <mesh position={[0, 0.275, -0.01]}>
+            <cylinderGeometry args={[0.066, 0.066, 0.02, 8]} />
+            <M c="#2a1f1a" />
+          </mesh>
+        </group>
+      )
     case 'heels':
       // รองเท้าส้นสูง: ส้นเรียวด้านหลัง ส้นเท้ายก ปลายแหลม
       return (
