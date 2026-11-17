@@ -72,6 +72,8 @@ export interface SaveData {
   wandGem?: 'green' | 'yellow' | 'red' | 'purple'
   /** หีบสมบัติที่เปิดแล้ว (id → นาทีสัมบูรณ์ในเกมที่เปิด) */
   chestsOpened?: Record<string, number>
+  /** อ่านประกาศบนบอร์ดแต่ละจุดล่าสุดวันที่ */
+  boardSeen?: Record<string, number>
 }
 
 export interface QuestState {
@@ -82,6 +84,11 @@ export interface QuestState {
   qty: number
   /** จำนวนสัตว์ในสมุดตอนรับภารกิจ (ภารกิจเก็บสัตว์) */
   startCount?: number
+  /** งานจากบอร์ดประกาศ: หัวข้อ · ค่าจ้าง · ของแถม · ส่งภายในวันที่ */
+  title?: string
+  coins?: number
+  bonus?: { item: ItemId; qty: number }
+  until?: number
 }
 
 export interface CaughtAnimal {

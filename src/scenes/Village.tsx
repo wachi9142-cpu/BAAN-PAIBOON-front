@@ -1,3 +1,8 @@
+import { useGame } from '../game/store'
+import type { Group } from 'three'
+import { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { BananaTree } from './models/BananaTree'
 import { Treasures } from './Treasure'
 import { ChoppableTrees } from './ChoppableTrees'
 import { Structures } from './Structures'
@@ -16,7 +21,7 @@ import {
 } from '../game/content/village'
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
-import { House, VillagerHouse, GableRoof, Bush, HouseYard } from './models/House'
+import { House, VillagerHouse, GableRoof, Bush, HouseYard, PicketFence } from './models/House'
 import { RBox } from './models/RBox'
 import { BigChedi, Temple } from './Temple'
 
@@ -175,6 +180,9 @@ function PlaceMesh({ place }: { place: Place }) {
             <RBox args={[3, 0.16, 0.5]} radius={0.07} />
             <meshStandardMaterial color="#7b3b2a" />
           </mesh>
+          <BoardBadge id={place.id} />
+          <Bush x={-1.8} z={0.5} s={0.6} flowers="#f6c445" />
+          <Bush x={1.8} z={0.5} s={0.6} flowers="#f29ab8" />
         </group>
       )
       break
@@ -270,6 +278,10 @@ function PlaceMesh({ place }: { place: Place }) {
           ))}
         </group>
       )
+      break
+    case 'school':
+      labelY = 8
+      body = <School w={w} d={d} />
       break
     case 'ricefield':
       labelY = 3
@@ -437,21 +449,10 @@ export function Tree({ tree }: { tree: TreeSpot }) {
         </group>
       )
     case 'banana':
-      // กล้วย: ใบกว้างโค้งออกรอบต้น
+      // กล้วย: ลำต้นกาบซ้อน ใบยาวโค้งปลายตก บางต้นมีเครือกล้วยกับหัวปลี
       return (
         <group position={[x, 0, z]} scale={s}>
-          <mesh position={[0, 1, 0]} castShadow>
-            <cylinderGeometry args={[0.17, 0.23, 2, 14]} />
-            <meshStandardMaterial color="#8aa055" />
-          </mesh>
-          {Array.from({ length: 6 }).map((_, k) => (
-            <group key={k} position={[0, 2.05, 0]} rotation={[0, (k / 6) * Math.PI * 2 + 0.3, 0]}>
-              <mesh position={[0, 0.25, 0.75]} rotation={[-0.55, 0, 0]} scale={[0.4, 0.035, 0.95]} castShadow>
-                <sphereGeometry args={[1, 16, 10]} />
-                <meshStandardMaterial color={k % 2 ? '#7ab452' : '#6fa64a'} />
-              </mesh>
-            </group>
-          ))}
+          <BananaTree seed={Math.round(x * 7 + z * 13)} />
         </group>
       )
     case 'mango':
@@ -479,4 +480,102 @@ export function Tree({ tree }: { tree: TreeSpot }) {
         </group>
       )
   }
+}
+
+/** ป้าย ! ลอยเหนือบอร์ดเมื่อมีประกาศใหม่ที่ยังไม่ได้อ่านวันนี้ */
+function BoardBadge({ id }: { id: string }) {
+  const seen = useGame((s) => s.save?.boardSeen?.[id])
+  const day = useGame((s) => s.save?.day)
+  const ref = useRef<Group>(null)
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.position.y = 3.3 + Math.sin(clock.elapsedTime * 2.5) * 0.08
+  })
+  if (seen === day) return null
+  return (
+    <group ref={ref} position={[0, 3.3, 0]}>
+      <TextSprite text="❗ ประกาศใหม่" color="#b5603a" height={0.42} position={[0, 0, 0]} />
+    </group>
+  )
+}
+
+/** โรงเรียน: อาคารเรียน 2 ชั้น หลังคาสีส้ม ระเบียงทางเดิน เสาธง ลานหน้าเสาธง ประตูรั้ว */
+function School({ w, d }: { w: number; d: number }) {
+  const bz = -d / 2 + 2.3
+  return (
+    <group>
+      {/* ลานดินหน้าเสาธง */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 1.2]} receiveShadow>
+        <planeGeometry args={[w - 2, d - 4]} />
+        <meshStandardMaterial color="#d8c39a" roughness={1} />
+      </mesh>
+      {/* อาคารเรียน 2 ชั้น */}
+      <mesh position={[0, 1.6, bz]} castShadow receiveShadow>
+        <RBox args={[14, 3.2, 3.6]} radius={0.3} />
+        <meshStandardMaterial color="#f1e6cc" />
+      </mesh>
+      <mesh position={[0, 3.25, bz + 0.3]} castShadow>
+        <RBox args={[14.4, 0.2, 4.4]} radius={0.08} />
+        <meshStandardMaterial color="#c9b48c" />
+      </mesh>
+      <mesh position={[0, 4.75, bz]} castShadow receiveShadow>
+        <RBox args={[14, 2.8, 3.6]} radius={0.3} />
+        <meshStandardMaterial color="#f6edd8" />
+      </mesh>
+      <GableRoof width={14} depth={3.6} height={1.6} y={6.15} color="#d0703c" overhang={0.6} />
+      {/* หน้าต่างสองชั้น */}
+      {[-5.4, -3.2, -1, 1.2, 3.4, 5.6].flatMap((x) =>
+        [1.8, 4.9].map((y) => (
+          <mesh key={`${x}${y}`} position={[x, y, bz + 1.82]}>
+            <RBox args={[1.3, 1, 0.08]} radius={0.04} />
+            <meshStandardMaterial color="#6d8fa8" />
+          </mesh>
+        )),
+      )}
+      {/* ป้ายชื่อโรงเรียนเหนือประตู */}
+      <mesh position={[0, 3.6, bz + 2.55]}>
+        <RBox args={[4, 0.5, 0.1]} radius={0.05} />
+        <meshStandardMaterial color="#2f5f8a" />
+      </mesh>
+      {/* เสาธง */}
+      <group position={[0, 0, 2.6]}>
+        <mesh position={[0, 0.2, 0]} receiveShadow>
+          <cylinderGeometry args={[0.9, 1, 0.4, 20]} />
+          <meshStandardMaterial color="#e2dccd" />
+        </mesh>
+        <mesh position={[0, 3.6, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.07, 7, 10]} />
+          <meshStandardMaterial color="#e8e8e8" metalness={0.4} roughness={0.4} />
+        </mesh>
+        {/* ธงชาติไทย */}
+        {(
+          [
+            ['#a51931', 0],
+            ['#f4f5f8', 1],
+            ['#2d2a4a', 2],
+            ['#2d2a4a', 3],
+            ['#f4f5f8', 4],
+            ['#a51931', 5],
+          ] as const
+        ).map(([c, i]) => (
+          <mesh key={i} position={[0.62, 6.75 - i * 0.12 - (i >= 3 ? 0 : 0), 0]}>
+            <planeGeometry args={[1.1, 0.12]} />
+            <meshStandardMaterial color={c} side={2} />
+          </mesh>
+        ))}
+      </group>
+      {/* ประตูรั้วโรงเรียน */}
+      {[-2, 2].map((x) => (
+        <mesh key={x} position={[x, 0.9, d / 2]} castShadow>
+          <RBox args={[0.45, 1.8, 0.45]} radius={0.1} />
+          <meshStandardMaterial color="#e9e1cf" />
+        </mesh>
+      ))}
+      <PicketFence x={-4.75} z={d / 2} len={5} />
+      <PicketFence x={4.75} z={d / 2} len={5} />
+      <Bush x={-6.5} z={bz + 2.6} s={1} flowers="#f6c445" />
+      <Bush x={6.5} z={bz + 2.6} s={1} flowers="#e86a5a" />
+      <Bush x={-3.5} z={bz + 2.4} s={0.8} flowers="#ffffff" />
+      <Bush x={3.5} z={bz + 2.4} s={0.8} flowers="#c99af0" />
+    </group>
+  )
 }

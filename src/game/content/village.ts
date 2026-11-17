@@ -13,6 +13,7 @@ export type PlaceKind =
   | 'training'
   | 'npchouse'
   | 'chedi'
+  | 'school'
 
 export interface Place {
   id: string
@@ -58,6 +59,7 @@ export const ROADS: Road[] = [
   { from: [0, -34], to: [0, 0], width: 4 }, // ถนนไปวัด (ต่อด้วยทางเดินหินในลานวัด)
   { from: [30, 0], to: [30, 60], width: 3.5 }, // ซอยไปบ้านผู้เล่น
   { from: [-35, 0], to: [-35, 45], width: 3.5 }, // ทางไปบ่อปลา
+  { from: [66, 0], to: [66, -40], width: 3.5 }, // ทางไปโรงเรียน
 ]
 
 export const PLACES: Place[] = [
@@ -94,13 +96,43 @@ export const PLACES: Place[] = [
   },
   {
     id: 'questboard',
-    name: 'บอร์ดประกาศหมู่บ้าน',
+    name: 'บอร์ดประกาศหน้าหมู่บ้าน',
     kind: 'questboard',
-    pos: [6, -6],
+    pos: [-72, 5],
     size: [3, 1],
-    arriveText: 'ชาวบ้านมาติดประกาศหาคนช่วยงานที่นี่',
-    comingSoon: 'รับงานจ้างและภารกิจ (Part 3)',
+    rotation: Math.PI,
+    arriveText: 'ข่าวสารประจำหมู่บ้าน กิจกรรมตามฤดูกาล และภารกิจพิเศษ',
     solidRadius: 1.2,
+  },
+  {
+    id: 'board-school',
+    name: 'บอร์ดประกาศหน้าโรงเรียน',
+    kind: 'questboard',
+    pos: [70, -35],
+    size: [3, 1],
+    rotation: 0,
+    arriveText: 'ข่าวและกิจกรรมของโรงเรียน รับสมัครเข้าร่วมกิจกรรม',
+    solidRadius: 1.2,
+  },
+  {
+    id: 'board-headman',
+    name: 'บอร์ดประกาศหน้าบ้านผู้ใหญ่บ้าน',
+    kind: 'questboard',
+    pos: [-59, -5],
+    size: [3, 1],
+    rotation: 0,
+    arriveText: 'ประกาศจากผู้ใหญ่บ้าน งานช่วยเหลือชาวบ้าน และตามหาของหาย',
+    solidRadius: 1.2,
+  },
+  {
+    id: 'school',
+    name: 'โรงเรียน',
+    kind: 'school',
+    pos: [66, -46],
+    size: [16, 9],
+    arriveText: 'โรงเรียนประจำหมู่บ้าน เด็ก ๆ มาเรียนทุกวัน',
+    comingSoon: 'กิจกรรมโรงเรียน (เร็ว ๆ นี้)',
+    solidRadius: 0,
   },
   {
     id: 'shop',
@@ -149,6 +181,7 @@ export const PLACES: Place[] = [
   { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [46, -14], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
   { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-20, 10], size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
+  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [-64, -11], size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
 export const PLOTS: Plot[] = [

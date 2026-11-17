@@ -1,3 +1,5 @@
+import { isBoard, openBoard, useBoard } from '../game/noticeboard'
+import { NoticeBoardWindow } from './NoticeBoardWindow'
 import { chestHint, openChest, useChests } from '../game/treasure'
 import { whistle } from '../game/whistle'
 import { ToolBar } from './ToolBar'
@@ -130,6 +132,10 @@ export function WorldScreen() {
       }
       if (e.code === 'Escape') {
         setPauseOpen(false)
+        if (useBoard.getState().open) {
+          useBoard.setState({ open: null })
+          return
+        }
         if (useBuild.getState().chestOpen) {
           useBuild.setState({ chestOpen: null })
           return
@@ -143,7 +149,11 @@ export function WorldScreen() {
       if (e.code === 'KeyE' && !e.repeat) {
         const g = useGame.getState()
         if (g.paused) return
-        if (g.nearbyPlaceId === 'shop') {
+        if (isBoard(g.nearbyPlaceId)) {
+          if (useBoard.getState().open) useBoard.setState({ open: null })
+          else openBoard(g.nearbyPlaceId)
+        }
+        else if (g.nearbyPlaceId === 'shop') {
           if (isShopOpen(useClock.getState().minute)) setShop((o) => !o)
           else g.toast({ title: 'ร้านป้าศรีปิดแล้ว', body: `เปิด ${String(SHOP_HOURS.open).padStart(2, '0')}:00 – ${SHOP_HOURS.close}:00 น.`, tone: 'info' })
         }
@@ -227,6 +237,7 @@ export function WorldScreen() {
       <FortuneSlip />
       <MeritPopup />
       <SeedPicker />
+      <NoticeBoardWindow />
       <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
@@ -646,6 +657,10 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           {place.id === 'shop' ? (
             <button className="btn small" onClick={onShop}>
               🛒 เข้าร้าน (E)
+            </button>
+          ) : isBoard(place.id) ? (
+            <button className="btn small" onClick={() => openBoard(place.id as Parameters<typeof openBoard>[0])}>
+              📌 อ่านประกาศ (E)
             </button>
           ) : (
             place.comingSoon && <div className="soon">เร็ว ๆ นี้: {place.comingSoon}</div>

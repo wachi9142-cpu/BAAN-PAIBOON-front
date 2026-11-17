@@ -23,6 +23,9 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
     out.push({ x: plot.center[0] + plot.houseOffset[0], z: plot.center[1] + plot.houseOffset[1], r: Math.max(w, d) * 0.62 })
   }
   out.push(...templeWalls())
+  // อาคารเรียน (ด้านหลังของพื้นที่โรงเรียน)
+  const sc = PLACES.find((p) => p.id === 'school')
+  if (sc) out.push({ minX: sc.pos[0] - 7, maxX: sc.pos[0] + 7, minZ: sc.pos[1] - 4.3, maxZ: sc.pos[1] - 0.3 })
   for (const s of structures) out.push(...structureColliders(s))
   // หีบสมบัติ: ชนเป็นวงกลมเล็ก ๆ
   for (const ch of CHEST_SPOTS) out.push({ x: ch.pos[0], z: ch.pos[1], r: 0.55 })
