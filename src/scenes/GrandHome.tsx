@@ -10,8 +10,15 @@ import type { PetChoice } from '../game/content/pets'
  * บ้านตารัง–ยายเลียน (บ้านฟ่าง) — อ้างอิง docs/HOME_TARANG_YAILIAN.md
  * พิกัดภายในบริเวณบ้าน (x = ตะวันออก, z = เหนือ) ขอบใต้ (z = −13) ติดถนนดินแดงที่ตัดเข้ากลุ่มบ้าน
  */
-export const HOME_W = 30
-export const HOME_D = 26
+/**
+ * ขอบเขตรั้วบ้าน (พิกัดภายใน เทียบจุดกลางเดิม) — ขยายพื้นที่ไปทางตะวันออกและทางเหนือ (ผู้สร้าง 18 พ.ย. 2569: "บ้านฟ่างใหญ่กว่านี้")
+ * ฝั่งตะวันตก (ติดซอย 2) และฝั่งใต้ (ติดถนนดินแดง/ประตู) อยู่ที่เดิม
+ */
+export const HOME_BOX = { x0: -15, x1: 23, z0: -13, z1: 24 }
+export const HOME_W = HOME_BOX.x1 - HOME_BOX.x0
+export const HOME_D = HOME_BOX.z1 - HOME_BOX.z0
+const BOX_CX = (HOME_BOX.x0 + HOME_BOX.x1) / 2
+const BOX_CZ = (HOME_BOX.z0 + HOME_BOX.z1) / 2
 /** ประตูรั้วหน้าบ้าน (พิกัดภายใน) */
 export const HOME_GATE: [number, number] = [-6.5, -13]
 
@@ -28,12 +35,11 @@ export const HOME_SOLIDS: [number, number, number, number][] = [
 ]
 
 export function GrandHome() {
-  const h = HOME_W / 2
-  const d = HOME_D / 2
+  const { x0, x1, z0, z1 } = HOME_BOX
   return (
     <group>
       {/* พื้นดินบริเวณบ้าน + ลานปูนหน้าบ้าน */}
-      <mesh position={[0, 0.022, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[BOX_CX, 0.022, BOX_CZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[HOME_W, HOME_D]} />
         <meshStandardMaterial color="#93ad62" />
       </mesh>
@@ -77,13 +83,13 @@ export function GrandHome() {
       <Orchard />
       <Surroundings />
       {/* รั้วไม้รอบบ้าน (เว้นประตูหน้าบ้าน) */}
-      <PicketFence x={(-h + HOME_GATE[0] - 2) / 2} z={-d} len={HOME_GATE[0] - 2 + h} />
-      <PicketFence x={(HOME_GATE[0] + 2 + h) / 2} z={-d} len={h - HOME_GATE[0] - 2} />
-      <PicketFence x={0} z={d} len={HOME_W} />
-      <PicketFence x={-h} z={0} len={HOME_D} rot={Math.PI / 2} />
-      <PicketFence x={h} z={0} len={HOME_D} rot={Math.PI / 2} />
+      <PicketFence x={(x0 + HOME_GATE[0] - 2) / 2} z={z0} len={HOME_GATE[0] - 2 - x0} />
+      <PicketFence x={(HOME_GATE[0] + 2 + x1) / 2} z={z0} len={x1 - HOME_GATE[0] - 2} />
+      <PicketFence x={BOX_CX} z={z1} len={HOME_W} />
+      <PicketFence x={x0} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
+      <PicketFence x={x1} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
       {/* ป้ายหน้าบ้าน */}
-      <group position={[HOME_GATE[0] + 2.6, 0, -d - 0.3]}>
+      <group position={[HOME_GATE[0] + 2.6, 0, z0 - 0.3]}>
         {[-0.45, 0.45].map((x) => (
           <mesh key={x} position={[x, 0.55, 0]}>
             <RBox args={[0.08, 1.1, 0.08]} radius={0.03} />
@@ -173,13 +179,7 @@ function MainHouse() {
           ))}
         </group>
       ))}
-      {/* บันไดขึ้นชั้นบน (ข้างบ้าน) */}
-      {Array.from({ length: 8 }).map((_, i) => (
-        <mesh key={'s' + i} position={[W / 2 + 0.7, 0.25 + i * 0.36, -1.5 + i * 0.35]} castShadow>
-          <RBox args={[1, 0.08, 0.32]} radius={0.03} />
-          <meshStandardMaterial color="#6e4a30" />
-        </mesh>
-      ))}
+      {/* บันไดขึ้นชั้นบนอยู่ในบ้าน (ดู HomeInterior) — ข้างนอกไม่มีบันได */}
       <GableRoof width={W} depth={D - 0.3} height={2} y={0.36 + low + up} color="#7a3a2a" overhang={0.7} />
       {/* เปลนั่งชมวิวของตารัง (ระเบียงข้างบ้าน) */}
       <group position={[-W / 2 - 1.1, 0, -2.6]}>
@@ -743,16 +743,20 @@ function Orchard() {
 
 /** รอบบ้าน: มะพร้าว หมาก ไผ่ ลำไย มะม่วงเขียวใหญ่ พื้นที่หญ้า */
 function Surroundings() {
-  const h = HOME_W / 2 - 0.9
-  const d = HOME_D / 2 - 0.9
+  const h = -HOME_BOX.x0 - 0.9
+  const d = HOME_BOX.z1 - 0.9
+  const east = HOME_BOX.x1 - 0.9
   return (
     <group>
       {/* แนวมะพร้าวรอบบ้าน (หลังแนวมะพร้าวคือรั้วไม้) */}
-      {[-13, -9, -5, -1, 3, 7, 11].map((x, i) => (
+      {[-13, -9, -5, -1, 3, 7, 11, 15, 19].map((x, i) => (
         <Palm key={'cn' + x} x={x} z={d} h={5 + (i % 3) * 0.6} />
       ))}
-      {[-8, -3, 2].map((z, i) => (
+      {[-8, -3, 2, 7, 12, 17, 21].map((z, i) => (
         <Palm key={'cw' + z} x={-h} z={z} h={5.4 + (i % 2) * 0.5} />
+      ))}
+      {[-6, 0, 6, 12, 18].map((z, i) => (
+        <Palm key={'ce' + z} x={east} z={z} h={5.2 + (i % 2) * 0.5} />
       ))}
       {/* หมาก: พื้นที่หญ้าฝั่งตะวันตก-เหนือ */}
       {Array.from({ length: 14 }).map((_, i) => (

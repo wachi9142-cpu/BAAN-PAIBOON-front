@@ -837,7 +837,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
 
       <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
+        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · <kbd>Enter</kbd> กระโดด · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
         {(
           [
             ['KeyP', 'P', 'พัก'],

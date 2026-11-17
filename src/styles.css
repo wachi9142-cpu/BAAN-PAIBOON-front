@@ -2634,7 +2634,7 @@ button.save-ind:hover {
 .water-act-icon { font-size: 26px; }
 .water-act small { color: #557; font-size: 12px; line-height: 1.35; }
 .swim-bar {
-  position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
+  position: absolute; left: 50%; top: 74px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px;
   background: rgba(240, 250, 252, 0.92); color: #234; font-size: 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   pointer-events: none;
@@ -2643,3 +2643,22 @@ button.save-ind:hover {
 .swim-track { width: 160px; height: 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
 .swim-fill { display: block; height: 100%; background: linear-gradient(90deg, #3ca0c8, #66c7d8); transition: width 0.3s; }
 .swim-bar.danger .swim-fill { background: linear-gradient(90deg, #d8452a, #f08a50); }
+
+/* แผงสถานะมุมซ้ายบน: โปร่งใส มองทะลุเห็นฉากด้านหลัง (ผู้สร้าง 18 พ.ย. 2569) */
+.status {
+  background: rgba(255, 250, 238, 0.42);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+.status .animal-btn,
+.status .leash-btn {
+  background: rgba(255, 252, 244, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.status .status-name,
+.status .stat,
+.status .coins {
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}

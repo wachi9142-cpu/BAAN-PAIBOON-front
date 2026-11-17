@@ -40,6 +40,7 @@ const LAND: WaterFx = { sink: 0, tilt: 0, speedK: 1, canRun: true }
 
 /** แรงว่ายแบบละเอียด (อัปเดต store เฉพาะตอนเลขเต็มเปลี่ยน ไม่ให้ UI render ทุกเฟรม) */
 let exact = 100
+let rescueFrom: [number, number] | null = null
 function getStamina() {
   const ui = useWater.getState().stamina
   return Math.round(exact) === Math.round(ui) ? exact : ui
@@ -75,19 +76,22 @@ export function waterTick(pos: [number, number], prev: [number, number], dt: num
     const dep = waterAt(pos[0], pos[1]).depth
     if (el < towAt) return { sink: -Math.min(1.1, dep * 0.8 + 0.25) * bodyK, tilt: 0.1, speedK: 0, canRun: false }
     if (st.mode !== 'rescue') setMode('rescue')
-    const dx = r.shore[0] - pos[0]
-    const dz = r.shore[1] - pos[1]
-    const d = Math.hypot(dx, dz)
-    const step = Math.min(d, 2.2 * dt)
-    if (d > 0.05) {
-      pos[0] += (dx / d) * step
-      pos[1] += (dz / d) * step
-    }
+    // ลากตามเวลาจริง (เฟรมกระตุกก็ยังถึงฝั่งแน่นอน)
+    rescueFrom ??= [pos[0], pos[1]]
+    const fx0 = rescueFrom[0]
+    const fz0 = rescueFrom[1]
+    const dx = r.shore[0] - fx0
+    const dz = r.shore[1] - fz0
+    const total = Math.hypot(dx, dz) || 1
+    const k = Math.min(1, ((el - towAt) * 2.2) / total)
+    pos[0] = fx0 + dx * k
+    pos[1] = fz0 + dz * k
     if ((waterRt.stepT -= dt) <= 0) {
       waterRt.stepT = 0.7
       playStroke()
     }
-    if (d < 0.3 || el > 25) {
+    if (k >= 1) {
+      rescueFrom = null
       exact = 60
       finishRescue()
     }
@@ -187,9 +191,9 @@ export function findWaterSpot(x: number, z: number): string | null {
 
 export function waterHint(near: string) {
   if (near === 'boat') return '🚣 ขึ้นฝั่ง (พายเข้าใกล้ฝั่งก่อน)'
-  if (near.startsWith('lotus:')) return LOTUS.find((l) => l.id === near.slice(6))?.white ? '🪷 เก็บดอกบัวขาว' : '🪷 เก็บดอกบัวชมพู'
+  if (near.startsWith('lotus:')) return LOTUS.find((l) => l.id === near.slice(6))?.white ? '🌸 เก็บดอกบัวขาว' : '🌸 เก็บดอกบัวชมพู'
   const b = WATER.find((w) => w.id === near.split(':')[1])
-  return `${near.startsWith('dock:') ? '🛶 ท่าน้ำ' : '🌊 ริมน้ำ'}${b ? b.name : ''} · เลือกกิจกรรม`
+  return `${near.startsWith('dock:') ? '⛵ ท่าน้ำ' : '🌊 ริมน้ำ'}${b ? b.name : ''} · เลือกกิจกรรม`
 }
 
 export function activateWater(near: string, x: number, z: number) {

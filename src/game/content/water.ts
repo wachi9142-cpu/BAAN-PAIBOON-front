@@ -8,7 +8,7 @@ export const ACTIVITY_INFO: Record<WaterActivity, { icon: string; name: string; 
   swim: { icon: '🌊', name: 'เล่นน้ำ', note: 'ริมตลิ่งตื้นเดินลุยได้ · กลางบ่อลึกต้องว่าย (ใส่เสื้อชูชีพปลอดภัยกว่า)' },
   vest: { icon: '🦺', name: 'เสื้อชูชีพ', note: 'สวมก่อนทำกิจกรรมทางน้ำ ว่ายได้ไม่เหนื่อย ไม่จม' },
   boat: { icon: '🚣', name: 'พายเรือ', note: 'ขึ้นเรือที่ท่าน้ำ ใช้ไม้พายพายสำรวจ' },
-  lotus: { icon: '🪷', name: 'เก็บดอกบัว', note: 'เดินลุยน้ำหรือพายเรือเข้าไปเก็บ' },
+  lotus: { icon: '🌸', name: 'เก็บดอกบัว', note: 'เดินลุยน้ำหรือพายเรือเข้าไปเก็บ' },
 }
 
 export interface WaterBody {

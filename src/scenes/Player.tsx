@@ -18,7 +18,7 @@ import { useSettings } from '../game/settings'
 import { AGE_RULES, CANE_WALK } from '../game/content/appearance'
 import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
-import { Character } from './models/Character'
+import { Character, JUMP_CROUCH, JUMP_LAND } from './models/Character'
 import { findGatherTarget } from '../game/inventory'
 import { findBed, useGarden } from '../game/garden'
 import { insideTempleBox, TEMPLE, templeSpots, WORSHIP_SPOT, templeGroundY } from '../game/content/temple'
@@ -42,11 +42,25 @@ function rideHeight(save: SaveData) {
 }
 
 /** เก็บปุ่มที่กดค้าง (ใช้ e.code จึงใช้ได้แม้คีย์บอร์ดเป็นภาษาไทย) */
+/** คำขอกระโดดล่าสุด (กด Enter) */
+const jumpReq = { at: -1e9 }
+/** กระโดด: ทั้งหมด 0.8 วิ (ย่อตัว → ลอย → ลงพื้นรับแรง) สูงสุด 0.85 ม. · ลอยอยู่ = ข้ามรั้ว/สิ่งกีดขวางเตี้ยได้ */
+const JUMP_DUR = 0.8
+const JUMP_H = 0.85
+
 function useKeys() {
   const keys = useRef(new Set<string>())
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      // Enter = กระโดด (กันไม่ให้ไปกดปุ่มบนจอที่โฟกัสค้างอยู่)
+      if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+        if (document.querySelector('.menu-backdrop')) return
+        e.preventDefault()
+        if (!e.repeat) jumpReq.at = performance.now()
+        return
+      }
       keys.current.add(e.code)
     }
     const up = (e: KeyboardEvent) => keys.current.delete(e.code)
@@ -128,6 +142,8 @@ export function Player() {
   const wPose = wMode === 'swim' || wMode === 'rescue' ? 'swim' : wMode === 'struggle' ? 'struggle' : wMode === 'boat' ? 'paddle' : null
   const wfx = useRef<WaterFx>({ sink: 0, tilt: 0, speedK: 1, canRun: true })
   const tilt = useRef(0)
+  const jumpT = useRef(-1)
+  const baseY = useRef(0)
   const toast = useGame((s) => s.toast)
 
   const keys = useKeys()
@@ -154,7 +170,7 @@ export function Player() {
     if (!import.meta.env.DEV) return
     ;(window as unknown as { __dev: unknown }).__dev = {
       warp: (x: number, z: number, h = 0) => (warp.pending = { x, z, heading: h, y: 0 }),
-      water: () => ({ ...useWater.getState(), depth: waterRt.depth, pos: [...pos.current] }),
+      water: () => ({ ...useWater.getState(), depth: waterRt.depth, pos: [...pos.current], jumpT: jumpT.current, y: root.current?.position.y, gesture: useGame.getState().gesture, riding: useGame.getState().riding, play: !!playPose(performance.now()) }),
       useWater,
     }
   }, [])
@@ -193,9 +209,30 @@ export function Player() {
       orbit.current.pitch = useInterior.getState().inside ? 1.05 : 0.42
       orbit.current.dist = useInterior.getState().inside ? 8 : 9
       if (root.current) root.current.position.set(w.x, w.y, w.z)
+      baseY.current = w.y
       state.camera.position.set(w.x, 2, w.z + 3)
     }
     const prevP: [number, number] = [pos.current[0], pos.current[1]]
+    // กระโดด: เฉพาะบนบก/น้ำตื้น ไม่ได้ขี่สัตว์ ไม่ได้อยู่ในบ้าน ไม่ได้เล่นเครื่องเล่น
+    if (performance.now() - jumpReq.at < 400 && jumpT.current < 0) {
+      jumpReq.at = -1e9
+      const wm = useWater.getState().mode
+      const g0 = useGame.getState()
+      if ((wm === 'land' || wm === 'wade') && !g0.riding && !useInterior.getState().inside && !playPose(performance.now()) && !g0.gesture) {
+        jumpT.current = 0
+      }
+    }
+    if (jumpT.current >= 0) {
+      const before = jumpT.current
+      jumpT.current += dt / JUMP_DUR
+      // เสียงตอนดีดตัวขึ้น และตอนเท้าแตะพื้น
+      if (before < JUMP_CROUCH && jumpT.current >= JUMP_CROUCH) playJump()
+      if (before < JUMP_LAND && jumpT.current >= JUMP_LAND) playLand()
+      if (jumpT.current >= 1) jumpT.current = -1
+    }
+    // สัดส่วนช่วงลอยตัว 0..1 (-1 = ไม่ได้ลอย)
+    const airP = jumpT.current >= JUMP_CROUCH && jumpT.current < JUMP_LAND ? (jumpT.current - JUMP_CROUCH) / (JUMP_LAND - JUMP_CROUCH) : -1
+    const airborne = airP > 0.06 && airP < 0.94
     // กำลังเล่นเครื่องเล่น: เดินเพื่อเลิกเล่น
     let pp = playPose(performance.now())
     if (pp && len > 0) {
@@ -255,7 +292,7 @@ export function Player() {
       const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK * wfx.current.speedK
       const insideNow = useInterior.getState().inside
       const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
-      pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow)
+      pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
       const target = Math.atan2(mx, mz)
       let diff = target - heading.current
       diff = Math.atan2(Math.sin(diff), Math.cos(diff))
@@ -296,13 +333,15 @@ export function Player() {
       const gy = inHome ? interiorGround(x - INTERIOR_ORIGIN[0], z - INTERIOR_ORIGIN[1], root.current.position.y) : templeGroundY(x, z)
       // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
       const rideY = useGame.getState().riding ? rideHeight(save) : 0
+      const jp = airP >= 0 ? 4 * JUMP_H * airP * (1 - airP) : 0
       const targetY = gy + rideY + wf.sink
       if (pp) {
         root.current.position.set(x, gy + pp.y, z)
         root.current.rotation.order = 'XYZ'
         root.current.rotation.set(pp.tilt, heading.current, 0)
       } else {
-        root.current.position.set(x, root.current.position.y + (targetY - root.current.position.y) * Math.min(1, dt * 12), z)
+        baseY.current += (targetY - baseY.current) * Math.min(1, dt * 12)
+        root.current.position.set(x, baseY.current + jp, z)
         // เอียงตัวไปข้างหน้าตามทิศที่หัน (ว่ายน้ำ)
         root.current.rotation.order = 'YXZ'
         root.current.rotation.set(tilt.current, heading.current, 0)
@@ -434,13 +473,15 @@ export function Player() {
   }, [updatePosition])
 
   return (
-    <group ref={root} position={[save.position[0], 0, save.position[1]]}>
+    // ตำแหน่งตั้งทุกเฟรมใน useFrame (ไม่ผูกกับ prop ไม่งั้นตอนบันทึกตำแหน่งทุก 3 วิ ตัวจะกระตุกกลับพื้น)
+    <group ref={root}>
       <Character
         appearance={riding ? { ...save.player.appearance, pose: 'ride' } : wPose ? { ...save.player.appearance, pose: wPose } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
         tool={gesture === 'shake' ? 'siamsi' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
+        jump={jumpT}
         wandGem={wandGem}
         aim={wandCast}
       />
@@ -498,3 +539,30 @@ function LifeVest({ k }: { k: number }) {
     </group>
   )
 }
+
+// ---------- เสียงกระโดด/ลงพื้น (สังเคราะห์) ----------
+let jctx: AudioContext | null = null
+function puff(freq: number, dur: number, gain: number) {
+  try {
+    jctx ??= new AudioContext()
+    if (jctx.state === 'suspended') void jctx.resume()
+    const c = jctx
+    const len = Math.floor(c.sampleRate * dur)
+    const buf = c.createBuffer(1, len, c.sampleRate)
+    const ch = buf.getChannelData(0)
+    for (let n = 0; n < len; n++) ch[n] = (Math.random() * 2 - 1) * (1 - n / len) ** 2
+    const src = c.createBufferSource()
+    src.buffer = buf
+    const f = c.createBiquadFilter()
+    f.type = 'lowpass'
+    f.frequency.value = freq
+    const g = c.createGain()
+    g.gain.value = gain * (useSettings.getState().sfxVolume ?? 1)
+    src.connect(f).connect(g).connect(c.destination)
+    src.start()
+  } catch {
+    /* ไม่มีเสียงก็ไม่เป็นไร */
+  }
+}
+const playJump = () => puff(1400, 0.12, 0.12)
+const playLand = () => puff(380, 0.16, 0.35)

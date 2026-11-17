@@ -198,7 +198,7 @@ export function pickLotus(id: string) {
     useGame.setState({ save: { ...s, lotusPicked: { ...(s.lotusPicked ?? {}), [id]: nowMinute() } }, dirty: true })
     useGame.getState().saveNow('event')
     const white = LOTUS.find((l) => l.id === id)?.white
-    toast(`🪷 เก็บดอกบัว${white ? 'ขาว' : 'ชมพู'}แล้ว`, 'ใช้ตกแต่งบ้าน ถวายพระ หรือมอบให้ชาวบ้านได้ · จะบานใหม่พรุ่งนี้', 'success')
+    toast(`🌸 เก็บดอกบัว${white ? 'ขาว' : 'ชมพู'}แล้ว`, 'ใช้ตกแต่งบ้าน ถวายพระ หรือมอบให้ชาวบ้านได้ · จะบานใหม่พรุ่งนี้', 'success')
   }, 1100)
 }
 

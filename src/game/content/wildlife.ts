@@ -70,7 +70,7 @@ export const WILD_SPAWNS: WildSpawn[] = [
   { id: 'w-duck-1', pet: p('duck', '#f6f1e2', '#6b8a3a'), home: [-52, 48], roam: 5 },
   { id: 'w-cat-1', pet: p('cat', '#2b2a2c', '#f3ead8', { pattern: 'tuxedo' }), home: [-22, 6], roam: 5 },
   { id: 'w-dog-1', pet: p('dog', '#c8935a', '#f3ead8'), home: [20, 6], roam: 6 },
-  { id: 'w-pig-1', pet: p('pig', '#f2b0b8', '#e8909c'), home: [-40, -20], roam: 4 },
+  { id: 'w-pig-1', pet: p('pig', '#f2b0b8', '#e8909c'), home: [-44, -26.5], roam: 4 },
   { id: 'w-goat-1', pet: p('goat', '#f2ede4', '#b8a890'), home: [40, -30], roam: 5 },
   { id: 'w-rabbit-1', pet: p('rabbit', '#fbf3ee', '#f4b8c4'), home: [-72, 44], roam: 6 },
   { id: 'w-rabbit-2', pet: p('rabbit', '#8a6a4a', '#f4b8c4'), home: [62, 40], roam: 6 },

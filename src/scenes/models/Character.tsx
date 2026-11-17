@@ -48,7 +48,13 @@ interface Props {
   wandGem?: GemColor
   /** กำลังชี้คฑายิงลำแสง */
   aim?: { aiming: boolean }
+  /** จังหวะกระโดด 0→1 (-1 = ไม่ได้กระโดด) */
+  jump?: { current: number }
 }
+
+/** ช่วงของการกระโดด (สัดส่วน 0–1): ย่อตัวก่อนกระโดด · เริ่มลงพื้น */
+export const JUMP_CROUCH = 0.16
+export const JUMP_LAND = 0.86
 
 export type CharacterAction = 'sweep' | 'hoe' | 'talk'
 export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi'
@@ -96,7 +102,7 @@ function bowAmount(t: number) {
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim }: Props) {
+export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim, jump }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -334,6 +340,48 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     if (body.current) {
       const down = kneel ? -0.62 * age.legScale : (pose === 'sit' && m === 0) || pose === 'paddle' ? -0.42 * age.legScale : 0
       body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
+    }
+    // ---- กระโดด: ย่อตัว → ดีดตัวลอย (แขนเหวี่ยงขึ้น ขางอเก็บ) → ลงพื้นย่อเข่ารับแรง ----
+    const jt = jump?.current ?? -1
+    if (jt >= 0) {
+      let squat = 0
+      let air = -1
+      if (jt < JUMP_CROUCH) squat = Math.sin(((jt / JUMP_CROUCH) * Math.PI) / 2)
+      else if (jt < JUMP_LAND) air = (jt - JUMP_CROUCH) / (JUMP_LAND - JUMP_CROUCH)
+      else squat = Math.sin(((jt - JUMP_LAND) / (1 - JUMP_LAND)) * Math.PI) * 0.75
+      let ax: number
+      let az: number
+      let lx2: number
+      let rx2: number
+      let lean: number
+      if (air < 0) {
+        // ย่อตัว/รับแรง: แขนเหวี่ยงไปข้างหลัง ขางอ ตัวโน้มไปข้างหน้า
+        ax = jt < JUMP_CROUCH ? 0.7 * squat : -0.7 * squat
+        az = 0.12
+        lx2 = -0.45 * squat
+        rx2 = -0.45 * squat
+        lean = 0.3 * squat
+      } else {
+        // ลอยตัว: แขนเหวี่ยงขึ้นแล้วค่อย ๆ ลดลง · ขางอเก็บตอนจุดสูงสุด (ซ้ายนำ ขวาตาม)
+        const apex = Math.sin(air * Math.PI)
+        ax = -2.5 + air * 1.6
+        az = 0.25 + apex * 0.15
+        lx2 = -0.95 * apex
+        rx2 = -0.45 * apex + 0.15
+        lean = 0.12 - apex * 0.18
+      }
+      if (armL.current) {
+        armL.current.rotation.x = ax
+        armL.current.rotation.z = -az
+      }
+      if (armR.current) {
+        armR.current.rotation.x = ax
+        armR.current.rotation.z = az
+      }
+      if (legL.current) legL.current.rotation.x = lx2
+      if (legR.current) legR.current.rotation.x = rx2
+      if (upper.current) upper.current.rotation.x = age.hunch + lean
+      if (body.current) body.current.position.y = -0.14 * squat * age.legScale
     }
   })
 

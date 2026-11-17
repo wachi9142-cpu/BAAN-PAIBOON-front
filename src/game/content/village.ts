@@ -41,6 +41,8 @@ export interface Place {
   color?: string
   /** วงชนสำหรับกันเดินทะลุ (0 = เดินผ่านได้) */
   solidRadius?: number
+  /** ลานโล่งหน้าบ้าน (ลึกกี่เมตร ด้านหน้าบ้าน) — ที่วิ่งเล่น จอดรถของเด็ก */
+  frontYard?: number
 }
 
 export interface Plot {
@@ -63,6 +65,8 @@ export interface Road {
 }
 
 export const WORLD_HALF_SIZE = 90
+/** เดินได้ไกลสุดจากกลางหมู่บ้าน (ขยายให้มีที่สำหรับถนนหลังบ้านฟ่าง · ต้นไม้/หินยังสุ่มในวง WORLD_HALF_SIZE เดิม) */
+export const WORLD_WALK_LIMIT = 106
 
 /** เริ่มเกมใหม่ที่หน้าประตูรั้วบ้านตารัง–ยายเลียน (บ้านฟ่าง) */
 export const SPAWN: Vec2 = [-24.5, 55.5]
@@ -75,14 +79,20 @@ export const ROADS: Road[] = [
   { from: [0, -3.5], to: [0, -38], width: 5 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
   { from: [30, 3.5], to: [30, 60], width: 3.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
-  { from: [-35, 3.5], to: [-35, 84], width: 3.5 }, // ซอย 2 · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
+  { from: [-37.5, 3.5], to: [-37.5, 95.5], width: 7 }, // ซอย 2 (ถนนดินแดง 2 เลน) · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
   // ซอย 2: ช่วงแรกบ้าน 2–3 หลัง → คอกควาย ยุ้งข้าว พื้นที่ส่วนบุคคล (มีรั้ว) → สี่แยก (ทางสี่แพร่ง)
   // แยกขวา (ตะวันออก) = ถนนดินแดงเข้ากลุ่มบ้านตารัง–ยายเลียน (บ้านตาอยู่เหนือถนน · บ้านพ่อน้องน้ำฝนอยู่ตรงข้าม) · แยกซ้ายไปทุ่งนา
-  { from: [-33.25, 55], to: [-4, 55], width: 3.5 },
-  { from: [-36.75, 55], to: [-44, 55], width: 3 },
+  { from: [-34, 55], to: [9, 55], width: 3.5 },
+  // หลังรั้วฝั่งตะวันออกของบ้านฟ่าง = ถนนดินแดงเลียบรั้วขึ้นไปทางเหนือ (บ้านขยายแล้ว รั้วตะวันออกอยู่ที่ x = 5)
+  { from: [7.25, 56.75], to: [7.25, 95.5], width: 3.5 },
+  // หลังรั้วฝั่งเหนือของบ้านฟ่าง = ถนนดินแดงแนวนอน 2 เลน ต่อซอย 2 กับถนนเลียบรั้วตะวันออก (ขอบแผนที่ขยายถึง 105)
+  { from: [-41, 99], to: [9, 99], width: 7 },
+  { from: [-41, 55], to: [-69, 55], width: 3 }, // แยกซ้ายเลียบลานหน้าบ้านยายวาน
   { from: [66, -3.5], to: [66, -36], width: 3.5 }, // ซอย 3 · ร้านเครื่องมือช่าง
-  { from: [-30, -3.5], to: [-30, -30], width: 3.5 }, // ซอย 4 · ร้านจักสาน
-  { from: [-60, 3.5], to: [-60, 28], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์
+  { from: [-37.5, -3.5], to: [-37.5, -30], width: 7 }, // ซอย 4 (2 เลน ตรงแนวซอย 2) · ร้านจักสาน (ตรงแนวเดียวกับซอย 2 ข้ามถนนใหญ่เป็นสี่แยก)
+  { from: [-80, 3.5], to: [-80, 28], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์ (ปลายหมู่บ้านฝั่งตะวันตก ห่างซอย 2)
+  // ซอย 6 ซอยร้านค้า: ตรงแนวซอย 5 ข้ามถนนใหญ่ (สี่แยก) ลงไปชนถนนหน้าโรงเรียน · ร้านเรียงสองฝั่ง
+  { from: [-80, -3.5], to: [-80, -37], width: 3.5 },
   // ถนนเข้าโรงเรียน + ถนนหน้าโรงเรียน (คอนกรีต 2 เลน วิ่งแนวนอนขนานหน้าโรงเรียน)
   { from: [-62, -3.5], to: [-62, -37], width: 7, surface: 'concrete' },
   { from: [-82, -40.5], to: [-21, -40.5], width: 7, surface: 'concrete' },
@@ -171,10 +181,14 @@ export const PLACES: Place[] = [
   },
   // ---------- ร้านประจำซอย (ขายของต่างกัน) ----------
   { id: 'shop-plants', name: 'ร้านต้นไม้ลุงชิต (ซอย 1)', kind: 'shop', style: 'stall', color: '#5f9e47', pos: [35.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'เมล็ดผัก ต้นกล้า และของทำสวน', solidRadius: 0 },
-  { id: 'shop-food', name: 'ร้านข้าวแกงป้านวล (ซอย 2)', kind: 'shop', style: 'stall', color: '#e0802e', pos: [-40.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'ข้าวแกง ขนม น้ำดื่ม กินอิ่มเติมแรง', solidRadius: 0 },
+  { id: 'shop-food', name: 'ร้านข้าวแกงป้านวล (ซอย 2)', kind: 'shop', style: 'stall', color: '#e0802e', pos: [-44.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'ข้าวแกง ขนม น้ำดื่ม กินอิ่มเติมแรง', solidRadius: 0 },
   { id: 'shop-tools', name: 'ร้านเครื่องมือช่างหน่อย (ซอย 3)', kind: 'shop', style: 'stall', color: '#4a6a8a', pos: [71.5, -8], size: [6, 5], arriveText: 'ขวาน ค้อน เลื่อย มีดพร้า เครื่องมือช่างครบ', solidRadius: 0 },
-  { id: 'shop-craft', name: 'ร้านจักสานยายจันทร์ (ซอย 4)', kind: 'shop', style: 'stall', color: '#b8904a', pos: [-24.5, -9], size: [6, 5], arriveText: 'กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน', solidRadius: 0 },
-  { id: 'shop-pet', name: 'ร้านอาหารสัตว์พี่แดง (ซอย 5)', kind: 'shop', style: 'stall', color: '#c0504a', pos: [-54.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์', solidRadius: 0 },
+  { id: 'shop-craft', name: 'ร้านจักสานยายจันทร์ (ซอย 4)', kind: 'shop', style: 'stall', color: '#b8904a', pos: [-29.5, -9], size: [6, 5], arriveText: 'กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน', solidRadius: 0 },
+  { id: 'shop-pet', name: 'ร้านอาหารสัตว์พี่แดง (ซอย 5)', kind: 'shop', style: 'stall', color: '#c0504a', pos: [-85.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์', solidRadius: 0 },
+  // ซอย 6 ซอยร้านค้า (ชื่อร้าน/เจ้าของเปลี่ยนได้ภายหลัง)
+  { id: 'shop-grocery', name: 'ร้านขายของชำยายบุญ (ซอย 6)', kind: 'shop', style: 'stall', color: '#5a8fc0', pos: [-75, -11], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ขนม น้ำดื่ม ของใช้ในบ้าน ของกินเล่น', solidRadius: 0 },
+  { id: 'shop-build', name: 'ร้านวัสดุก่อสร้างลุงเปีย (ซอย 6)', kind: 'shop', style: 'stall', color: '#8a8f96', pos: [-75, -26], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ไม้กระดาน หิน เชือก วัสดุสร้างบ้าน', solidRadius: 0 },
+  { id: 'shop-fishing', name: 'ร้านเบ็ดและเหยื่อน้าสิงห์ (ซอย 6)', kind: 'shop', style: 'stall', color: '#3f8f86', pos: [-85, -18], rotation: Math.PI / 2, size: [5, 6], arriveText: 'เบ็ดตกปลา เหยื่อ รับซื้อปลาและดอกบัว', solidRadius: 0 },
   // ---------- บอร์ดประกาศ 3 จุด ----------
   {
     id: 'questboard',
@@ -220,19 +234,9 @@ export const PLACES: Place[] = [
     id: 'pond',
     name: 'บ่อปลาลุงเขียว',
     kind: 'pond',
-    pos: [-50, 38],
+    pos: [-52, 38],
     size: [20, 14],
     arriveText: 'บ่อปลาดุกของลุงเขียว · ไปริมบ่อหรือท่าน้ำแล้วกด E: ตกปลา เล่นน้ำ เสื้อชูชีพ พายเรือ เก็บบัว',
-    solidRadius: 0,
-  },
-  {
-    id: 'ricefield',
-    name: 'ทุ่งนา',
-    kind: 'ricefield',
-    pos: [-62, 70],
-    size: [36, 28],
-    arriveText: 'ทุ่งนากว้างสุดลูกหูลูกตา',
-    comingSoon: 'ปลูกข้าวและต้อนเป็ด (Part 4)',
     solidRadius: 0,
   },
   {
@@ -269,6 +273,9 @@ export const PLACES: Place[] = [
   { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-17.5, 48.5], size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
   { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-8.5, 48.5], size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
+  // ฝั่งตะวันตกของซอย 2 ช่วงที่ 2 (เดิมเป็นทุ่งนา): บ้านยายแดงตรงข้ามบ้านฟ่างพอดี · บ้านยายวานอยู่ลึกเข้าไป (ตรงที่เคยเป็นนา) หน้าบ้านเป็นลานกว้าง
+  { id: 'house-daeng', name: 'บ้านยายแดง', kind: 'npchouse', pos: [-45, 66], rotation: Math.PI / 2, size: [6, 5], color: '#b0704a', arriveText: 'บ้านยายแดง ลูกสาวอี๊ดเอี๊ยง หลานน้องไม้วายุ · อยู่ตรงข้ามบ้านฟ่างพอดี', solidRadius: 4.2 },
+  { id: 'house-wan', name: 'บ้านยายวาน', kind: 'npchouse', pos: [-72, 72], rotation: Math.PI / 2, size: [6, 5], color: '#8a6a48', arriveText: 'บ้านยายวานกับมินท์หลานสาว · หน้าบ้านเป็นลานกว้าง เด็ก ๆ วิ่งเล่นและจอดจักรยาน', solidRadius: 4.2, frontYard: 18 },
   { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [23.5, 40], rotation: Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
@@ -313,6 +320,18 @@ function inRect(p: Vec2, c: Vec2, s: Vec2, pad: number) {
 export function isBlockedForDecor(p: Vec2) {
   if (ROADS.some((r) => distToSegment(p, r.from, r.to) < r.width / 2 + 2)) return true
   if (PLACES.some((pl) => inRect(p, pl.pos, pl.size, 3))) return true
+  // ลานหน้าบ้าน (frontYard) ต้องโล่ง ไม่มีต้นไม้/หิน
+  for (const pl of PLACES) {
+    if (!pl.frontYard) continue
+    const r = pl.rotation ?? 0
+    const dx = p[0] - pl.pos[0]
+    const dz = p[1] - pl.pos[1]
+    const lx = dx * Math.cos(r) - dz * Math.sin(r)
+    const lz = dx * Math.sin(r) + dz * Math.cos(r)
+    if (Math.abs(lx) < 9 && lz > 2 && lz < 4.5 + pl.frontYard + 2) return true
+  }
+  // บ้านฟ่างขยายแล้ว (รั้วไม่สมมาตรรอบจุดกลาง ดู HOME_BOX ใน GrandHome.tsx): x −33..5, z 58..95
+  if (p[0] > -35 && p[0] < 7 && p[1] > 56 && p[1] < 97) return true
   if (PLOTS.some((pl) => inRect(p, pl.center, pl.size, 2))) return true
   if (Math.hypot(p[0] - SPAWN[0], p[1] - SPAWN[1]) < 6) return true
   return false

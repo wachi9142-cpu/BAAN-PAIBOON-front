@@ -23,7 +23,7 @@ import {
 } from '../game/content/village'
 import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
-import { House, VillagerHouse, GableRoof, Bush, HouseYard } from './models/House'
+import { House, VillagerHouse, GableRoof, Bush, HouseYard, PicketFence } from './models/House'
 import { RBox } from './models/RBox'
 import { BigChedi, Temple } from './Temple'
 
@@ -287,6 +287,7 @@ function PlaceMesh({ place }: { place: Place }) {
         <group>
           <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} style={place.houseStyle} roof={place.roof} />
           <HouseYard seed={place.id.length} />
+          {place.frontYard && <KidsYard depth={place.frontYard} />}
         </group>
       )
       break
@@ -296,6 +297,75 @@ function PlaceMesh({ place }: { place: Place }) {
     <group position={[x, 0, z]} rotation={[0, place.rotation ?? 0, 0]}>
       {body}
       <Label text={place.name} y={labelY} />
+    </group>
+  )
+}
+
+/** ลานโล่งหน้าบ้าน: พื้นดินอัดแน่น ที่วิ่งเล่น จอดจักรยาน/รถของเล่นของเด็ก */
+function KidsYard({ depth }: { depth: number }) {
+  const z0 = 4.5
+  return (
+    <group>
+      <mesh position={[0, 0.025, z0 + depth / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[14, depth]} />
+        <meshStandardMaterial color="#c9b07a" roughness={1} />
+      </mesh>
+      {/* จักรยานเด็ก 2 คัน จอดข้างบ้าน */}
+      {[
+        [-5, z0 + 1.5, '#d8453a'],
+        [-5.8, z0 + 2.6, '#3a7ad8'],
+      ].map(([x, z, col], i) => (
+        <group key={i} position={[x as number, 0, z as number]} rotation={[0, Math.PI / 2, 0]}>
+          {[-0.38, 0.38].map((wz) => (
+            <mesh key={wz} position={[0, 0.24, wz]} rotation={[0, Math.PI / 2, 0]}>
+              <torusGeometry args={[0.22, 0.035, 6, 16]} />
+              <meshStandardMaterial color="#2b2b2b" />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.42, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, 0.8, 6]} />
+            <meshStandardMaterial color={col as string} />
+          </mesh>
+          <mesh position={[0, 0.58, -0.22]}>
+            <RBox args={[0.12, 0.05, 0.24]} radius={0.02} />
+            <meshStandardMaterial color="#222" />
+          </mesh>
+          <mesh position={[0, 0.62, 0.36]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.02, 0.02, 0.42, 6]} />
+            <meshStandardMaterial color="#888" />
+          </mesh>
+        </group>
+      ))}
+      {/* รถของเล่นสีเหลือง */}
+      <group position={[3.5, 0, z0 + 3]} rotation={[0, 0.6, 0]}>
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <RBox args={[0.6, 0.3, 1]} radius={0.1} />
+          <meshStandardMaterial color="#f0c23a" />
+        </mesh>
+        <mesh position={[0, 0.5, -0.1]}>
+          <RBox args={[0.5, 0.2, 0.45]} radius={0.08} />
+          <meshStandardMaterial color="#e8eef2" />
+        </mesh>
+        {[-1, 1].flatMap((sx) =>
+          [-0.32, 0.32].map((wz) => (
+            <mesh key={sx + ':' + wz} position={[sx * 0.32, 0.12, wz]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.12, 0.12, 0.08, 10]} />
+              <meshStandardMaterial color="#2b2b2b" />
+            </mesh>
+          )),
+        )}
+      </group>
+      {/* ลูกบอล + ตารางกระโดดขาเดียวขีดบนพื้น */}
+      <mesh position={[1.5, 0.18, z0 + 9]} castShadow>
+        <sphereGeometry args={[0.18, 12, 10]} />
+        <meshStandardMaterial color="#e2533c" />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => (
+        <mesh key={i} position={[-2, 0.03, z0 + 6 + i * 0.7]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.26, 0.3, 4, 1, Math.PI / 4]} />
+          <meshBasicMaterial color="#f4f0e4" />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -325,6 +395,12 @@ function RiceField({ w, d }: { w: number; d: number }) {
           </group>
         )
       })}
+      {/* รั้วไม้รอบนา เว้นประตูกลางด้านใต้ */}
+      <PicketFence x={0} z={d / 2 + 0.6} len={w + 1.2} />
+      <PicketFence x={(-w / 2 - 0.6 - 1.6) / 2} z={-d / 2 - 0.6} len={w / 2 + 0.6 - 1.6} />
+      <PicketFence x={(w / 2 + 0.6 + 1.6) / 2} z={-d / 2 - 0.6} len={w / 2 + 0.6 - 1.6} />
+      <PicketFence x={-w / 2 - 0.6} z={0} len={d + 1.2} rot={Math.PI / 2} />
+      <PicketFence x={w / 2 + 0.6} z={0} len={d + 1.2} rot={Math.PI / 2} />
       {/* กระท่อมกลางนา */}
       <group position={[w / 2 - 3, 0, -d / 2 + 3]}>
         {[-1, 1].flatMap((sx) =>

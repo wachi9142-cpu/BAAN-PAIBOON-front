@@ -1,7 +1,7 @@
-import { HOME_GATE, HOME_D, HOME_SOLIDS, HOME_W } from '../scenes/GrandHome'
+import { HOME_BOX, HOME_GATE, HOME_SOLIDS } from '../scenes/GrandHome'
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
-import { PLACES, PLOTS, WORLD_HALF_SIZE, type Vec2 } from './content/village'
+import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
 import { getHouse } from './content/houses'
 import { templeWalls, type Rect } from './content/temple'
 
@@ -9,6 +9,8 @@ export interface Circle {
   x: number
   z: number
   r: number
+  /** ของเตี้ย (ก้อนหิน ฯลฯ) กระโดดข้ามได้ */
+  low?: boolean
 }
 
 /** วงชนของสิ่งปลูกสร้าง (คำนวณจากข้อมูลหมู่บ้าน) */
@@ -29,16 +31,23 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
   for (const s of structures) out.push(...structureColliders(s))
   // หีบสมบัติ: ชนเป็นวงกลมเล็ก ๆ
   for (const ch of CHEST_SPOTS) out.push({ x: ch.pos[0], z: ch.pos[1], r: 0.55 })
+  // กองหินริมทาง: เดินชน แต่กระโดดข้ามได้ (สูงไม่ถึงครึ่งเมตร)
+  for (const [x, z] of ROCKS) out.push({ x, z, r: 0.55, low: true })
   return out
 }
 
 const PLAYER_R = 0.4
 
 /** ขยับตำแหน่งแล้วดันออกจากวงชน + จำกัดขอบโลก */
-export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = true): Vec2 {
+/**
+ * ดันผู้เล่นออกจากสิ่งกีดขวาง
+ * jumping = กำลังลอยตัวจากการกระโดด → ข้ามของเตี้ยบาง ๆ ได้ (รั้ว ราว ขอบ: ด้านแคบ ≤ 0.5 ม.) แต่ไม่ทะลุตึก/ผนังหนา
+ */
+export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = true, jumping = false): Vec2 {
   let [x, z] = pos
   for (const c of colliders) {
     if (!('r' in c)) {
+      if (jumping && Math.min(c.maxX - c.minX, c.maxZ - c.minZ) <= 0.5) continue
       // สี่เหลี่ยม: ดันออกตามด้านที่ลึกน้อยที่สุด
       const px = Math.max(c.minX, Math.min(x, c.maxX))
       const pz = Math.max(c.minZ, Math.min(z, c.maxZ))
@@ -62,6 +71,7 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = tru
       }
       continue
     }
+    if (jumping && c.low) continue
     const dx = x - c.x
     const dz = z - c.z
     const dist = Math.hypot(dx, dz)
@@ -72,7 +82,7 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = tru
     }
   }
   if (!clamp) return [x, z]
-  const lim = WORLD_HALF_SIZE - 1
+  const lim = WORLD_WALK_LIMIT - 1
   return [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, z))]
 }
 
@@ -112,14 +122,13 @@ export function homeWalls(): Rect[] {
   if (!hp) return []
   const [cx, cz] = hp.pos
   const out: Rect[] = HOME_SOLIDS.map(([x, z, w, d]) => ({ minX: cx + x - w / 2, maxX: cx + x + w / 2, minZ: cz + z - d / 2, maxZ: cz + z + d / 2 }))
-  const h = HOME_W / 2
-  const d = HOME_D / 2
+  const { x0, x1, z0, z1 } = HOME_BOX
   const t = 0.2
   const gx = HOME_GATE[0]
-  out.push({ minX: cx - h, maxX: cx + gx - 2, minZ: cz - d - t, maxZ: cz - d + t })
-  out.push({ minX: cx + gx + 2, maxX: cx + h, minZ: cz - d - t, maxZ: cz - d + t })
-  out.push({ minX: cx - h, maxX: cx + h, minZ: cz + d - t, maxZ: cz + d + t })
-  out.push({ minX: cx - h - t, maxX: cx - h + t, minZ: cz - d, maxZ: cz + d })
-  out.push({ minX: cx + h - t, maxX: cx + h + t, minZ: cz - d, maxZ: cz + d })
+  out.push({ minX: cx + x0, maxX: cx + gx - 2, minZ: cz + z0 - t, maxZ: cz + z0 + t })
+  out.push({ minX: cx + gx + 2, maxX: cx + x1, minZ: cz + z0 - t, maxZ: cz + z0 + t })
+  out.push({ minX: cx + x0, maxX: cx + x1, minZ: cz + z1 - t, maxZ: cz + z1 + t })
+  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + z0, maxZ: cz + z1 })
+  out.push({ minX: cx + x1 - t, maxX: cx + x1 + t, minZ: cz + z0, maxZ: cz + z1 })
   return out
 }

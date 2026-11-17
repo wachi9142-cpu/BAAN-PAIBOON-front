@@ -1,4 +1,4 @@
-// ร้านค้าทั้งหมู่บ้าน: ร้านค้าขนาดใหญ่ริมถนนใหญ่ (ป้าศรี) + ร้านประจำซอย 5 ร้าน ขายของต่างกัน
+// ร้านค้าทั้งหมู่บ้าน: ร้านค้าขนาดใหญ่ริมถนนใหญ่ (ป้าศรี) + ร้านประจำซอย (ซอย 1–6) ขายของต่างกัน
 // ทุกร้านรับซื้อของคืนได้ แต่ร้านใหญ่ให้ราคาเต็ม ร้านในซอยรับซื้อเฉพาะของที่เกี่ยวกับร้าน
 import { SHOP, type ItemId, type ShopEntry } from './items'
 
@@ -66,6 +66,46 @@ export const SHOPS: Record<string, ShopDef> = {
     note: 'ซอย 4 · กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน',
     goods: pick(['bag1', 'bag2', 'bag3', 'vine5']).map((e) => ({ ...e, price: Math.round(e.price * 0.92) })),
     buys: ['vine', 'leaf', 'branch', 'lotus'],
+  },
+  'shop-grocery': {
+    id: 'shop-grocery',
+    name: 'ร้านขายของชำยายบุญ',
+    owner: 'ยายบุญ',
+    icon: '🏪',
+    note: 'ซอย 6 · ขนม น้ำดื่ม ของกินเล่น กินแล้วสดชื่น',
+    goods: [
+      { id: 'g-water', name: 'น้ำเปล่า', icon: '💧', price: 5, gives: { eat: { thirst: 25 } } },
+      { id: 'g-soda', name: 'น้ำอัดลม', icon: '🥤', price: 12, gives: { eat: { thirst: 25, fun: 4 } } },
+      { id: 'g-snack', name: 'ขนมถุง', icon: '🍪', price: 10, gives: { eat: { hunger: 8, fun: 5 } } },
+      { id: 'g-bread', name: 'ขนมปังสังขยา', icon: '🍞', price: 15, gives: { eat: { hunger: 18 } } },
+      { id: 'g-icecream', name: 'ไอศกรีมกะทิ', icon: '🍨', price: 15, gives: { eat: { thirst: 8, fun: 8 } } },
+      { id: 'g-milk', name: 'นมกล่อง', icon: '🥛', price: 12, gives: { eat: { hunger: 6, thirst: 15 } } },
+    ],
+    buys: ['tomato', 'pumpkin', 'eggplant', 'chili'],
+  },
+  'shop-build': {
+    id: 'shop-build',
+    name: 'ร้านวัสดุก่อสร้างลุงเปีย',
+    owner: 'ลุงเปีย',
+    icon: '🧱',
+    note: 'ซอย 6 · ไม้ หิน เชือก วัสดุสร้างบ้าน (ระบบสร้างบ้านอิสระจะมีของเพิ่ม)',
+    goods: [
+      ...pick(['plank4', 'vine5']),
+      { id: 'b-stone5', name: 'ก้อนหิน ×5', icon: '🪨', price: 20, gives: { item: 'stone', qty: 5 } },
+      { id: 'b-log2', name: 'ไม้ท่อน ×2', icon: '🪵', price: 40, gives: { item: 'log', qty: 2 } },
+      { id: 'b-hardwood', name: 'ไม้เนื้อแข็ง', icon: '🪵', price: 70, gives: { item: 'hardwood', qty: 1 } },
+      ...pick(['hammer', 'saw']),
+    ],
+    buys: ['log', 'plank', 'hardwood', 'stone', 'branch'],
+  },
+  'shop-fishing': {
+    id: 'shop-fishing',
+    name: 'ร้านเบ็ดและเหยื่อน้าสิงห์',
+    owner: 'น้าสิงห์',
+    icon: '🎣',
+    note: 'ซอย 6 · เบ็ดตกปลา รับซื้อปลาและดอกบัวราคาดี',
+    goods: pick(['rod']).map((e) => ({ ...e, price: 50 })),
+    buys: ['fish_tilapia', 'fish_catfish', 'fish_barb', 'lotus'],
   },
   'shop-pet': {
     id: 'shop-pet',
