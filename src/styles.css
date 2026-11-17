@@ -797,3 +797,138 @@ kbd {
   color: var(--green-deep);
   background: transparent;
 }
+
+/* ---------- แผงสถานะ (ซ้ายบน) ---------- */
+.status {
+  background: var(--glass);
+  border-radius: 16px;
+  padding: 10px 14px 12px;
+  box-shadow: var(--shadow);
+  width: 236px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Mitr', sans-serif;
+}
+.status-name {
+  font-size: 16px;
+  color: var(--green-deep);
+}
+.stat {
+  display: grid;
+  grid-template-columns: 18px 34px 1fr;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.stat-icon {
+  font-size: 13px;
+}
+.stat-label {
+  color: var(--ink-soft);
+}
+.stat-track {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(46, 42, 36, 0.12);
+  overflow: hidden;
+}
+.stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.money {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin-top: 2px;
+  color: #6b4a10;
+}
+.money strong {
+  font-weight: 600;
+}
+.money-pop {
+  position: absolute;
+  left: 110px;
+  top: -6px;
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  color: #2f7a2a;
+  white-space: nowrap;
+  animation: money-rise 2.6s ease-out forwards;
+  text-shadow: 0 1px 0 #fff;
+}
+.money-pop.neg {
+  color: #b23a2a;
+}
+.money-pop small {
+  font-weight: 400;
+  color: #6b4a10;
+  font-size: 11px;
+}
+@keyframes money-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  25% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px);
+  }
+}
+.pet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pet-hearts {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(46, 42, 36, 0.2);
+}
+.pet-hearts .on {
+  color: #e8607a;
+}
+.leash-btn {
+  border: 1px solid var(--line);
+  background: #fffaf0;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Mitr', sans-serif;
+}
+.leash-btn.on {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.pause-card {
+  align-items: center;
+  text-align: center;
+}
+.pause-icon {
+  font-size: 44px;
+  line-height: 1;
+}
+@media (max-width: 760px) {
+  .status {
+    width: 190px;
+  }
+}

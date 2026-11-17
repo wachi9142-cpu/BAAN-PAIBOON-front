@@ -13,7 +13,6 @@ import {
   isCustomColor,
   LIP_COLORS,
   OUTFITS,
-  POSES,
   SHOES,
   SHOE_COLORS,
   SKIN_TONES,
@@ -22,7 +21,6 @@ import {
   type Appearance,
   type BagId,
   type Gender,
-  type PoseId,
   type ShoeId,
 } from '../game/content/appearance'
 import { useGame } from '../game/store'
@@ -121,8 +119,6 @@ export function CreateCharacterScreen() {
           <ColorChoiceField label="สีกระเป๋า" options={BAG_COLORS} value={look.bagColor ?? 'indigo'} onChange={(bagColor) => patch({ bagColor })} fallbackCustom="#5c7a3a" />
         )}
 
-        <div className="setup-section">ท่าทาง</div>
-        <ChipField label="ท่ายืน" options={POSES} value={look.pose ?? 'stand'} onChange={(id) => patch({ pose: id as PoseId })} />
 
         <p className="hint">ลากเมาส์บนตัวละครเพื่อหมุนดูรอบตัว · ล้อเมาส์เพื่อซูมดูใบหน้า</p>
 

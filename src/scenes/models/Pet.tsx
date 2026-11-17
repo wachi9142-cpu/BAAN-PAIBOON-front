@@ -1124,6 +1124,13 @@ export function Pet({ pet, motion, pose }: Props & { pose?: React.RefObject<numb
   )
 }
 
+/** ขนาดรวมของสัตว์ (ใช้หาตำแหน่งคอสำหรับสายจูง) */
+export function petScale(pet: PetChoice) {
+  const selfScaled = pet.species === 'dog' || pet.species === 'cow' || pet.species === 'pig'
+  const outer = selfScaled ? 1 : pet.size === 'small' ? 0.75 : pet.size === 'large' ? 1.2 : 1
+  return outer * innerScale(pet)
+}
+
 /** ขนาดที่โมเดลหมา/วัว/หมูใช้ภายใน (ชุดต้องย่อ-ขยายเท่ากันจึงจะพอดีตัว) */
 function innerScale(pet: PetChoice) {
   switch (pet.species) {

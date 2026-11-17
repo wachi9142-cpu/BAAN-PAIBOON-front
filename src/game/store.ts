@@ -4,6 +4,7 @@ import type { PetChoice } from './content/pets'
 import { SPAWN, STARTING_PLOT_ID } from './content/village'
 import { clearSaves, listSaves, loadLatest, writeSave, type Envelope, type SaveReason } from './save/localSave'
 import { cloudEnabled, flushOutbox, queueForUpload, type CloudStatus } from './save/cloudSync'
+import { playCoinSound } from './audio/coin'
 
 /**
  * SaveData = ข้อมูลที่ต้องเก็บถาวร (เซฟเกม)
@@ -34,7 +35,23 @@ export interface SaveData {
   discoveredPlaceIds: string[]
   /** เวลาเล่นสะสม (วินาที) */
   playSeconds: number
+  /** ค่าสถานะ 0–100 — ลดลงเฉพาะตอนเล่น (ออกจากเกมแล้วไม่ลด) */
+  stats: PlayerStats
+  /** ความผูกพันกับสัตว์เลี้ยง (จำนวนหัวใจ) */
+  petHearts: number
+  /** จูงสัตว์เลี้ยงอยู่หรือไม่ */
+  petLeashed: boolean
 }
+
+export interface PlayerStats {
+  health: number
+  hunger: number
+  thirst: number
+  fun: number
+}
+
+export const DEFAULT_STATS: PlayerStats = { health: 100, hunger: 85, thirst: 85, fun: 70 }
+export const MAX_PET_HEARTS = 10
 
 export type Screen = 'title' | 'create' | 'pet' | 'house' | 'world'
 
@@ -56,6 +73,9 @@ function migrateSave(data: SaveData): SaveData {
     ...data,
     player: { ...data.player, pet: data.player.pet ?? null },
     playSeconds: data.playSeconds ?? 0,
+    stats: { ...DEFAULT_STATS, ...data.stats },
+    petHearts: data.petHearts ?? 0,
+    petLeashed: data.petLeashed ?? false,
     version: SAVE_VERSION,
   }
 }
@@ -88,6 +108,17 @@ interface GameState {
   discoverPlace: (id: string) => boolean
   setNearby: (id: string | null) => void
   toast: (t: Omit<Toast, 'id'>) => void
+  /** ได้/เสียเงิน: เล่นเสียงเหรียญ แสดง +X บาท (รวม Y) แล้วบันทึกทันที */
+  addCoins: (amount: number, reason?: string) => void
+  /** ปรับค่าสถานะ (ค่าบวก/ลบ) จำกัดอยู่ใน 0–100 */
+  changeStats: (delta: Partial<PlayerStats>) => void
+  addPetHeart: () => void
+  setPetLeashed: (v: boolean) => void
+  /** หยุดเกมชั่วคราว (เปิดเมนู / กดพัก / สลับไปหน้าต่างอื่น) — ไม่ถูกบันทึก */
+  paused: boolean
+  setPaused: (v: boolean) => void
+  /** ป้ายเงินลอยขึ้นบนจอ */
+  moneyPops: { id: number; amount: number; total: number }[]
   dismissToast: (id: number) => void
   setFlushWorld: (fn: (() => void) | null) => void
   /** บันทึกทันที (ตรวจสอบว่าสำเร็จจริง) คืนค่า true ถ้าสำเร็จ */
@@ -141,6 +172,9 @@ export const useGame = create<GameState>()((set, get) => ({
       heading: Math.PI,
       discoveredPlaceIds: [],
       playSeconds: 0,
+      stats: { ...DEFAULT_STATS },
+      petHearts: 0,
+      petLeashed: false,
     }
     set({ save, draft: null, screen: 'world', toasts: [], dirty: true, recoveredFrom: null })
     enterWorld()
@@ -180,6 +214,61 @@ export const useGame = create<GameState>()((set, get) => ({
     const [ox, oz] = save.position
     if (Math.abs(ox - position[0]) < 0.01 && Math.abs(oz - position[1]) < 0.01 && Math.abs(save.heading - heading) < 0.01) return
     set({ save: { ...save, position, heading }, dirty: true })
+  },
+
+  moneyPops: [],
+  paused: false,
+  setPaused: (paused) => {
+    if (get().paused === paused) return
+    set({ paused })
+    // พักเกม = บันทึกให้เลย (ผู้เล่นอาจลุกไปทำอย่างอื่นนาน)
+    if (paused && get().save) get().saveNow('auto')
+  },
+
+  addCoins: (amount, reason) => {
+    const save = get().save
+    if (!save || amount === 0) return
+    const total = Math.max(0, save.coins + amount)
+    set({ save: { ...save, coins: total }, dirty: true })
+    const id = toastSeq++
+    set({ moneyPops: [...get().moneyPops.slice(-2), { id, amount, total }] })
+    setTimeout(() => set({ moneyPops: get().moneyPops.filter((p) => p.id !== id) }), 2600)
+    if (amount > 0) playCoinSound()
+    if (reason) get().toast({ title: reason, body: `${amount > 0 ? 'ได้รับ' : 'จ่าย'} ${Math.abs(amount).toLocaleString('th-TH')} บาท · รวม ${total.toLocaleString('th-TH')} บาท`, tone: 'success' })
+    // เหตุการณ์สำคัญ: ได้รับหรือใช้เงิน → บันทึกทันที
+    get().saveNow('event')
+  },
+
+  changeStats: (delta) => {
+    const save = get().save
+    if (!save) return
+    const clamp = (v: number) => Math.max(0, Math.min(100, v))
+    const st = save.stats
+    set({
+      save: {
+        ...save,
+        stats: {
+          health: clamp(st.health + (delta.health ?? 0)),
+          hunger: clamp(st.hunger + (delta.hunger ?? 0)),
+          thirst: clamp(st.thirst + (delta.thirst ?? 0)),
+          fun: clamp(st.fun + (delta.fun ?? 0)),
+        },
+      },
+      dirty: true,
+    })
+  },
+
+  addPetHeart: () => {
+    const save = get().save
+    if (!save || save.petHearts >= MAX_PET_HEARTS) return
+    set({ save: { ...save, petHearts: save.petHearts + 1 }, dirty: true })
+    get().toast({ title: `💗 ${save.player.pet?.name ?? 'สัตว์เลี้ยง'} รักคุณมากขึ้น`, body: `ความผูกพัน ${save.petHearts + 1}/${MAX_PET_HEARTS} หัวใจ`, tone: 'discover' })
+  },
+
+  setPetLeashed: (petLeashed) => {
+    const save = get().save
+    if (!save) return
+    set({ save: { ...save, petLeashed }, dirty: true })
   },
 
   discoverPlace: (id) => {

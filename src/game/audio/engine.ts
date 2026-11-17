@@ -102,6 +102,32 @@ class AudioEngine {
     this.duckFor(buf.duration)
   }
 
+  /** เสียงเงินเข้ากระเป๋า */
+  async playCoin() {
+    if (!this.ctx) return
+    const buf = await this.load('sfx-coin.mp3')
+    if (buf) return void this.playSfx('sfx-coin.mp3', 0.9)
+    const ctx = this.ctx
+    const t0 = ctx.currentTime + 0.01
+    // กริ๊ง กริ๊ง: โน้ตสูงสองตัว เสียงกระดิ่งโลหะ
+    ;[
+      [1568, 0],
+      [2093, 0.09],
+    ].forEach(([f, dt]) => {
+      const osc = ctx.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = f
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t0 + dt)
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.5)
+      osc.connect(g).connect(this.buses.sfx)
+      osc.start(t0 + dt)
+      osc.stop(t0 + dt + 0.55)
+    })
+    this.duckFor(0.6)
+  }
+
   /** เสียงร้องสัตว์: ใช้ไฟล์ถ้ามี ไม่งั้นใช้เสียงสังเคราะห์ (ถ้ามี) ไม่งั้นเงียบ */
   async playCallOrFile(file: string, synth: CallKind | undefined, volume = 0.7) {
     if (!this.ctx) return

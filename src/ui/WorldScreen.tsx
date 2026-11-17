@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Sky } from '@react-three/drei'
-import { formatClock, formatSavedAt, markCleanExit, periodOfDay, useGame } from '../game/store'
+import { formatClock, formatSavedAt, markCleanExit, MAX_PET_HEARTS, periodOfDay, useGame } from '../game/store'
 import { AUTO_SAVE_CHOICES, useSettings } from '../game/settings'
 import { PLACES, PLOTS } from '../game/content/village'
 import { SOUND_PERIODS } from '../game/content/soundscape'
@@ -14,8 +14,24 @@ import { SaveSlots } from './SaveSlots'
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
   useFrame((_, dt) => {
-    const s = useGame.getState().save
-    if (s) s.playSeconds += Math.min(dt, 0.1)
+    const g = useGame.getState()
+    if (g.save && !g.paused) g.save.playSeconds += Math.min(dt, 0.1)
+  })
+  return null
+}
+
+/** ความผูกพันกับสัตว์เลี้ยง: ทุก 60 วินาทีที่เล่นด้วยกัน (ไม่นับตอนพัก) ได้ 1 หัวใจ + ความสนุก */
+function PetBond() {
+  const acc = useRef({ t: 0 }).current
+  useFrame((_, dt) => {
+    const g = useGame.getState()
+    if (!g.save?.player.pet || g.paused) return
+    acc.t += Math.min(dt, 0.1)
+    if (acc.t >= 60) {
+      acc.t = 0
+      g.addPetHeart()
+      g.changeStats({ fun: 5 })
+    }
   })
   return null
 }
@@ -23,18 +39,41 @@ function PlayClock() {
 export function WorldScreen() {
   const save = useGame((s) => s.save)
   const exitToTitle = useGame((s) => s.exitToTitle)
+  const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
+  const [pauseOpen, setPauseOpen] = useState(false)
+  const [hidden, setHidden] = useState(document.hidden)
 
   useAutoSave()
   useVillageSoundscape()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape') setMenu((m) => !m)
+      if (e.code === 'Escape') {
+        setPauseOpen(false)
+        setMenu((m) => !m)
+      }
+      if (e.code === 'KeyP') setPauseOpen((p) => !p)
+      if (e.code === 'KeyL') {
+        const g = useGame.getState()
+        if (g.save?.player.pet) g.setPetLeashed(!g.save.petLeashed)
+      }
     }
+    // สลับไปหน้าต่าง/แท็บอื่น = พักอัตโนมัติ
+    const onVis = () => setHidden(document.hidden)
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('visibilitychange', onVis)
+    }
   }, [])
+
+  // เปิดเมนู / กดพัก / ไม่ได้ดูหน้าจอเกม → เกมหยุด (ตัวละคร สัตว์เลี้ยง เวลา ค่าสถานะ ไม่เดิน)
+  useEffect(() => {
+    setPaused(menu || pauseOpen || hidden)
+  }, [menu, pauseOpen, hidden, setPaused])
+  useEffect(() => () => setPaused(false), [setPaused])
 
   useEffect(() => {
     if (!save) exitToTitle(true)
@@ -62,8 +101,25 @@ export function WorldScreen() {
         <Player />
         {save.player.pet && <PetFollower pet={save.player.pet} start={save.position} />}
         <PlayClock />
+        <PetBond />
       </Canvas>
-      <Hud onMenu={() => setMenu(true)} />
+      <Hud onMenu={() => setMenu(true)} onPause={() => setPauseOpen(true)} />
+      {pauseOpen && !menu && (
+        <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
+          <div className="menu pause-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="พักเกม">
+            <div className="pause-icon">⏸</div>
+            <h2>พักเกม</h2>
+            <p className="hint" style={{ margin: 0, textAlign: 'center' }}>
+              เวลาในเกม ค่าสถานะ และสัตว์เลี้ยงหยุดไว้ก่อน บันทึกความคืบหน้าให้แล้ว
+              <br />
+              ลุกไปทำธุระได้เลย กลับมาแล้วกดเล่นต่อ
+            </p>
+            <button className="btn" onClick={() => setPauseOpen(false)} autoFocus>
+              ▶ เล่นต่อ (P)
+            </button>
+          </div>
+        </div>
+      )}
       {menu && <GameMenu onClose={() => setMenu(false)} />}
     </>
   )
@@ -85,7 +141,70 @@ function useAutoSave() {
   }, [enabled, minutes])
 }
 
-function Hud({ onMenu }: { onMenu: () => void }) {
+/** หลอดค่าสถานะ */
+function StatBar({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+  return (
+    <div className="stat" title={`${label} ${Math.round(value)}/100`}>
+      <span className="stat-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="stat-label">{label}</span>
+      <span className="stat-track" role="meter" aria-label={label} aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
+        <span className="stat-fill" style={{ width: `${value}%`, background: color }} />
+      </span>
+    </div>
+  )
+}
+
+/** แผงสถานะมุมซ้ายบน: ชื่อ หลอดค่าสถานะ ถุงเงิน ความผูกพันกับสัตว์เลี้ยง สายจูง */
+function StatusPanel() {
+  const save = useGame((s) => s.save)!
+  const pops = useGame((s) => s.moneyPops)
+  const setPetLeashed = useGame((s) => s.setPetLeashed)
+  const pet = save.player.pet
+  return (
+    <div className="status">
+      <div className="status-name">{save.player.name}</div>
+      <StatBar icon="❤️" label="ชีวิต" value={save.stats.health} color="#d9534f" />
+      <StatBar icon="🍚" label="อิ่ม" value={save.stats.hunger} color="#e0a35c" />
+      <StatBar icon="💧" label="น้ำ" value={save.stats.thirst} color="#4a90d8" />
+      <StatBar icon="😊" label="สนุก" value={save.stats.fun} color="#5c9a4a" />
+      <div className="money">
+        <span aria-hidden="true">💰</span>
+        <span>
+          ถุงเงิน <strong>{save.coins.toLocaleString('th-TH')}</strong> บาท
+        </span>
+        {pops.map((p) => (
+          <span key={p.id} className={`money-pop ${p.amount < 0 ? 'neg' : ''}`}>
+            {p.amount > 0 ? '+' : '−'}
+            {Math.abs(p.amount).toLocaleString('th-TH')} บาท
+            <small>รวม {p.total.toLocaleString('th-TH')} บาท</small>
+          </span>
+        ))}
+      </div>
+      {pet && (
+        <div className="pet-row">
+          <span className="pet-hearts" title={`ความผูกพันกับ${pet.name} ${save.petHearts}/${MAX_PET_HEARTS}`}>
+            {Array.from({ length: MAX_PET_HEARTS }).map((_, i) => (
+              <span key={i} className={i < save.petHearts ? 'on' : ''}>
+                ♥
+              </span>
+            ))}
+          </span>
+          <button
+            className={`leash-btn ${save.petLeashed ? 'on' : ''}`}
+            onClick={() => setPetLeashed(!save.petLeashed)}
+            title="กด L เพื่อจูง/ปล่อย"
+          >
+            {save.petLeashed ? '🦮 จูงอยู่' : '🐾 ปล่อย'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Hud({ onMenu, onPause }: { onMenu: () => void; onPause: () => void }) {
   const save = useGame((s) => s.save)!
   const nearby = useGame((s) => s.nearbyPlaceId)
   const toasts = useGame((s) => s.toasts)
@@ -98,12 +217,12 @@ function Hud({ onMenu }: { onMenu: () => void }) {
   return (
     <div className="hud">
       <div className="hud-top">
+        <StatusPanel />
         <div className="pill">
-          <span>{save.player.name}</span>
+          <button className="btn small ghost pause-btn" onClick={onPause} aria-label="พักเกม" title="พักเกม (P)">
+            ⏸ พัก
+          </button>
           <span className="sep" />
-          <span className="coins"><span className="coin-dot" /> {save.coins.toLocaleString('th-TH')} เหรียญ</span>
-        </div>
-        <div className="pill">
           <span>วันที่ {save.day}</span>
           <span className="sep" />
           <span>
@@ -144,7 +263,7 @@ function Hud({ onMenu }: { onMenu: () => void }) {
       )}
 
       <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม · <kbd>Esc</kbd> เมนู
+        <kbd>W A S D</kbd> เดิน · <kbd>Shift</kbd> วิ่ง · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม · <kbd>P</kbd> พัก · <kbd>L</kbd> จูงสัตว์ · <kbd>Esc</kbd> เมนู
       </div>
     </div>
   )
