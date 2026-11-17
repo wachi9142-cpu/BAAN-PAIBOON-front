@@ -80,7 +80,7 @@ export function Eye({
       {(style === 'gentle' || style === 'sharp') && (
         // ตาหวาน: เปลือกตา (สีผิว) ลดลงมาปิดด้านบนเล็กน้อย
         <mesh position={[0, style === 'sharp' ? 0.022 : 0.012, z(5)]} scale={[1.06, style === 'sharp' ? 0.6 : 0.75, 1]}>
-          <circleGeometry args={[0.034, 20, 0, Math.PI]} />
+          <circleGeometry args={[0.036, 20, 0, Math.PI]} />
           <meshBasicMaterial color={skin} />
         </mesh>
       )}

@@ -393,7 +393,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
         ))}
       {/* ตา: ตาดำตามสีที่เลือก + จุดแสงสีขาว */}
       {([-1, 1] as const).map((s) => (
-        <group key={s} position={[s * eyeX, eyeY, faceZ(eyeX, eyeY) - 0.006]} scale={age.eyeScale}>
+        <group key={s} position={[s * eyeX, eyeY, faceZ(eyeX, eyeY) - 0.006]} scale={age.eyeScale * 1.06}>
           <Eye color={eye} style={appearance.eyeStyle ?? 'round'} side={s} female={female} skin={skin} />
         </group>
       ))}
