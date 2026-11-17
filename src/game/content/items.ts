@@ -35,6 +35,11 @@ export type ItemId =
   | 'tomato'
   | 'seed_pumpkin'
   | 'pumpkin'
+  | 'rod'
+  | 'lotus'
+  | 'fish_tilapia'
+  | 'fish_catfish'
+  | 'fish_barb'
 
 export type ItemKind = 'material' | 'tool' | 'seed' | 'food'
 
@@ -85,6 +90,11 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   hardwood: { id: 'hardwood', name: 'ไม้เนื้อแข็ง', icon: '🪵', kind: 'material', stack: 20, sell: 30, note: 'ได้จากการโค่นต้นไม้ใหญ่ด้วยขวาน ใช้ทำเครื่องเรือนระดับสูง' },
   sapling: { id: 'sapling', name: 'ต้นกล้าไม้', icon: '🌱', kind: 'material', stack: 20, sell: 3, note: 'ปลูกแทนที่ตอไม้ (เดินไปที่ตอไม้แล้วกด E) โตเป็นต้นไม้ใน 1 วัน' },
   oldkey: { id: 'oldkey', name: 'กุญแจโบราณ', icon: '🗝️', kind: 'material', stack: 5, sell: 0, note: 'ไขหีบโบราณได้หนึ่งใบ (ได้จากหีบลับที่ซ่อนอยู่ในป่า)' },
+  rod: { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', kind: 'tool', stack: 1, sell: 30, note: 'คันเบ็ดไม้ไผ่ ตกปลาที่บ่อปลาลุงเขียว (เดินไปริมบ่อแล้วกด E)' },
+  lotus: { id: 'lotus', name: 'ดอกบัว', icon: '🪷', kind: 'material', stack: 20, sell: 6, note: 'เก็บจากบ่อ ใช้ตกแต่งบ้าน ถวายพระ หรือมอบให้ชาวบ้าน · บานใหม่ทุกวัน' },
+  fish_tilapia: { id: 'fish_tilapia', name: 'ปลานิล', icon: '🐟', kind: 'food', stack: 10, sell: 25, note: 'ตกได้จากบ่อ ย่างเกลือหรือทอดก็อร่อย', food: 14 },
+  fish_catfish: { id: 'fish_catfish', name: 'ปลาดุก', icon: '🐟', kind: 'food', stack: 10, sell: 30, note: 'ปลาดุกบ่อลุงเขียว ย่างกินกับน้ำพริก', food: 16 },
+  fish_barb: { id: 'fish_barb', name: 'ปลาตะเพียน', icon: '🐟', kind: 'food', stack: 10, sell: 18, note: 'ปลาตัวเล็กก้างเยอะ ทอดกรอบ ๆ', food: 10 },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 
@@ -123,6 +133,7 @@ export const RECIPES: Recipe[] = [
   { id: 'saw', name: 'เลื่อย', icon: '🪚', needs: { log: 2, stone: 4 }, tool: 'hammer', gives: { item: 'saw', qty: 1 } },
   { id: 'plank', name: 'ไม้กระดาน ×2', icon: '🟫', needs: { log: 1 }, tool: 'saw', gives: { item: 'plank', qty: 2 } },
   { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', needs: { branch: 1, vine: 1 }, gives: { item: 'feed', qty: 4 } },
+  { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', needs: { branch: 2, vine: 2 }, gives: { item: 'rod', qty: 1 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', needs: { plank: 2, stone: 5, vine: 3 }, tool: 'hammer', gives: { item: 'wand', qty: 1 } },
   { id: 'bag1', name: 'ย่ามผ้าฝ้าย (20 ช่อง)', icon: '🎒', needs: { vine: 6, branch: 2 }, gives: { bagLevel: 1 } },
   { id: 'bag2', name: 'กระเป๋าสานไม้ไผ่ (28 ช่อง)', icon: '🧺', needs: { vine: 10, plank: 4 }, tool: 'machete', gives: { bagLevel: 2 } },
@@ -146,6 +157,7 @@ export const SHOP: ShopEntry[] = [
   { id: 'treat3', name: 'กล้วยสุก ×3', icon: '🍌', price: 45, gives: { item: 'treat', qty: 3 } },
   { id: 'axe2', name: 'ขวานเหล็ก', icon: '🪓', price: 350, gives: { item: 'axe2', qty: 1 } },
   { id: 'sapling', name: 'ต้นกล้าไม้ ×2', icon: '🌱', price: 20, gives: { item: 'sapling', qty: 2 } },
+  { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', price: 60, gives: { item: 'rod', qty: 1 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', price: 500, gives: { item: 'wand', qty: 1 } },
   { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง ×3', icon: '🌱', price: 10, gives: { item: 'seed_morningglory', qty: 3 } },
   { id: 'seed_scallion', name: 'เมล็ดต้นหอม ×3', icon: '🌱', price: 12, gives: { item: 'seed_scallion', qty: 3 } },

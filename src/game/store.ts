@@ -72,6 +72,8 @@ export interface SaveData {
   wandGem?: 'green' | 'yellow' | 'red' | 'purple'
   /** หีบสมบัติที่เปิดแล้ว (id → นาทีสัมบูรณ์ในเกมที่เปิด) */
   chestsOpened?: Record<string, number>
+  /** ดอกบัวที่เก็บแล้ว (id → นาทีสัมบูรณ์ที่เก็บ) */
+  lotusPicked?: Record<string, number>
   /** อ่านประกาศบนบอร์ดแต่ละจุดล่าสุดวันที่ */
   boardSeen?: Record<string, number>
   /** เซียมซี: วันที่เสี่ยงล่าสุด · เลขที่ได้แต่ยังไม่ได้หยิบใบ · ประวัติทั้งหมด */

@@ -7,7 +7,7 @@
 import { useGame } from './store'
 import { useSettings } from './settings'
 import { wild, wildPos, tierOf } from './catching'
-import { playerPose } from '../scenes/Player'
+import { playerPose } from './playerPose'
 import { WILD_SPAWNS } from './content/wildlife'
 import { getSpecies, type PetSpecies } from './content/pets'
 import { playPetSound } from './audio/petSounds'

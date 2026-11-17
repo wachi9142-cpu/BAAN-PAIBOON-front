@@ -2621,3 +2621,25 @@ button.save-ind:hover {
   font-size: 12px;
   white-space: nowrap;
 }
+
+/* ---------- ระบบน้ำ ---------- */
+.water-win { max-width: 520px; }
+.water-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+.water-act {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  padding: 12px; border-radius: 14px; border: 1px solid rgba(60, 110, 120, 0.25);
+  background: linear-gradient(180deg, #f3fbfb, #e1f1f0); cursor: pointer; font: inherit; color: #234;
+}
+.water-act:hover { background: linear-gradient(180deg, #e6f7f6, #cfe9e7); }
+.water-act-icon { font-size: 26px; }
+.water-act small { color: #557; font-size: 12px; line-height: 1.35; }
+.swim-bar {
+  position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px;
+  background: rgba(240, 250, 252, 0.92); color: #234; font-size: 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+.swim-bar.danger { background: rgba(255, 228, 220, 0.95); color: #8a2a12; }
+.swim-track { width: 160px; height: 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+.swim-fill { display: block; height: 100%; background: linear-gradient(90deg, #3ca0c8, #66c7d8); transition: width 0.3s; }
+.swim-bar.danger .swim-fill { background: linear-gradient(90deg, #d8452a, #f08a50); }

@@ -73,6 +73,10 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
   sit: [-0.7, 0.12, -0.7, -0.12],
   hang: [-3.05, 0.12, -3.05, -0.12],
   balance: [0, -1.35, 0, 1.35],
+  // ในน้ำ: ว่ายท่ากบ · ตะเกียกตะกายตอนหมดแรง · นั่งพายเรือ (แอนิเมชันอยู่ใน useFrame)
+  swim: [-2.8, -0.3, -2.8, 0.3],
+  struggle: [-2.6, -0.4, -2.6, 0.4],
+  paddle: [-1, -0.2, -1, 0.2],
 }
 
 /** กราบสามครั้ง: ช่วงคุกเข่าพนมมือ แล้วกราบลง-ขึ้น 3 รอบ (วินาที) */
@@ -278,6 +282,48 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       if (legL.current) legL.current.rotation.z = lerp(legL.current.rotation.z, 0)
       if (legR.current) legR.current.rotation.z = lerp(legR.current.rotation.z, 0)
     }
+    if (pose === 'swim') {
+      // ว่ายท่ากบ: แขนเหยียดไปข้างหน้าแล้วกวาดออกข้าง · ขาตีน้ำสลับ (ตัวเอียงไปข้างหน้าจาก Player)
+      const st = (idle.current * (m > 0 ? 1.6 : 0.7)) % 1
+      const sweep = st < 0.5 ? st / 0.5 : 1 - (st - 0.5) / 0.5
+      if (armL.current) {
+        armL.current.rotation.x = -2.9 + sweep * 1.3
+        armL.current.rotation.z = -0.15 - sweep * 0.9
+      }
+      if (armR.current) {
+        armR.current.rotation.x = -2.9 + sweep * 1.3
+        armR.current.rotation.z = 0.15 + sweep * 0.9
+      }
+      const kick = Math.sin(idle.current * (m > 0 ? 10 : 4)) * 0.35
+      if (legL.current) legL.current.rotation.x = kick
+      if (legR.current) legR.current.rotation.x = -kick
+    } else if (pose === 'struggle') {
+      // หมดแรง ตะเกียกตะกาย: แขนตีน้ำสลับเร็ว ๆ
+      const f = idle.current * 11
+      if (armL.current) {
+        armL.current.rotation.x = -2.3 + Math.sin(f) * 0.7
+        armL.current.rotation.z = -0.5
+      }
+      if (armR.current) {
+        armR.current.rotation.x = -2.3 - Math.sin(f) * 0.7
+        armR.current.rotation.z = 0.5
+      }
+      if (legL.current) legL.current.rotation.x = Math.sin(f * 0.8) * 0.5
+      if (legR.current) legR.current.rotation.x = -Math.sin(f * 0.8) * 0.5
+    } else if (pose === 'paddle') {
+      // นั่งในเรือ ขาเหยียด · สองมือจับไม้พายจ้วงเป็นวง
+      const p = idle.current * (m > 0 ? 4 : 1.2)
+      if (armL.current) {
+        armL.current.rotation.x = -1 + Math.sin(p) * 0.45
+        armL.current.rotation.z = -0.2 + Math.cos(p) * 0.15
+      }
+      if (armR.current) {
+        armR.current.rotation.x = -1 + Math.sin(p) * 0.45
+        armR.current.rotation.z = 0.2 + Math.cos(p) * 0.15
+      }
+      if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, -1.45)
+      if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, -1.45)
+    }
     if (m === 0 && pose === 'shake') {
       // เขย่ากระบอกเซียมซี: มือสองข้างโยกขึ้นลงเร็ว ๆ
       const sh = Math.sin(idle.current * 18) * 0.18
@@ -286,8 +332,8 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     }
     if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + (kneel ? bow * 1.15 : 0))
     if (body.current) {
-      const down = kneel ? -0.62 * age.legScale : pose === 'sit' && m === 0 ? -0.42 * age.legScale : 0
-      body.current.position.y = m > 0 && pose !== 'ride' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
+      const down = kneel ? -0.62 * age.legScale : (pose === 'sit' && m === 0) || pose === 'paddle' ? -0.42 * age.legScale : 0
+      body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * 0.05 : lerp(body.current.position.y, down)
     }
   })
 

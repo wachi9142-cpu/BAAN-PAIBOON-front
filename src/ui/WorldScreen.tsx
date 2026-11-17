@@ -5,6 +5,10 @@ import { startPlay, toyHint, usePlay } from '../game/play'
 import { isShop, SHOPS } from '../game/content/shops'
 import { isBoard, openBoard, useBoard } from '../game/noticeboard'
 import { NoticeBoardWindow } from './NoticeBoardWindow'
+import { SwimBar, WaterMenu } from './WaterMenu'
+import { useWater } from '../game/water'
+import { activateWater, waterHint } from '../game/waterTick'
+import { playerPose } from '../game/playerPose'
 import { chestHint, openChest, useChests } from '../game/treasure'
 import { whistle } from '../game/whistle'
 import { ToolBar } from './ToolBar'
@@ -22,6 +26,7 @@ import { useVillageSoundscape } from '../game/audio/useSoundscape'
 import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
 import { PetFollower } from '../scenes/PetFollower'
+import { WaterLife } from '../scenes/WaterLife'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu, type Tab } from './GameMenu'
 import { takePhoto } from '../game/photo'
@@ -185,6 +190,10 @@ export function WorldScreen() {
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
         }
         else if (usePlay.getState().near && !usePlay.getState().playing) startPlay(usePlay.getState().near!)
+        else if (useWater.getState().near) {
+          if (useWater.getState().menu) useWater.setState({ menu: null })
+          else activateWater(useWater.getState().near!, playerPose.x, playerPose.z)
+        }
         else if (useChests.getState().near) openChest(useChests.getState().near!)
         else if (useBuild.getState().near) {
           const uid = useBuild.getState().near!
@@ -246,6 +255,7 @@ export function WorldScreen() {
         <Wildlife />
         <Player />
         <HomeInterior />
+        <WaterLife />
         {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
         <PlayClock />
         <PetBond />
@@ -260,6 +270,7 @@ export function WorldScreen() {
       <MeritPopup />
       <SeedPicker />
       <NoticeBoardWindow />
+      <WaterMenu />
       <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
@@ -675,6 +686,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const chestNear = useChests((s) => s.near)
   const toyNear = usePlay((s) => s.near)
   const homeNear = useInterior((s) => s.near)
+  const waterNear = useWater((s) => s.near)
   const playing = usePlay((s) => s.playing)
   useGame((s) => s.save?.chestsOpened)
   const building = useBuild((s) => s.active)
@@ -779,7 +791,13 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       {!building && toyNear && (
         <div className="gather-hint">{playing ? `😄 กำลังเล่น${playing.spot.name} · เดินเพื่อเลิกเล่น` : <><kbd>E</kbd> {toyHint(toyNear)}</>}</div>
       )}
-      {!building && !toyNear && !nearWorship && !npcNear && !meritSpot && chestNear && (
+      {!building && !toyNear && !nearWorship && !npcNear && !meritSpot && waterNear && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {waterHint(waterNear)}
+        </div>
+      )}
+      <SwimBar />
+      {!building && !toyNear && !nearWorship && !npcNear && !meritSpot && !waterNear && chestNear && (
         <div className="gather-hint">
           <kbd>E</kbd> {chestHint(chestNear)}
         </div>

@@ -47,7 +47,7 @@ export const SHOPS: Record<string, ShopDef> = {
       { id: 'water', name: 'น้ำเปล่า', icon: '💧', price: 5, gives: { eat: { thirst: 25 } } },
       { id: 'tea', name: 'ชาเย็น', icon: '🧋', price: 15, gives: { eat: { thirst: 30, fun: 3 } } },
     ],
-    buys: ['morningglory', 'scallion', 'basil', 'lemongrass', 'chili', 'eggplant', 'tomato', 'pumpkin'],
+    buys: ['morningglory', 'scallion', 'basil', 'lemongrass', 'chili', 'eggplant', 'tomato', 'pumpkin', 'fish_tilapia', 'fish_catfish', 'fish_barb'],
   },
   'shop-tools': {
     id: 'shop-tools',
@@ -55,7 +55,7 @@ export const SHOPS: Record<string, ShopDef> = {
     owner: 'ช่างหน่อย',
     icon: '🔨',
     note: 'ซอย 3 · เครื่องมือช่างครบ ขวานเหล็กราคาดี',
-    goods: pick(['axe', 'axe2', 'hammer', 'machete', 'saw', 'plank4']).map((e) => (e.id === 'axe2' ? { ...e, price: 320 } : e)),
+    goods: pick(['axe', 'axe2', 'hammer', 'machete', 'saw', 'plank4', 'rod']).map((e) => (e.id === 'axe2' ? { ...e, price: 320 } : e)),
     buys: ['log', 'plank', 'hardwood', 'stone', 'branch', 'axe', 'axe2', 'hammer', 'machete', 'saw'],
   },
   'shop-craft': {
@@ -65,7 +65,7 @@ export const SHOPS: Record<string, ShopDef> = {
     icon: '🧺',
     note: 'ซอย 4 · กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน',
     goods: pick(['bag1', 'bag2', 'bag3', 'vine5']).map((e) => ({ ...e, price: Math.round(e.price * 0.92) })),
-    buys: ['vine', 'leaf', 'branch'],
+    buys: ['vine', 'leaf', 'branch', 'lotus'],
   },
   'shop-pet': {
     id: 'shop-pet',

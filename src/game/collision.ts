@@ -98,10 +98,10 @@ export function campusWalls(): Rect[] {
   const lk = PLACES.find((p) => p.id === 'school-pond')
   if (lk) {
     const [cx, cz] = lk.pos
-    const [w, d] = lk.size
-    // สะพานที่ z = cz - 2 กว้าง 2.6 ม.
-    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz - 3.3 })
-    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - 0.7, maxZ: cz + d / 2 })
+    const [w] = lk.size
+    // บ่อลงไปเล่นน้ำได้แล้ว (ระบบน้ำ) · เหลือแค่ราวสะพานสองข้าง (สะพานที่ z = cz - 2 กว้าง 2.6 ม.)
+    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - 3.35, maxZ: cz - 3.15 })
+    out.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - 0.85, maxZ: cz - 0.65 })
   }
   return out
 }

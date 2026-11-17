@@ -5,7 +5,7 @@ import { useGame } from '../game/store'
 import { PULL_DURATION, refreshWild, tierOf, wild, wildPos } from '../game/catching'
 import { GEMS, wandGem } from '../game/wand'
 import { TIERS, WILD_SPAWNS, type WildSpawn } from '../game/content/wildlife'
-import { playerPose } from './Player'
+import { playerPose } from '../game/playerPose'
 import { Pet } from './models/Pet'
 
 const CATCH_RANGE = 2.8

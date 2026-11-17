@@ -7,8 +7,10 @@ import { playPetSound } from '../game/audio/petSounds'
 import { useGame } from '../game/store'
 import { Pet, petScale } from './models/Pet'
 import { PET_ANCHORS } from './models/PetOutfit'
-import { playerPose } from './Player'
+import { playerPose } from '../game/playerPose'
 import { templeGroundY } from '../game/content/temple'
+import { waterAt } from '../game/content/water'
+import { waterRt } from '../game/water'
 
 /** รอนานเท่าไรถึงนั่ง / นอน (วินาที) */
 const SIT_AFTER = 2.5
@@ -35,6 +37,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
   const play = useRef({ until: 0, next: 6 + Math.random() * 6, angle: 0, dir: 1 })
   const nextIdleSound = useRef(8 + Math.random() * 15)
   const heardRef = useRef(-1)
+  const far = useRef(0)
   const tmp = useMemo(() => ({ a: new Vector3(), b: new Vector3(), up: new Vector3(0, 1, 0), q: new Quaternion() }), [])
   const anchor = PET_ANCHORS[pet.species]
   const scale = petScale(pet)
@@ -51,6 +54,12 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
     let tz = pz - Math.cos(ph) * back - Math.sin(ph) * side
 
     let [x, z] = pos.current
+    // เจ้าของหมดแรงกลางน้ำ: สัตว์ตัวใหญ่กระโดดลงไปว่ายเคียงข้าง แล้วลากเข้าฝั่งด้วยกัน
+    const rescuing = !!waterRt.rescue?.byPet
+    if (rescuing) {
+      tx = px + Math.cos(ph) * 0.55
+      tz = pz - Math.sin(ph) * 0.55
+    }
     // ถูกขี่อยู่: อยู่ใต้ผู้เล่น หันตามผู้เล่น เดิน/วิ่งตามจังหวะผู้เล่น
     if (g.riding) {
       pos.current = [px, pz]
@@ -65,7 +74,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       return
     }
     const playerMoving = pm > 0
-    const playing = !playerMoving && idle.current < play.current.until
+    const playing = !rescuing && !playerMoving && idle.current < play.current.until
 
     // วิ่งเล่นวนรอบผู้เล่น
     if (playing) {
@@ -87,9 +96,14 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       playPetSound(pet, 0.85)
       idle.current = 0
       wakeDist = 0
+      // อยู่ไกลเกินมองเห็น: วิ่งลัดมาโผล่ข้างหลังผู้เล่นเลย
+      if (dist > 14) far.current = 99
     }
+    // ตามไม่ทัน (ติดอยู่ไกล ๆ นานเกิน 3 วินาที) → วิ่งลัดมาหา ไม่ปล่อยให้หลง
+    far.current = dist > 14 ? far.current + dt : 0
 
-    if (dist > 25) {
+    if (dist > 25 || far.current > 3) {
+      far.current = 0
       x = tx
       z = tz
       motion.current = 0
@@ -106,8 +120,8 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       // สายจูงตึง: ถ้าห่างผู้เล่นเกินความยาวสาย ให้รีบตาม
       const fromPlayer = Math.hypot(px - x, pz - z)
       const pulled = leashed && fromPlayer > LEASH_LEN
-      const running = playing || pulled || dist > 3 || pm === 2
-      const speed = playing ? 5 : Math.min(12, 2.5 + dist * 2.2 + (pm === 2 ? 3 : 0) + (pulled ? 3 : 0))
+      const running = rescuing || playing || pulled || dist > 3 || pm === 2
+      const speed = rescuing ? 7 : playing ? 5 : Math.min(12, 2.5 + dist * 2.2 + (pm === 2 ? 3 : 0) + (pulled ? 3 : 0))
       const step = Math.min(dist, speed * dt)
       x += (dx / dist) * step
       z += (dz / dist) * step
@@ -143,7 +157,8 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       fly = info.flies ? (pose.current === 2 ? 0.05 : 1.5 + Math.sin(clock.elapsedTime * 2) * 0.12) : 0
       root.current.position.x = x
       root.current.position.z = z
-      const ground = templeGroundY(x, z)
+      // ในน้ำ: ตัวจมลงจนเหลือแค่หัวโผล่ (นกบินไม่จม)
+      const ground = templeGroundY(x, z) - (info.flies ? 0 : Math.min(waterAt(x, z).depth, 0.9) * 0.45 * scale)
       root.current.position.y += (ground + fly - root.current.position.y) * Math.min(1, dt * (fly ? 3 : 10))
       root.current.rotation.y = heading.current
     }

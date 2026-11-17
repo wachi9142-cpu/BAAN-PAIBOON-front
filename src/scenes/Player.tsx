@@ -1,3 +1,6 @@
+import { playerPose } from '../game/playerPose'
+import { useWater, waterRt } from '../game/water'
+import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
 import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, outsideDoor, useInterior } from '../game/interior'
 import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
@@ -103,7 +106,6 @@ function useOrbit() {
 }
 
 /** ตำแหน่งผู้เล่นล่าสุด (อัปเดตทุกเฟรม) ให้สัตว์เลี้ยงและระบบอื่นอ่านได้โดยไม่ต้อง re-render */
-export const playerPose = { x: 0, z: 0, heading: 0, motion: 0 }
 
 const WALK = 4.2
 const RUN = 8
@@ -121,6 +123,11 @@ export function Player() {
   const equipped = useTools((s) => s.equipped)
   const wandGem = useGame((s) => s.save?.wandGem) ?? 'purple'
   const gesture = useGame((s) => s.gesture)
+  const wMode = useWater((s) => s.mode)
+  const vest = useWater((s) => s.vest)
+  const wPose = wMode === 'swim' || wMode === 'rescue' ? 'swim' : wMode === 'struggle' ? 'struggle' : wMode === 'boat' ? 'paddle' : null
+  const wfx = useRef<WaterFx>({ sink: 0, tilt: 0, speedK: 1, canRun: true })
+  const tilt = useRef(0)
   const toast = useGame((s) => s.toast)
 
   const keys = useKeys()
@@ -142,6 +149,16 @@ export function Player() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ทดสอบตอนพัฒนา: window.__dev.warp(x, z) · window.__dev.water() ดูสถานะน้ำ
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    ;(window as unknown as { __dev: unknown }).__dev = {
+      warp: (x: number, z: number, h = 0) => (warp.pending = { x, z, heading: h, y: 0 }),
+      water: () => ({ ...useWater.getState(), depth: waterRt.depth, pos: [...pos.current] }),
+      useWater,
+    }
+  }, [])
+
   // เริ่มกล้องด้านหลังตัวละคร
   useEffect(() => {
     orbit.current.yaw = save.heading + Math.PI
@@ -154,7 +171,7 @@ export function Player() {
     const k = keys.current
     const f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
     const r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
-    const running = k.has('ShiftLeft') || k.has('ShiftRight')
+    const running = (k.has('ShiftLeft') || k.has('ShiftRight')) && wfx.current.canRun
 
     // ทิศทางอิงมุมกล้อง: กล้องอยู่ที่ yaw มองเข้าหาตัวละคร
     const yaw = orbit.current.yaw
@@ -178,6 +195,7 @@ export function Player() {
       if (root.current) root.current.position.set(w.x, w.y, w.z)
       state.camera.position.set(w.x, 2, w.z + 3)
     }
+    const prevP: [number, number] = [pos.current[0], pos.current[1]]
     // กำลังเล่นเครื่องเล่น: เดินเพื่อเลิกเล่น
     let pp = playPose(performance.now())
     if (pp && len > 0) {
@@ -226,7 +244,7 @@ export function Player() {
         mz = 0
       }
     }
-    if (len > 0 && swing.current < 0 && !wandCast.aiming && !pp) {
+    if (len > 0 && swing.current < 0 && !wandCast.aiming && !pp && !waterRt.rescue) {
       mx /= len
       mz /= len
       const age = AGE_RULES[save.player.appearance.age ?? 'adult']
@@ -234,7 +252,7 @@ export function Player() {
       const caneK = look.age === 'elder' && look.cane && look.cane !== 'none' ? CANE_WALK : 1
       // ขี่สัตว์: ใช้ความเร็วของสัตว์ (ไม่นับไม้เท้า/วัย)
       const ride = useGame.getState().riding ? RIDEABLE[save.player.pet?.species ?? 'dog'] : undefined
-      const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK
+      const speed = ride ? (running ? RUN * 1.2 : WALK * ride.speed) : (running ? RUN * age.runSpeed : WALK * age.walkSpeed) * caneK * wfx.current.speedK
       const insideNow = useInterior.getState().inside
       const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
       pos.current = resolveMove([pos.current[0] + mx * speed * dt, pos.current[1] + mz * speed * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow)
@@ -254,6 +272,23 @@ export function Player() {
       }
     }
 
+    // น้ำ: ลุย/ว่าย/พายเรือ/ถูกช่วยลากเข้าฝั่ง (อาจขยับตำแหน่ง)
+    const wf = waterTick(
+      pos.current,
+      prevP,
+      dt,
+      len > 0 && !pp,
+      running,
+      useInterior.getState().inside || !!useGame.getState().riding || !!pp,
+      AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale,
+    )
+    wfx.current = wf
+    if (wf.face !== undefined) {
+      let diff = wf.face - heading.current
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+      heading.current += diff * Math.min(1, dt * 6)
+    }
+    tilt.current += (wf.tilt - tilt.current) * Math.min(1, dt * 5)
     const [x, z] = pos.current
     if (root.current) {
       // ขึ้นบันได/ยืนบนพื้นโบสถ์ (ค่อย ๆ ขยับความสูงให้นุ่ม)
@@ -261,13 +296,16 @@ export function Player() {
       const gy = inHome ? interiorGround(x - INTERIOR_ORIGIN[0], z - INTERIOR_ORIGIN[1], root.current.position.y) : templeGroundY(x, z)
       // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
       const rideY = useGame.getState().riding ? rideHeight(save) : 0
-      const targetY = gy + rideY
+      const targetY = gy + rideY + wf.sink
       if (pp) {
         root.current.position.set(x, gy + pp.y, z)
+        root.current.rotation.order = 'XYZ'
         root.current.rotation.set(pp.tilt, heading.current, 0)
       } else {
         root.current.position.set(x, root.current.position.y + (targetY - root.current.position.y) * Math.min(1, dt * 12), z)
-        root.current.rotation.set(0, heading.current, 0)
+        // เอียงตัวไปข้างหน้าตามทิศที่หัน (ว่ายน้ำ)
+        root.current.rotation.order = 'YXZ'
+        root.current.rotation.set(tilt.current, heading.current, 0)
       }
     }
     playerPose.x = x
@@ -334,6 +372,8 @@ export function Player() {
       if (ins.near !== hn) useInterior.setState({ near: hn })
       const up = ins.inside && (root.current?.position.y ?? 0) > FLOOR2 * 0.5
       if (ins.upper !== up) useInterior.setState({ upper: up })
+      const ws = ins.inside ? null : findWaterSpot(x, z)
+      if (useWater.getState().near !== ws) useWater.setState({ near: ws })
       const toy = findToy(x, z)
       if (usePlay.getState().near !== toy) usePlay.setState({ near: toy })
       const chest = findChest(x, z)
@@ -396,15 +436,16 @@ export function Player() {
   return (
     <group ref={root} position={[save.position[0], 0, save.position[1]]}>
       <Character
-        appearance={riding ? { ...save.player.appearance, pose: 'ride' } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
+        appearance={riding ? { ...save.player.appearance, pose: 'ride' } : wPose ? { ...save.player.appearance, pose: wPose } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
-        tool={gesture === 'shake' ? 'siamsi' : riding || gesture || equipped === 'hand' ? undefined : equipped}
+        tool={gesture === 'shake' ? 'siamsi' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
         wandGem={wandGem}
         aim={wandCast}
       />
       <Aura />
+      {vest && <LifeVest k={AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale} />}
       {gesture === 'whistle' && <WhistleNotes />}
     </group>
   )
@@ -432,6 +473,28 @@ function WhistleNotes() {
           <TextSprite text={n} color={i === 1 ? '#7a4fd0' : '#3f6b3a'} height={0.28} position={[0, 0, 0]} />
         </group>
       ))}
+    </group>
+  )
+}
+
+/** เสื้อชูชีพสีส้ม (สวมทับเสื้อ) */
+function LifeVest({ k }: { k: number }) {
+  return (
+    <group scale={k}>
+      <mesh position={[0, 1.18, 0]} castShadow>
+        <cylinderGeometry args={[0.235, 0.215, 0.5, 14]} />
+        <meshStandardMaterial color="#f07a1e" roughness={0.6} />
+      </mesh>
+      {[1.06, 1.3].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.232, 0.018, 6, 20]} />
+          <meshStandardMaterial color="#f2f2f2" />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.2, 0.22]}>
+        <boxGeometry args={[0.03, 0.42, 0.04]} />
+        <meshStandardMaterial color="#2b2b2b" />
+      </mesh>
     </group>
   )
 }
