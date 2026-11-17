@@ -76,7 +76,7 @@ export const WILD_SPAWNS: WildSpawn[] = [
   { id: 'w-rabbit-2', pet: p('rabbit', '#8a6a4a', '#f4b8c4'), home: [62, 40], roam: 6 },
   { id: 'w-bird-1', pet: p('bird', '#4aa3d8', '#f2d34a'), home: [60, -44], roam: 6 },
   { id: 'w-squirrel-1', pet: p('squirrel', '#9a6236', '#f0dcc0'), home: [-84, -30], roam: 5 },
-  { id: 'w-goose-1', pet: p('goose', '#f6f3ec', '#f6f3ec'), home: [-40, 52], roam: 5 },
+  { id: 'w-goose-1', pet: p('goose', '#f6f3ec', '#f6f3ec'), home: [-46, 49], roam: 5 },
   { id: 'w-mouse-1', pet: p('mouse', '#a8a4a0', '#f2b8c0'), home: [25, -40], roam: 4 },
   { id: 'w-sheep-1', pet: p('sheep', '#f6f2e8', '#3a3330'), home: [60, 60], roam: 5 },
   { id: 'w-monkey-1', pet: p('monkey', '#7a5634', '#d9b48a'), home: [-82, 64], roam: 5 },

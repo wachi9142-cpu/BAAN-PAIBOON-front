@@ -18,6 +18,7 @@ export type PlaceKind =
   | 'eventground'
   | 'lake'
   | 'grandhome'
+  | 'farm'
 
 export interface Place {
   id: string
@@ -29,6 +30,9 @@ export interface Place {
   rotation?: number
   /** ร้านค้า: big = ร้านใหญ่ริมถนน · stall = ร้านประจำซอย */
   style?: 'big' | 'stall'
+  /** บ้านชาวบ้าน: บังคับแบบบ้าน / สีหลังคา */
+  houseStyle?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2'
+  roof?: string
   /** ข้อความเมื่อผู้เล่นเดินมาถึง */
   arriveText?: string
   /** ระบบที่จะเปิดใช้ในอนาคต (แสดงเป็น "เร็ว ๆ นี้") */
@@ -61,20 +65,21 @@ export interface Road {
 export const WORLD_HALF_SIZE = 90
 
 /** เริ่มเกมใหม่ที่หน้าประตูรั้วบ้านตารัง–ยายเลียน (บ้านฟ่าง) */
-export const SPAWN: Vec2 = [-24.5, 24.5]
+export const SPAWN: Vec2 = [-24.5, 55.5]
 
 export const ROADS: Road[] = [
   // ถนนใหญ่ตัดผ่านหมู่บ้าน (ตะวันตก–ตะวันออก)
   { from: [-88, 0], to: [88, 0], width: 7, surface: 'concrete' },
   // สี่แยกกลางหมู่บ้าน: แยกเหนือไปทุ่งนา · แยกใต้ไปวัด
-  { from: [0, 3.5], to: [0, 55], width: 5 },
+  { from: [0, 3.5], to: [0, 50], width: 5 },
   { from: [0, -3.5], to: [0, -38], width: 5 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
   { from: [30, 3.5], to: [30, 60], width: 3.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
-  { from: [-35, 3.5], to: [-35, 45], width: 3.5 }, // ซอย 2 ไปบ่อปลา · ร้านข้าวแกง
-  // ซอย 2 ช่วงที่ 2: สี่แยก — แยกขวา (ตะวันออก) เป็นถนนดินแดงเข้ากลุ่มบ้าน 4 หลังของตารัง–ยายเลียน · แยกซ้ายไปบ้านลุงเขียว
-  { from: [-33.25, 24], to: [-4, 24], width: 3.5 },
-  { from: [-36.75, 24], to: [-52, 24], width: 3 },
+  { from: [-35, 3.5], to: [-35, 84], width: 3.5 }, // ซอย 2 · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
+  // ซอย 2: ช่วงแรกบ้าน 2–3 หลัง → คอกควาย ยุ้งข้าว พื้นที่ส่วนบุคคล (มีรั้ว) → สี่แยก (ทางสี่แพร่ง)
+  // แยกขวา (ตะวันออก) = ถนนดินแดงเข้ากลุ่มบ้านตารัง–ยายเลียน (บ้านตาอยู่เหนือถนน · บ้านพ่อน้องน้ำฝนอยู่ตรงข้าม) · แยกซ้ายไปทุ่งนา
+  { from: [-33.25, 55], to: [-4, 55], width: 3.5 },
+  { from: [-36.75, 55], to: [-44, 55], width: 3 },
   { from: [66, -3.5], to: [66, -36], width: 3.5 }, // ซอย 3 · ร้านเครื่องมือช่าง
   { from: [-30, -3.5], to: [-30, -30], width: 3.5 }, // ซอย 4 · ร้านจักสาน
   { from: [-60, 3.5], to: [-60, 28], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์
@@ -195,9 +200,9 @@ export const PLACES: Place[] = [
     id: 'board-headman',
     name: 'บอร์ดประกาศหน้าบ้านผู้ใหญ่บ้าน',
     kind: 'questboard',
-    pos: [-67, -7.5],
+    pos: [27, 46],
     size: [3, 1],
-    rotation: 0,
+    rotation: Math.PI / 2,
     arriveText: 'ประกาศจากผู้ใหญ่บ้าน งานช่วยเหลือชาวบ้าน และตามหาของหาย',
     solidRadius: 1.2,
   },
@@ -225,7 +230,7 @@ export const PLACES: Place[] = [
     id: 'ricefield',
     name: 'ทุ่งนา',
     kind: 'ricefield',
-    pos: [-2, 69],
+    pos: [-62, 70],
     size: [36, 28],
     arriveText: 'ทุ่งนากว้างสุดลูกหูลูกตา',
     comingSoon: 'ปลูกข้าวและต้อนเป็ด (Part 4)',
@@ -235,7 +240,7 @@ export const PLACES: Place[] = [
     id: 'home-tarang',
     name: 'บ้านตารัง–ยายเลียน (บ้านฟ่าง)',
     kind: 'grandhome',
-    pos: [-18, 40],
+    pos: [-18, 71],
     size: [30, 26],
     arriveText: 'บ้านไม้สองชั้นของตารังกับยายเลียน · สวนผัก สวนดอกไม้ สวนผลไม้ ยุ้งข้าว คอกควาย เล้าไก่ คอกหมู',
     comingSoon: 'เดินเข้าไปสำรวจในบ้าน (กำลังสร้าง)',
@@ -247,11 +252,25 @@ export const PLACES: Place[] = [
   { id: 'house-mai', name: 'บ้านยายไหม', kind: 'npchouse', pos: [-46, -34], size: [6, 5], color: '#8f6a46', solidRadius: 4.2 },
   { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [80, -16], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
   // กลุ่มบ้านเดียวกับบ้านตารัง–ยายเลียน (ฝั่งตรงข้ามถนนดินแดงที่ตัดเข้าไป) — ชื่อเปลี่ยนได้ภายหลัง
-  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-27, 17], size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
-  { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-18, 17], size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
-  { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-9, 17], size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
+  // ซอย 2 ช่วงแรก: บ้าน 2–3 หลัง (หันหน้าเข้าซอย)
+  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-28.5, 10], rotation: -Math.PI / 2, size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
+  { id: 'house-noi', name: 'บ้านยายน้อย', kind: 'npchouse', pos: [-28.5, 19], rotation: -Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
+  // คอกควาย ยุ้งข้าว และพื้นที่ส่วนบุคคล (กว้างประมาณบ้าน 4 หลัง มีรั้วล้อม)
+  {
+    id: 'farm-soi2',
+    name: 'คอกควายและยุ้งข้าว (พื้นที่ส่วนบุคคล)',
+    kind: 'farm',
+    pos: [-20, 34],
+    size: [24, 18],
+    arriveText: 'พื้นที่ส่วนบุคคลกว้าง มีรั้วล้อม คอกควาย ยุ้งข้าว กองฟาง',
+    solidRadius: 0,
+  },
+  // ตรงข้ามบ้านตารัง–ยายเลียน (ฝั่งใต้ถนนดินแดง): บ้านพ่อน้องน้ำฝน (หลังคาม่วง) + บ้านอีก 2 หลังในกลุ่มเดียวกัน
+  { id: 'house-namfon', name: 'บ้านพ่อน้องน้ำฝน', kind: 'npchouse', houseStyle: 'concrete', roof: '#4f3a7a', pos: [-26.5, 48.5], size: [6, 5], color: '#e8dcc0', solidRadius: 4.2 },
+  { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-17.5, 48.5], size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
+  { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-8.5, 48.5], size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
-  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [-71, -14], size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
+  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [23.5, 40], rotation: Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
 export const PLOTS: Plot[] = [

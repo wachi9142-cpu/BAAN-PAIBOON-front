@@ -264,10 +264,10 @@ export function House({ design }: { design: HouseDesign }) {
 }
 
 /** บ้านชาวบ้าน (ใช้แบบใต้ถุนสูงเรียบง่าย สีต่างกัน) */
-export function VillagerHouse({ color, seed = 0 }: { color: string; seed?: number }) {
+export function VillagerHouse({ color, seed = 0, style: forced, roof }: { color: string; seed?: number; style?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2'; roof?: string }) {
   // บ้านไม้สองชั้นมีมากที่สุด · แซมด้วยครึ่งตึกครึ่งไม้ และใต้ถุนสูง
   const styles = ['wood2', 'wood2', 'halfhalf', 'wood2', 'stilt', 'wood2', 'halfhalf'] as const
-  const style = styles[seed % styles.length]
+  const style = forced ?? styles[seed % styles.length]
   return (
     <House
       design={{
@@ -277,7 +277,7 @@ export function VillagerHouse({ color, seed = 0 }: { color: string; seed?: numbe
         style,
         footprint: [6, 5],
         wall: style === 'halfhalf' ? '#d8cbb3' : color,
-        roof: ['#6b3a2a', '#7a4a2e', '#8b8f86', '#a24a2c'][seed % 4],
+        roof: roof ?? ['#6b3a2a', '#7a4a2e', '#8b8f86', '#a24a2c'][seed % 4],
         trim: '#d9c29a',
         perks: [],
       }}

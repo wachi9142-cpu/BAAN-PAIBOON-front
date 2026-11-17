@@ -1,3 +1,4 @@
+import { FarmLand } from './FarmLand'
 import { GrandHome } from './GrandHome'
 import { BigStore, Campus, EventGround, Garage, Lake, RoadSurface, Stall } from './VillageLayout'
 import { useGame } from '../game/store'
@@ -190,6 +191,10 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 3
       body = <Lake w={w} d={d} />
       break
+    case 'farm':
+      labelY = 4
+      body = <FarmLand w={w} d={d} />
+      break
     case 'grandhome':
       labelY = 9
       body = <GrandHome />
@@ -201,7 +206,7 @@ function PlaceMesh({ place }: { place: Place }) {
             <RBox args={[w, 3.2, d]} radius={0.32} />
             <meshStandardMaterial color="#efe3c8" />
           </mesh>
-          <GableRoof width={w} depth={d} height={2} y={3.2} color="#5c4a8a" overhang={0.6} />
+          <GableRoof width={w} depth={d} height={2} y={3.2} color="#3f7a5a" overhang={0.6} />
           <mesh position={[0, 1.15, d / 2 + 0.03]}>
             <RBox args={[1.6, 2.2, 0.08]} radius={0.04} />
             <meshStandardMaterial color="#6b4a2e" />
@@ -280,7 +285,7 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 8
       body = (
         <group>
-          <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} />
+          <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} style={place.houseStyle} roof={place.roof} />
           <HouseYard seed={place.id.length} />
         </group>
       )
