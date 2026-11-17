@@ -1,3 +1,4 @@
+import { bedHint, plant, seedsInBag, tendBed, useGarden } from '../game/garden'
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { formatClock, MAX_PET_HEARTS, useGame } from '../game/store'
@@ -10,7 +11,9 @@ import { PetFollower } from '../scenes/PetFollower'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu } from './GameMenu'
 import { takePhoto } from '../game/photo'
-import { gather, gatherHint } from '../game/inventory'
+import { countOf, gather, gatherHint } from '../game/inventory'
+import { ItemIcon } from './ItemIcon'
+import { ITEMS } from '../game/content/items'
 import { catchHint, summonPet, tierOf, tryCatch } from '../game/catching'
 import { getSpecies, RIDEABLE } from '../game/content/pets'
 import { TIERS } from '../game/content/wildlife'
@@ -18,7 +21,7 @@ import { Wildlife } from '../scenes/Wildlife'
 import { DayLight } from '../scenes/DayLight'
 import { SPEEDS, skipToNextPeriod, syncClockFromSave, tickClock, useClock } from '../game/clock'
 import { isShopOpen, SHOP_HOURS, timePeriodAt } from '../game/content/daytime'
-import { applyGoldLeaf, birthdayCoin, bowThreeTimes, donate, drawSiamsi, lightIncense, pourWater, ringBell, useMerit, useTemple } from '../game/templeActions'
+import { applyGoldLeaf, birthdayCoin, bowThreeTimes, donate, drawSiamsi, lightIncense, pourWater, ringBell, toggleShoes, useMerit, useTemple } from '../game/templeActions'
 import { BIRTH_DAYS } from '../game/content/temple'
 import { TalkWindow } from './TalkWindow'
 import { startTalk, useTalk } from '../game/talk'
@@ -120,8 +123,10 @@ export function WorldScreen() {
           const sp = useMerit.getState().spot!
           if (sp.startsWith('bell')) ringBell(sp)
           else if (sp === 'water') pourWater()
+          else if (sp === 'shoes') toggleShoes()
           else useMerit.setState({ popup: sp as 'donate' | 'birthday' | 'incense' })
         }
+        else if (useGarden.getState().near !== null) tendBed(useGarden.getState().near!)
         else if (g.wildTarget) tryCatch(g.wildTarget)
         else if (g.gatherTarget) gather(g.gatherTarget)
         else g.toast({ title: 'ไม่มีอะไรให้เก็บใกล้ ๆ', body: 'เดินไปใกล้ต้นไม้ กองหิน หรือสัตว์ แล้วกด E (มีป้ายบอกกลางจอ)', tone: 'info' })
@@ -182,6 +187,7 @@ export function WorldScreen() {
       {temple && !menu && <TemplePanel onClose={() => setTemple(false)} />}
       <FortuneSlip />
       <MeritPopup />
+      <SeedPicker />
       <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>
@@ -380,6 +386,33 @@ function TemplePanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+/** เลือกเมล็ดที่จะปลูก (มีเมล็ดหลายชนิดในกระเป๋า) */
+function SeedPicker() {
+  const picking = useGarden((s) => s.picking)
+  useGame((s) => s.save?.inventory)
+  if (picking === null) return null
+  const close = () => useGarden.setState({ picking: null })
+  const seeds = seedsInBag()
+  return (
+    <div className="menu-backdrop" onClick={close}>
+      <div className="menu merit-pop" role="dialog" aria-label="เลือกเมล็ดผัก" onClick={(e) => e.stopPropagation()}>
+        <h3>🌱 ปลูกอะไรดี?</h3>
+        <p className="hint">ปลูกแล้วรดน้ำ ผักจะโตตามเวลาในเกม (โตเฉพาะตอนดินชื้น)</p>
+        <div className="chips">
+          {seeds.map((c) => (
+            <button key={c.id} type="button" className="chip" onClick={() => plant(picking, c.id)}>
+              <ItemIcon icon={ITEMS[c.produce].icon} /> {c.name} ×{countOf(c.seed)} · {c.growHours} ชม.
+            </button>
+          ))}
+        </div>
+        <button type="button" className="btn ghost small" onClick={close}>
+          ปิด
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /** ทำบุญตามศรัทธา: ตู้ทำบุญ / ค่าธูปเทียน (เลือกจำนวนเอง หรือไม่ให้ก็ได้) · เหรียญวันเกิด */
 function MeritPopup() {
   const popup = useMerit((s) => s.popup)
@@ -510,6 +543,10 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const wildTarget = useGame((s) => s.wildTarget)
   const nearWorship = useGame((s) => s.nearWorship)
   const meritSpot = useMerit((s) => s.spot)
+  const bedNear = useGarden((s) => s.near)
+  const garden = useGame((s) => s.save?.garden)
+  useClock((s) => s.minute)
+  const shoesOff = useMerit((s) => s.shoesOff)
   const npcNear = useTalk((s) => s.near)
   const talking = useTalk((s) => s.talking)
   const save = useGame((s) => s.save)!
@@ -587,17 +624,26 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                 ? '🕯️ จุดธูปเทียนบูชา'
                 : meritSpot === 'water'
                   ? '💧 กรวดน้ำ'
+                  : meritSpot === 'shoes'
+                  ? shoesOff
+                    ? '👟 ใส่รองเท้า'
+                    : '👣 ถอดรองเท้า'
                   : '🔔 ตีระฆัง'}
         </div>
       )}
-      {!nearWorship && !npcNear && !meritSpot && wildTarget && (
+      {!nearWorship && !npcNear && !meritSpot && bedNear !== null && garden && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {bedHint(bedNear)}
+        </div>
+      )}
+      {!nearWorship && !npcNear && !meritSpot && bedNear === null && wildTarget && (
         <div className="gather-hint wild">
           <span className="tier-dot" style={{ background: TIERS[tierOf(wildTarget)].color }} />
           <kbd>E</kbd> {catchHint(wildTarget)}
           <small> · ระดับ{TIERS[tierOf(wildTarget)].label}</small>
         </div>
       )}
-      {!nearWorship && !npcNear && !meritSpot && !wildTarget && gatherTarget && (
+      {!nearWorship && !npcNear && !meritSpot && bedNear === null && !wildTarget && gatherTarget && (
         <div className="gather-hint">
           <kbd>E</kbd> {gatherHint(gatherTarget).replace('กด E — ', '')}
         </div>
@@ -605,7 +651,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       {plot && (
         <div className="interact">
           <h3>ที่ดินของคุณ</h3>
-          <p>รั้วไม้ไผ่คือขอบเขตที่ดิน สร้างสวน ฟาร์ม และต่อเติมบ้านได้ภายในเขตนี้</p>
+          <p>รั้วไม้ไผ่คือขอบเขตที่ดิน · มีแปลงผักสวนครัว 8 แปลงหน้าบ้าน เดินไปที่แปลงแล้วกด E เพื่อปลูก รดน้ำ และเก็บผัก</p>
           <div className="soon">เร็ว ๆ นี้: ตกแต่งบ้านและซื้อที่ดินเพิ่ม (Part 5)</div>
         </div>
       )}

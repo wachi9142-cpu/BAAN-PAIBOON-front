@@ -552,7 +552,7 @@ const LEAF_SPOTS: [number, number, number, number][] = Array.from({ length: 40 }
 
 /** จุดทำบุญรอบโบสถ์: ตู้ทำบุญ · ตู้เหรียญวันเกิด · ธูปเทียน · ระฆัง · รองเท้าที่ถอดไว้ */
 function MeritSpots({ floorY, W, D, H }: { floorY: number; W: number; D: number; H: number }) {
-  const inside = useMerit((s) => s.inside)
+  const inside = useMerit((s) => s.shoesOff)
   const incenseAt = useMerit((s) => s.incenseAt)
   const lit = Date.now() - incenseAt < 3 * 60_000
   const wood = '#7a3a22'

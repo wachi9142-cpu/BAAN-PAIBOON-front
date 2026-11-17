@@ -1,4 +1,5 @@
-import type { ItemId } from './content/items'
+import { bagSlots, slotsUsed, type ItemId } from './content/items'
+import { emptyBed, GARDEN_BEDS, type BedState } from './content/garden'
 import { create } from 'zustand'
 import type { Appearance } from './content/appearance'
 import type { PetChoice } from './content/pets'
@@ -55,6 +56,8 @@ export interface SaveData {
   /** ภารกิจที่รับจากชาวบ้าน (ยังไม่เสร็จ) */
   quests: QuestState[]
   questsDone?: number
+  /** แปลงผักสวนครัวหน้าบ้าน (ลำดับตาม GARDEN_BEDS) */
+  garden: BedState[]
 }
 
 export interface QuestState {
@@ -106,6 +109,20 @@ export type SaveStatus = 'idle' | 'saved' | 'error'
 /** ใช้ตรวจว่าเกมปิดไม่สมบูรณ์ (ไฟดับ/ปิดแท็บกะทันหัน) */
 const SESSION_FLAG = 'baan-paiboon-session-open'
 
+/** แปลงผัก: ครบตามจำนวนแปลง · เซฟเก่าที่ยังไม่มีแปลง ได้เมล็ดผักบุ้ง/กะเพราติดกระเป๋าไว้เริ่มปลูก */
+function withGarden(data: SaveData): Pick<SaveData, 'garden' | 'inventory'> {
+  const inv = { ...(data.inventory ?? {}) }
+  if (!data.garden) {
+    const gift: [ItemId, number][] = [['seed_morningglory', 4], ['seed_basil', 2]]
+    for (const [id, q] of gift) {
+      const test = { ...inv, [id]: (inv[id] ?? 0) + q }
+      if (slotsUsed(test) <= bagSlots(data.bagLevel ?? 0)) Object.assign(inv, test)
+    }
+  }
+  const garden = GARDEN_BEDS.map((_, i) => data.garden?.[i] ?? emptyBed())
+  return { garden, inventory: inv }
+}
+
 function migrateSave(data: SaveData): SaveData {
   // v1 เป็นรุ่นแรก — เติมค่าเริ่มต้นให้ฟิลด์ที่อาจขาด
   return {
@@ -115,10 +132,10 @@ function migrateSave(data: SaveData): SaveData {
     stats: { ...DEFAULT_STATS, ...data.stats },
     petHearts: data.petHearts ?? 0,
     petLeashed: data.petLeashed ?? false,
-    inventory: data.inventory ?? {},
     bagLevel: data.bagLevel ?? 0,
     collection: data.collection ?? [],
     quests: data.quests ?? [],
+    ...withGarden(data),
     homePet: data.homePet !== undefined ? data.homePet : (data.player.pet ?? null),
     version: SAVE_VERSION,
   }
@@ -252,10 +269,11 @@ export const useGame = create<GameState>()((set, get) => ({
       home: { plotId: STARTING_PLOT_ID, houseDesignId },
       ownedPlotIds: [STARTING_PLOT_ID],
       coins: STARTING_COINS,
-      inventory: {},
+      inventory: { seed_morningglory: 4, seed_basil: 2 },
       bagLevel: 0,
       collection: [],
       quests: [],
+      garden: GARDEN_BEDS.map(emptyBed),
       homePet: draft.pet ?? null,
       day: 1,
       minuteOfDay: STARTING_MINUTE,

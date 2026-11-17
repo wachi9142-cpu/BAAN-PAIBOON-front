@@ -8,8 +8,9 @@ import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character } from './models/Character'
 import { findGatherTarget } from '../game/inventory'
+import { findBed, useGarden } from '../game/garden'
 import { insideTempleBox, TEMPLE, templeSpots, WORSHIP_SPOT, templeGroundY } from '../game/content/temple'
-import { leaveTemple, useMerit } from '../game/templeActions'
+import { autoShoes, leaveTemple, useMerit } from '../game/templeActions'
 import { RIDEABLE } from '../game/content/pets'
 import { PET_ANCHORS } from './models/PetOutfit'
 import { petScale } from './models/Pet'
@@ -106,7 +107,7 @@ export function Player() {
   const setGatherTarget = useGame((s) => s.setGatherTarget)
   const setNearWorship = useGame((s) => s.setNearWorship)
   const wasInTemple = useRef(false)
-  const barefoot = useMerit((s) => s.inside)
+  const barefoot = useMerit((s) => s.shoesOff)
   const riding = useGame((s) => s.riding)
   const gesture = useGame((s) => s.gesture)
   const toast = useGame((s) => s.toast)
@@ -229,6 +230,8 @@ export function Player() {
       }
       setNearby(near)
       setGatherTarget(findGatherTarget(x, z))
+      const bed = findBed(x, z)
+      if (useGarden.getState().near !== bed) useGarden.setState({ near: bed })
       setNearWorship(Math.hypot(x - WORSHIP_SPOT[0], z - WORSHIP_SPOT[1]) < 2.6)
       // จุดทำบุญรอบโบสถ์ / อยู่ในโบสถ์ (ถอดรองเท้า) / เดินออกจากวัด
       let spot: string | null = null
@@ -245,6 +248,7 @@ export function Player() {
       const m = useMerit.getState()
       if (m.spot !== spot || m.inside !== inside) useMerit.setState({ spot, inside })
       const inArea = Math.hypot(x - TEMPLE.pos[0], z - TEMPLE.pos[1]) < 24
+      autoShoes(inside, inArea)
       if (wasInTemple.current && !inArea) leaveTemple()
       wasInTemple.current = inArea
       if (near && !near.startsWith('plot:') && discoverPlace(near)) {

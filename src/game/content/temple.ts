@@ -83,7 +83,7 @@ export function insideTempleBox(x: number, z: number) {
 }
 
 // ---------- จุดทำบุญรอบโบสถ์ ----------
-export type TempleSpotKind = 'donate' | 'birthday' | 'incense' | 'bell' | 'water'
+export type TempleSpotKind = 'donate' | 'birthday' | 'incense' | 'bell' | 'water' | 'shoes'
 export interface TempleSpot {
   id: string
   kind: TempleSpotKind
@@ -114,6 +114,7 @@ export function templeSpots(): TempleSpot[] {
     { id: 'birthday', kind: 'birthday', x: cx + SPOT_LOCAL.birthday[0], z: cz + SPOT_LOCAL.birthday[1] },
     { id: 'incense', kind: 'incense', x: cx + SPOT_LOCAL.incense[0], z: cz + SPOT_LOCAL.incense[1] },
     { id: 'water', kind: 'water', x: cx + SPOT_LOCAL.water[0], z: cz + SPOT_LOCAL.water[1] },
+    { id: 'shoes', kind: 'shoes', x: cx + SPOT_LOCAL.shoes[0], z: cz + SPOT_LOCAL.shoes[1] },
     ...SPOT_LOCAL.bells.map(([x, z], i) => ({ id: 'bell' + i, kind: 'bell' as const, x: cx + x, z: cz + z })),
   ]
 }

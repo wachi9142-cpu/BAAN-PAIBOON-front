@@ -14,8 +14,24 @@ export type ItemId =
   | 'feed'
   | 'treat'
   | 'wand'
+  | 'seed_morningglory'
+  | 'morningglory'
+  | 'seed_scallion'
+  | 'scallion'
+  | 'seed_basil'
+  | 'basil'
+  | 'seed_lemongrass'
+  | 'lemongrass'
+  | 'seed_chili'
+  | 'chili'
+  | 'seed_eggplant'
+  | 'eggplant'
+  | 'seed_tomato'
+  | 'tomato'
+  | 'seed_pumpkin'
+  | 'pumpkin'
 
-export type ItemKind = 'material' | 'tool'
+export type ItemKind = 'material' | 'tool' | 'seed' | 'food'
 
 export interface ItemDef {
   id: ItemId
@@ -27,6 +43,8 @@ export interface ItemDef {
   /** ราคาที่ร้านรับซื้อ (บาท/ชิ้น) */
   sell: number
   note: string
+  /** กินได้: เพิ่มความอิ่มเท่านี้ */
+  food?: number
 }
 
 export const ITEMS: Record<ItemId, ItemDef> = {
@@ -41,6 +59,22 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   saw: { id: 'saw', name: 'เลื่อย', icon: '🪚', kind: 'tool', stack: 1, sell: 55, note: 'เลื่อยไม้ท่อนเป็นไม้กระดาน' },
   feed: { id: 'feed', name: 'อาหารสัตว์', icon: '🌾', kind: 'material', stack: 30, sell: 2, note: 'ข้าวเปลือกและรำ ล่อสัตว์เลี้ยงทั่วไปให้เชื่องเร็วขึ้น' },
   treat: { id: 'treat', name: 'กล้วยสุก', icon: '🍌', kind: 'material', stack: 20, sell: 5, note: 'ผลไม้หวาน ล่อสัตว์ป่าระดับปานกลาง-ยาก (บางทีได้จากต้นกล้วย)' },
+  seed_morningglory: { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  morningglory: { id: 'morningglory', name: 'ผักบุ้ง', icon: '🥬', kind: 'food', stack: 20, sell: 6, note: 'ผัดผักบุ้งไฟแดงอร่อย กินสดก็ได้', food: 6 },
+  seed_scallion: { id: 'seed_scallion', name: 'เมล็ดต้นหอม', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  scallion: { id: 'scallion', name: 'ต้นหอม', icon: '🧅', kind: 'food', stack: 20, sell: 6, note: 'โรยหน้าแกงจืดหอม ๆ', food: 3 },
+  seed_basil: { id: 'seed_basil', name: 'เมล็ดกะเพรา', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  basil: { id: 'basil', name: 'กะเพรา', icon: '🍃', kind: 'food', stack: 20, sell: 8, note: 'ใบกะเพราหอมฉุน ไว้ผัดกะเพรา', food: 4 },
+  seed_lemongrass: { id: 'seed_lemongrass', name: 'เมล็ดตะไคร้', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  lemongrass: { id: 'lemongrass', name: 'ตะไคร้', icon: '🎋', kind: 'food', stack: 20, sell: 8, note: 'ใส่ต้มยำ (ระบบทำอาหารเร็ว ๆ นี้) กินสดไม่ได้' },
+  seed_chili: { id: 'seed_chili', name: 'เมล็ดพริก', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  chili: { id: 'chili', name: 'พริก', icon: '🌶️', kind: 'food', stack: 20, sell: 10, note: 'เผ็ดมาก! กินสดแล้วหิวน้ำ', food: 2 },
+  seed_eggplant: { id: 'seed_eggplant', name: 'เมล็ดมะเขือ', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  eggplant: { id: 'eggplant', name: 'มะเขือ', icon: '🍆', kind: 'food', stack: 20, sell: 10, note: 'มะเขือเปราะลูกกลม จิ้มน้ำพริก', food: 6 },
+  seed_tomato: { id: 'seed_tomato', name: 'เมล็ดมะเขือเทศ', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  tomato: { id: 'tomato', name: 'มะเขือเทศ', icon: '🍅', kind: 'food', stack: 20, sell: 12, note: 'มะเขือเทศสุกแดง หวานอมเปรี้ยว', food: 8 },
+  seed_pumpkin: { id: 'seed_pumpkin', name: 'เมล็ดฟักทอง', icon: '🌱', kind: 'seed', stack: 30, sell: 1, note: 'ปลูกที่แปลงผักหน้าบ้าน (เดินไปที่แปลงแล้วกด E)' },
+  pumpkin: { id: 'pumpkin', name: 'ฟักทอง', icon: '🎃', kind: 'food', stack: 20, sell: 35, note: 'ฟักทองลูกโต ขายได้ราคาดี นึ่งกินอิ่มนาน', food: 18 },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 
@@ -101,6 +135,14 @@ export const SHOP: ShopEntry[] = [
   { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', price: 25, gives: { item: 'feed', qty: 4 } },
   { id: 'treat3', name: 'กล้วยสุก ×3', icon: '🍌', price: 45, gives: { item: 'treat', qty: 3 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', price: 500, gives: { item: 'wand', qty: 1 } },
+  { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง ×3', icon: '🌱', price: 10, gives: { item: 'seed_morningglory', qty: 3 } },
+  { id: 'seed_scallion', name: 'เมล็ดต้นหอม ×3', icon: '🌱', price: 12, gives: { item: 'seed_scallion', qty: 3 } },
+  { id: 'seed_basil', name: 'เมล็ดกะเพรา ×3', icon: '🌱', price: 15, gives: { item: 'seed_basil', qty: 3 } },
+  { id: 'seed_lemongrass', name: 'เมล็ดตะไคร้ ×3', icon: '🌱', price: 15, gives: { item: 'seed_lemongrass', qty: 3 } },
+  { id: 'seed_chili', name: 'เมล็ดพริก ×3', icon: '🌱', price: 18, gives: { item: 'seed_chili', qty: 3 } },
+  { id: 'seed_eggplant', name: 'เมล็ดมะเขือ ×3', icon: '🌱', price: 20, gives: { item: 'seed_eggplant', qty: 3 } },
+  { id: 'seed_tomato', name: 'เมล็ดมะเขือเทศ ×3', icon: '🌱', price: 24, gives: { item: 'seed_tomato', qty: 3 } },
+  { id: 'seed_pumpkin', name: 'เมล็ดฟักทอง ×3', icon: '🌱', price: 40, gives: { item: 'seed_pumpkin', qty: 3 } },
   { id: 'vine5', name: 'เชือกกล้วย ×5', icon: '🌿', price: 30, gives: { item: 'vine', qty: 5 } },
   { id: 'plank4', name: 'ไม้กระดาน ×4', icon: '🟫', price: 90, gives: { item: 'plank', qty: 4 } },
   { id: 'bag1', name: 'ย่ามผ้าฝ้าย (20 ช่อง)', icon: '🎒', price: 150, gives: { bagLevel: 1 } },

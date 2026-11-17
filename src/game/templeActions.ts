@@ -108,8 +108,10 @@ interface MeritState {
   /** จุดธูปเทียนล่าสุด (มีควันลอย) */
   incenseAt: number
   popup: null | 'donate' | 'birthday' | 'incense'
-  /** ผู้เล่นอยู่ในตัวโบสถ์ (ถอดรองเท้า) */
+  /** ผู้เล่นอยู่บนโบสถ์ (บันได/ระเบียง/ในโบสถ์) */
   inside: boolean
+  /** ถอดรองเท้าวางไว้ที่ลานถอดรองเท้าแล้ว */
+  shoesOff: boolean
   /** จุดทำบุญที่อยู่ใกล้ (กด E) */
   spot: string | null
 }
@@ -122,6 +124,7 @@ export const useMerit = create<MeritState>(() => ({
   incenseAt: 0,
   popup: null,
   inside: false,
+  shoesOff: false,
   spot: null,
 }))
 
@@ -217,4 +220,24 @@ export function pourWater() {
   window.setTimeout(() => {
     toast('💧 กรวดน้ำแล้ว', 'อุทิศส่วนกุศลให้ผู้ที่ล่วงลับและสรรพสัตว์', 'success')
   }, 1500)
+}
+
+/** กด E ที่ลานถอดรองเท้า: ถอด / ใส่ */
+export function toggleShoes() {
+  const s = useMerit.getState()
+  if (s.shoesOff && s.inside) return
+  useMerit.setState({ shoesOff: !s.shoesOff })
+  toast(s.shoesOff ? '👟 ใส่รองเท้าแล้ว' : '👣 ถอดรองเท้าวางไว้แล้ว', s.shoesOff ? undefined : 'ขึ้นไปกราบพระในโบสถ์ได้เลย', 'info')
+}
+
+/** ขึ้นบันไดทั้งที่ยังใส่รองเท้า → ถอดให้อัตโนมัติ · ออกจากวัด → ใส่กลับให้อัตโนมัติ */
+export function autoShoes(onTemple: boolean, inArea: boolean) {
+  const s = useMerit.getState()
+  if (onTemple && !s.shoesOff) {
+    useMerit.setState({ shoesOff: true })
+    toast('👣 ถอดรองเท้าไว้ที่ลานถอดรองเท้าแล้ว', 'ก่อนขึ้นโบสถ์ต้องถอดรองเท้านะ', 'info')
+  } else if (!inArea && s.shoesOff) {
+    useMerit.setState({ shoesOff: false })
+    toast('👟 ใส่รองเท้ากลับแล้ว', undefined, 'info')
+  }
 }

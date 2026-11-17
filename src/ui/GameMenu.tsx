@@ -1,3 +1,4 @@
+import { eat } from '../game/garden'
 import { useEffect, useState } from 'react'
 import { formatSavedAt, markCleanExit, useGame } from '../game/store'
 import { AUTO_SAVE_CHOICES, useSettings } from '../game/settings'
@@ -203,7 +204,13 @@ function BagTab({ onCraft }: { onCraft: () => void }) {
           if (!it) return <div key={k} className="bag-slot" aria-label="ช่องว่าง" />
           const def = ITEMS[it.id]
           return (
-            <div key={k} className="bag-slot filled" title={`${def.name} — ${def.note}`}>
+            <div
+              key={k}
+              className={`bag-slot filled${def.food ? ' edible' : ''}`}
+              title={`${def.name} — ${def.note}${def.food ? ' · คลิกเพื่อกิน' : ''}`}
+              onClick={def.food ? () => eat(it.id) : undefined}
+              role={def.food ? 'button' : undefined}
+            >
               <span className="bag-icon"><ItemIcon icon={def.icon} /></span>
               <span className="bag-name">{def.name}</span>
               {it.qty > 1 && <span className="bag-qty">×{it.qty}</span>}
@@ -212,7 +219,7 @@ function BagTab({ onCraft }: { onCraft: () => void }) {
         })}
       </div>
       <p className="hint">
-        💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท · เดินไปใกล้ต้นไม้หรือกองหินแล้วกด <kbd>E</kbd> เพื่อเก็บของ
+        💰 เงินติดตัว {save.coins.toLocaleString('th-TH')} บาท · เดินไปใกล้ต้นไม้หรือกองหินแล้วกด <kbd>E</kbd> เพื่อเก็บของ · คลิกผักเพื่อกิน
       </p>
       <button type="button" className="btn small" onClick={onCraft}>
         🔨 ไปคราฟของ
