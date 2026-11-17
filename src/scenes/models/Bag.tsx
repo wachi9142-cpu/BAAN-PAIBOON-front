@@ -7,7 +7,7 @@ import type { BagId } from '../../game/content/appearance'
  * กระเป๋าถือจะวาดแยกในมือ (HandBag)
  */
 
-const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} flatShading />
+const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} />
 
 /** สายกระเป๋าจากจุด a ไป b (กล่องบาง ๆ) */
 function Strap({ a, b, w = 0.03, color }: { a: [number, number, number]; b: [number, number, number]; w?: number; color: string }) {
@@ -82,7 +82,7 @@ export function BodyBag({ bag, color, female }: { bag: BagId; color: string; fem
           <Strap a={[-sx + 0.04, 1.36, 0]} b={[sx + 0.07, 0.86, 0.06]} w={0.04} color={color} />
           <mesh position={[sx + 0.08, 0.72, 0.04]} rotation={[0, 0.2, 0]} castShadow>
             <boxGeometry args={[0.26, 0.3, 0.05]} />
-            <meshStandardMaterial map={yaamTex} flatShading />
+            <meshStandardMaterial map={yaamTex} />
           </mesh>
           {/* พู่ด้านล่าง */}
           {[-0.08, 0, 0.08].map((x) => (

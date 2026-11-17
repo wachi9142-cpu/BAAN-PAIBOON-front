@@ -1,6 +1,6 @@
 import type { AccessoryId } from '../../game/content/appearance'
 
-const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} flatShading />
+const M = ({ c }: { c: string }) => <meshStandardMaterial color={c} />
 
 /** เครื่องประดับบนหัว/คอ — พิกัดเดียวกับหัวของ Character (กลางหัว y 1.57, หน้าไปทาง +z) */
 export function Accessory({ kind, color }: { kind: AccessoryId; color: string }) {

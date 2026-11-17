@@ -141,6 +141,12 @@ export interface Appearance {
   topColor?: string
   bottomColor?: string
   eyeColor?: string
+  /** รูปหน้า (ไม่มี = หญิงรูปไข่ / ชายเหลี่ยม) */
+  faceShape?: FaceShapeId
+  /** ลักษณะดวงตา (ไม่มี = ตากลมโต) */
+  eyeStyle?: EyeStyleId
+  /** รูปปาก (ไม่มี = ยิ้มเล็ก ๆ) */
+  mouthStyle?: MouthStyleId
   accessory?: AccessoryId
   accessoryColor?: string
   pose?: PoseId
@@ -293,7 +299,63 @@ export const EYE_COLORS: (Option & { color: string })[] = [
   { id: 'gray', label: 'เทา', color: '#6f7a82' },
   { id: 'blue', label: 'ฟ้า', color: '#3f7fc0' },
   { id: 'green', label: 'เขียว', color: '#4f8a4a' },
+  // สีละมุน (แบบตาการ์ตูน)
+  { id: 'sky', label: 'ฟ้าอ่อน', color: '#6fb8e8' },
+  { id: 'mint', label: 'เขียวมินต์', color: '#5fbf9a' },
+  { id: 'lime', label: 'เขียวตอง', color: '#8fbf3a' },
+  { id: 'violet', label: 'ม่วง', color: '#9a6ad0' },
+  { id: 'pink', label: 'ชมพู', color: '#e07aa8' },
+  { id: 'ruby', label: 'แดงทับทิม', color: '#c83a4a' },
+  { id: 'amber', label: 'ส้มอำพัน', color: '#e0902e' },
+  { id: 'honey', label: 'น้ำผึ้ง', color: '#c8a040' },
 ]
+
+// ---------- รูปหน้า ----------
+export type FaceShapeId = 'round' | 'oval' | 'square'
+export const FACE_SHAPES: (Option & { id: FaceShapeId })[] = [
+  { id: 'round', label: 'หน้ากลม' },
+  { id: 'oval', label: 'หน้ารูปไข่' },
+  { id: 'square', label: 'หน้าเหลี่ยม' },
+]
+export const defaultFaceShape = (g: Gender): FaceShapeId => (g === 'female' ? 'oval' : 'square')
+
+// ---------- รูปปาก ----------
+export type MouthStyleId = 'smile' | 'flat' | 'cat' | 'open' | 'o' | 'tongue' | 'fang' | 'grin' | 'small'
+export const MOUTH_STYLES: (Option & { id: MouthStyleId })[] = [
+  { id: 'smile', label: 'ยิ้มเล็ก ๆ' },
+  { id: 'open', label: 'ยิ้มอ้าปาก' },
+  { id: 'grin', label: 'ยิ้มเห็นฟัน' },
+  { id: 'cat', label: 'ปากแมว' },
+  { id: 'fang', label: 'ยิ้มมีเขี้ยว' },
+  { id: 'tongue', label: 'แลบลิ้น' },
+  { id: 'o', label: 'ปากจู๋' },
+  { id: 'small', label: 'ปากจิ๋ว' },
+  { id: 'flat', label: 'ปากเฉย ๆ' },
+]
+
+// ---------- ลักษณะดวงตา ----------
+export type EyeStyleId = 'round' | 'sparkle' | 'star' | 'gentle' | 'sharp' | 'classic'
+export const EYE_STYLES: (Option & { id: EyeStyleId })[] = [
+  { id: 'round', label: 'ตากลมโต' },
+  { id: 'sparkle', label: 'ตาเป็นประกาย' },
+  { id: 'star', label: 'ตาดาว' },
+  { id: 'gentle', label: 'ตาหวาน' },
+  { id: 'sharp', label: 'ตาคม' },
+  { id: 'classic', label: 'ตาเรียบ' },
+]
+
+/**
+ * คิ้วที่มากับตาแต่ละแบบ (เลือกตาแล้วได้คิ้วคู่กัน)
+ * arch = โค้งขึ้นกลางคิ้ว · tilt = หางคิ้ว (+ ชี้ขึ้น / - ตก) · lift = ยกสูงจากตา · len = ความยาว
+ */
+export const EYE_BROWS: Record<EyeStyleId, { arch: number; tilt: number; lift: number; len: number }> = {
+  round: { arch: 0.5, tilt: 0.1, lift: 0, len: 1 },
+  sparkle: { arch: 0.8, tilt: 0.25, lift: 0.006, len: 1 },
+  star: { arch: 0.3, tilt: 0.05, lift: 0.012, len: 0.8 },
+  gentle: { arch: 0.35, tilt: -0.25, lift: -0.002, len: 1.05 },
+  sharp: { arch: 0.1, tilt: 0.35, lift: -0.004, len: 1.1 },
+  classic: { arch: 0, tilt: 0, lift: 0, len: 1 },
+}
 export const eyeColorValue = (v: string | undefined) =>
   !v ? EYE_COLORS[0].color : isCustomColor(v) ? v : byId(EYE_COLORS, v).color
 

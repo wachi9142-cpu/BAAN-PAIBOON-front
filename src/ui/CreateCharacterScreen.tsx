@@ -19,6 +19,13 @@ import {
   CLOTH_COLORS,
   DEFAULT_APPEARANCE,
   EYE_COLORS,
+  EYE_STYLES,
+  type EyeStyleId,
+  MOUTH_STYLES,
+  FACE_SHAPES,
+  defaultFaceShape,
+  type FaceShapeId,
+  type MouthStyleId,
   GENDERS,
   HAIR_COLORS,
   HAIR_STYLES,
@@ -41,7 +48,7 @@ import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
 import { ColorWheel } from './ColorWheel'
 import { useRandomBackdrop } from './RandomBackdrop'
-import { useHairThumbs } from './hairThumbs'
+import { EYES, FACE, MOUTH, useHairThumbs, useVariantThumbs } from './hairThumbs'
 
 const MAX_NAME = 20
 /** ตัวเลือกที่แสดงก่อนกด "เพิ่มเติม" */
@@ -133,6 +140,37 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
       return { ...l, age, hairColor }
     })
 
+  // รูปหุ่นตัวอย่าง: เพศ (ตามที่จะได้จริงเมื่อกด) และสีผิว
+  const genderThumbs = useVariantThumbs(
+    'gender',
+    look,
+    GENDERS.map((g) => ({ id: g.id, patch: g.id === look.gender ? {} : { ...DEFAULT_APPEARANCE[g.id], age: look.age } })),
+  )
+  const eyeThumbs = useVariantThumbs(
+    'eyes',
+    { ...look, accessory: 'none', elderGlasses: false, elderHat: false, kidHead: 'none' },
+    // ไม่ใส่ผม (หน้าม้าบังคิ้ว) ให้เห็นคู่ตา-คิ้วชัด
+    EYE_STYLES.map((e) => ({ id: e.id, patch: { eyeStyle: e.id, hairStyle: 'none' as Appearance['hairStyle'] } })),
+    EYES,
+  )
+  const faceThumbs = useVariantThumbs(
+    'face',
+    { ...look, accessory: 'none', elderGlasses: false, elderHat: false, kidHead: 'none', hairStyle: 'none' as Appearance['hairStyle'] },
+    FACE_SHAPES.map((f) => ({ id: f.id, patch: { faceShape: f.id } })),
+    FACE,
+  )
+  const mouthThumbs = useVariantThumbs(
+    'mouth',
+    { ...look, accessory: 'none', elderGlasses: false, elderHat: false, kidHead: 'none' },
+    MOUTH_STYLES.map((m) => ({ id: m.id, patch: { mouthStyle: m.id } })),
+    MOUTH,
+  )
+  const skinThumbs = useVariantThumbs(
+    'skin',
+    look,
+    SKIN_TONES.map((t) => ({ id: t.id, patch: { skin: t.id } })),
+  )
+
   // ชุดของเพศที่เลือก (และชุดทุกเพศ) ขึ้นก่อน ชุดอื่นอยู่ใน "เพิ่มเติม"
   const outfits = [...OUTFITS].sort((a, b) => rank(a.for, look.gender) - rank(b.for, look.gender))
   const outfit = byId(OUTFITS, look.outfit)
@@ -142,7 +180,13 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
 
   return (
     <>
-          <ChipField label="เพศ" options={GENDERS} value={look.gender} onChange={(id) => chooseGender(id as Gender)} />
+          <PictureField
+            label="เพศ"
+            options={GENDERS}
+            value={look.gender}
+            thumbs={genderThumbs}
+            onChange={(id) => chooseGender(id as Gender)}
+          />
           <ChipField label="วัย" options={AGE_GROUPS} value={look.age ?? 'adult'} onChange={(id) => chooseAge(id as AgeGroup)} />
           {(look.age ?? 'adult') !== 'adult' && <p className="age-note">⚠️ {AGE_RULES[look.age!].note}</p>}
           {look.age === 'child' && (
@@ -163,8 +207,11 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
               <ChipField label="ตะกร้าเล็ก" options={YES_NO} value={look.basket ? 'yes' : 'no'} onChange={(v) => patch({ basket: v === 'yes' })} />
             </>
           )}
-          <ChipField label="สีผิว" options={SKIN_TONES} value={look.skin} onChange={(skin) => patch({ skin })} />
+          <PictureField label="สีผิว" options={SKIN_TONES} value={look.skin} thumbs={skinThumbs} onChange={(skin) => patch({ skin })} />
+          <PictureField label="รูปหน้า" options={FACE_SHAPES} value={look.faceShape ?? defaultFaceShape(look.gender)} thumbs={faceThumbs} onChange={(id) => patch({ faceShape: id as FaceShapeId })} />
+          <PictureField label="ตาและคิ้ว" options={EYE_STYLES} value={look.eyeStyle ?? 'round'} thumbs={eyeThumbs} onChange={(id) => patch({ eyeStyle: id as EyeStyleId })} />
           <ColorChoiceField label="สีตา" options={EYE_COLORS} value={look.eyeColor ?? 'black'} onChange={(eyeColor) => patch({ eyeColor })} fallbackCustom="#8a4fc0" />
+          <PictureField label="รูปปาก" options={MOUTH_STYLES} value={look.mouthStyle ?? 'smile'} thumbs={mouthThumbs} onChange={(id) => patch({ mouthStyle: id as MouthStyleId })} />
           <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
   
           <div className="setup-section">ทรงผม</div>
@@ -304,6 +351,35 @@ function HairPicker({ look, onChange }: { look: Appearance; onChange: (id: Appea
           >
             {thumbs[h.id] ? <img src={thumbs[h.id]} alt="" /> : <span className="hair-ph" aria-hidden="true" />}
             <span>{h.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** ตัวเลือกแบบมีรูปหุ่น (เพศ สีผิว) — เห็นภาพแล้วกดเลือกได้ทันที */
+function PictureField({
+  label,
+  options,
+  value,
+  thumbs,
+  onChange,
+}: {
+  label: string
+  options: { id: string; label: string }[]
+  value: string
+  thumbs: Record<string, string>
+  onChange: (id: string) => void
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="hair-grid" role="radiogroup" aria-label={label}>
+        {options.map((o) => (
+          <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className="hair-card" onClick={() => onChange(o.id)}>
+            {thumbs[o.id] ? <img src={thumbs[o.id]} alt="" /> : <span className="hair-ph" aria-hidden="true" />}
+            <span>{o.label}</span>
           </button>
         ))}
       </div>
