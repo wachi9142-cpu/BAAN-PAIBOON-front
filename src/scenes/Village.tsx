@@ -407,7 +407,7 @@ function Trees() {
   )
 }
 
-function Tree({ tree }: { tree: TreeSpot }) {
+export function Tree({ tree }: { tree: TreeSpot }) {
   const [x, z] = tree.pos
   const s = tree.scale
   switch (tree.kind) {

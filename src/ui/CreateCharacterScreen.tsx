@@ -60,7 +60,7 @@ export function CreateCharacterScreen() {
   return (
     <div className="setup">
       <div className="setup-stage" style={backdrop ? { background: `url(${backdrop}) center / cover no-repeat` } : undefined}>
-        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={1.6} maxDistance={7} ground={!backdrop}>
+        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={1.6} maxDistance={7} ground={!backdrop} decor={!backdrop}>
           <Character appearance={look} />
         </PreviewStage>
       </div>
@@ -115,7 +115,12 @@ export function AppearanceEditor({ look, setLook }: { look: Appearance; setLook:
   const chooseGender = (g: Gender) => setLook((l) => (l.gender === g ? l : { ...DEFAULT_APPEARANCE[g], age: l.age }))
   // ผู้สูงอายุ: เปลี่ยนผมดำเป็นสีเทาให้ก่อน (เปลี่ยนเองต่อได้)
   const chooseAge = (age: AgeGroup) =>
-    setLook((l) => ({ ...l, age, hairColor: age === 'elder' && l.hairColor === 'black' ? 'gray' : age !== 'elder' && l.hairColor === 'gray' ? 'black' : l.hairColor }))
+    setLook((l) => {
+      // ผู้สูงอายุ: ผมเปลี่ยนเป็นสีเทาให้อัตโนมัติ (ยังเปลี่ยนเองได้) · ออกจากวัยสูงอายุ: กลับเป็นผมดำ
+      const darkHair = ['black', 'darkbrown', 'brown'].includes(l.hairColor)
+      const hairColor = age === 'elder' && darkHair ? 'gray' : age !== 'elder' && (l.hairColor === 'gray' || l.hairColor === 'silver') ? 'black' : l.hairColor
+      return { ...l, age, hairColor }
+    })
 
   // ชุดของเพศที่เลือก (และชุดทุกเพศ) ขึ้นก่อน ชุดอื่นอยู่ใน "เพิ่มเติม"
   const outfits = [...OUTFITS].sort((a, b) => rank(a.for, look.gender) - rank(b.for, look.gender))

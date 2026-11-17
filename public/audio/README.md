@@ -34,8 +34,8 @@
 แหล่งเสียงฟรี: Pixabay (ใช้เชิงพาณิชย์ได้) · Freesound (เลือกไฟล์ CC0)
 
 ## เสียงร้องสัตว์เลี้ยง (เล่นตอนนั่งรอเป็นครั้งคราว และตอนลุกวิ่งตาม)
-วางไฟล์ `pet-<ชนิด>.mp3` เช่น pet-dog.mp3, pet-cat.mp3, pet-cow.mp3, pet-buffalo.mp3, pet-pig.mp3,
-pet-goat.mp3, pet-sheep.mp3, pet-monkey.mp3, pet-squirrel.mp3, pet-mouse.mp3, pet-rabbit.mp3,
-pet-bird.mp3, pet-chicken.mp3, pet-duck.mp3, pet-goose.mp3, pet-turtle.mp3
+ทุกชนิดเลือกเสียงได้ 4 แบบ (หน้าเลือกสัตว์เลี้ยง → "เสียงร้อง") วางไฟล์ `pet-<ชนิด>-<1..4>.mp3`
+เช่น pet-dog-1.mp3 (โฮ่ง หมาใหญ่), pet-dog-2.mp3 (บ็อก), pet-dog-3.mp3 (แง่ง หมาเล็ก), pet-dog-4.mp3 (หอน)
+รายการเสียงทั้งหมดอยู่ใน src/game/audio/petSounds.ts
 
-ถ้ายังไม่มีไฟล์: แมว หมู แพะ แกะ กระรอก หนู นก ไก่ เป็ด ห่าน ใช้เสียงสังเคราะห์แทน · ชนิดอื่นเงียบไว้ก่อน
+ถ้ายังไม่มีไฟล์: ใช้เสียงสังเคราะห์แทนครบทุกชนิดและทุกแบบ

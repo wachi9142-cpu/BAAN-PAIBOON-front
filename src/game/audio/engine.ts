@@ -129,7 +129,7 @@ class AudioEngine {
   }
 
   /** เสียงร้องสัตว์: ใช้ไฟล์ถ้ามี ไม่งั้นใช้เสียงสังเคราะห์ (ถ้ามี) ไม่งั้นเงียบ */
-  async playCallOrFile(file: string, synth: CallKind | undefined, volume = 0.7) {
+  async playCallOrFile(file: string, synth: CallKind | undefined, volume = 0.7, pitch = 1, times = 1) {
     if (!this.ctx) return
     const buf = await this.load(file)
     if (buf) {
@@ -140,7 +140,7 @@ class AudioEngine {
     const g = this.ctx.createGain()
     g.gain.value = volume
     g.connect(this.buses.sfx)
-    const dur = playCall(this.ctx, g, synth)
+    const dur = playCall(this.ctx, g, synth, pitch, times)
     this.duckFor(dur)
     window.setTimeout(() => g.disconnect(), (dur + 0.5) * 1000)
   }

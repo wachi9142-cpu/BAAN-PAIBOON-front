@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { colorsFor, PET_HELD, PET_OUTFITS, PET_OUTFIT_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
 import { useGame } from '../game/store'
-import { playPetSound } from '../game/audio/petSounds'
+import { playPetSound, voicesFor } from '../game/audio/petSounds'
 import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
 import { Pet } from '../scenes/models/Pet'
@@ -50,7 +50,7 @@ export function ChoosePetScreen() {
   return (
     <div className="setup">
       <div className="setup-stage">
-        <PreviewStage camera={[1.4, 1.5, 6.2]} target={[0.2, 0.8, 0]} minDistance={2.5} maxDistance={10}>
+        <PreviewStage camera={[1.4, 1.5, 6.2]} target={[0.2, 0.8, 0]} minDistance={2.5} maxDistance={10} decor hint="ลากเพื่อหมุนดู">
           <group position={[-0.4, 0, 0]}>
             <Character appearance={draft.appearance} />
           </group>
@@ -89,9 +89,25 @@ export function ChoosePetScreen() {
               </div>
             </div>
 
-            <button type="button" className="btn ghost small" style={{ alignSelf: "flex-start" }} onClick={() => playPetSound(pet.species, 0.9)}>
-              🔊 ฟังเสียงร้อง
-            </button>
+            <div className="field">
+              <label>เสียงร้อง</label>
+              <div className="chips">
+                {voicesFor(pet.species).map((vo, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="chip"
+                    aria-pressed={(pet.voice ?? 0) === i}
+                    onClick={() => {
+                      patch({ voice: i })
+                      playPetSound(pet, 0.9, i)
+                    }}
+                  >
+                    🔊 {vo.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {breeds.length > 0 && (
               <div className="field">

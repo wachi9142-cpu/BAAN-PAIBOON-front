@@ -184,6 +184,42 @@ export function Hair({ style, color }: { style: Appearance['hairStyle']; color: 
           {braid(0, -0.17, 6)}
         </group>
       )
+    case 'sidebraid':
+      // เปียข้างเดียว: ถักรวบพาดไหล่ขวาลงมาด้านหน้า
+      return (
+        <group>
+          {cap}
+          {bangs}
+          <mesh position={[0.12, 1.5, -0.02]} rotation={[0, 0, -0.3]}>
+            <boxGeometry args={[0.1, 0.16, 0.14]} />
+            {mat}
+          </mesh>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <mesh key={i} position={[0.15 + i * 0.004, 1.42 - i * 0.075, 0.05 + i * 0.012]} castShadow>
+              <sphereGeometry args={[0.048 - i * 0.003, 7, 6]} />
+              {mat}
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'topknot':
+      // ผมจุก: ผมสั้นเกรียน + จุกกลมบนกลางหัว มัดด้วยดอกไม้
+      return (
+        <group>
+          <mesh position={[0, 1.6, -0.01]}>
+            <sphereGeometry args={[0.176, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.4]} />
+            {mat}
+          </mesh>
+          <mesh position={[0, 1.79, -0.01]} castShadow>
+            <sphereGeometry args={[0.065, 10, 8]} />
+            {mat}
+          </mesh>
+          <mesh position={[0, 1.745, -0.01]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.045, 0.014, 6, 12]} />
+            <meshStandardMaterial color="#f2f0e6" />
+          </mesh>
+        </group>
+      )
     case 'twinbraids':
       return (
         <group>

@@ -129,6 +129,8 @@ export interface PetChoice {
   outfitColor?: string
   /** ของตกแต่ง (ถือ/กอดไว้ที่อก) */
   held?: PetHeldId
+  /** เสียงร้องที่เลือก (0–3) */
+  voice?: number
 }
 
 export const getSpecies = (id: PetSpecies) => PET_SPECIES.find((s) => s.id === id) ?? PET_SPECIES[0]

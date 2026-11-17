@@ -71,7 +71,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       motion.current = 0
     } else if (playing || dist > wakeDist) {
       if (!playing) {
-        if (pose.current > 0 && Math.random() < 0.5) playPetSound(pet.species, 0.8)
+        if (pose.current > 0 && Math.random() < 0.5) playPetSound(pet, 0.8)
         idle.current = 0
         play.current.until = 0
         play.current.next = 6 + Math.random() * 6
@@ -100,11 +100,11 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
         play.current.next = play.current.until + 8 + Math.random() * 8
         play.current.angle = Math.atan2(x - px, z - pz)
         play.current.dir = Math.random() < 0.5 ? 1 : -1
-        if (Math.random() < 0.4) playPetSound(pet.species, 0.7)
+        if (Math.random() < 0.4) playPetSound(pet, 0.7)
       }
       // เสียงร้องตอนรอ (ไม่ร้องตอนนอนหลับ)
       if (pose.current < 2 && idle.current > nextIdleSound.current) {
-        playPetSound(pet.species, 0.6)
+        playPetSound(pet, 0.6)
         nextIdleSound.current = idle.current + 15 + Math.random() * 25
       }
       if (pose.current === 2) nextIdleSound.current = Math.max(nextIdleSound.current, idle.current + 10)

@@ -76,7 +76,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
 
   useFrame((_, dt) => {
     const m = motion?.current ?? 0
-    phase.current += dt * (m === 2 ? 13 : 8) * (m > 0 ? 1 : 0)
+    phase.current += dt * (m === 2 ? 13 : 8) * (m > 0 ? 1 : 0) * (m === 2 ? age.runSpeed : age.walkSpeed)
     idle.current += dt
     const swing = m > 0 ? Math.sin(phase.current) * (m === 2 ? 0.8 : 0.5) : 0
     const k = Math.min(1, dt * 10)
@@ -122,11 +122,14 @@ export function Character({ appearance, motion, action, tool }: Props) {
   const shoulder = female ? 0.2 : 0.23
   const legGap = 0.09
   const skinMat = <meshStandardMaterial color={skin} flatShading />
+  // สีรอยย่น: สีผิวเข้มลง
+  const wrinkle = shade(skin, 0.72)
   const bottomMat = <meshStandardMaterial color={bottom} flatShading />
 
   return (
     <group ref={body} scale={age.bodyScale}>
-      {/* ---------- ท่อนล่าง ---------- */}
+      {/* ---------- ท่อนล่าง (เด็กขาสั้น: ย่อตามแนวตั้ง) ---------- */}
+      <group scale={[1, age.legScale, 1]}>
       {outfit.bottomShape === 'skirt' && (
         <>
           <mesh position={[0, 0.55, 0]} castShadow>
@@ -194,8 +197,10 @@ export function Character({ appearance, motion, action, tool }: Props) {
           </group>
         ))}
 
-      {/* ---------- ท่อนบน (ผู้สูงอายุหลังค่อมเล็กน้อย หมุนรอบสะโพก) ---------- */}
-      <group position={[0, 0.82, 0]} rotation={[age.hunch, 0, 0]}>
+      </group>
+
+      {/* ---------- ท่อนบน (ผู้สูงอายุหลังค่อม หมุนรอบสะโพก) ---------- */}
+      <group position={[0, 0.82 * age.legScale, 0]} rotation={[age.hunch, 0, 0]}>
       <group position={[0, -0.82, 0]}>
       {/* ---------- ลำตัว ---------- */}
       <mesh position={[0, 1.08, 0]} castShadow>
@@ -233,6 +238,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
       {/* ---------- แขน ---------- */}
       {[armL, armR].map((ref, i) => (
         <group key={i} ref={ref} position={[(i === 0 ? -1 : 1) * (shoulder + 0.06), 1.32, 0]}>
+          <group scale={[1, age.armScale, 1]}>
           <mesh position={[0, -0.18, 0]} castShadow>
             <boxGeometry args={[0.11, 0.36, 0.13]} />
             <meshStandardMaterial color={top} flatShading />
@@ -241,6 +247,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
             <boxGeometry args={[0.09, 0.2, 0.1]} />
             {skinMat}
           </mesh>
+          </group>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
           {i === 1 && tool && <Tool kind={tool} />}
         </group>
@@ -249,7 +256,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
       <BodyBag bag={bag} color={bagColor} female={female} />
 
       {/* ---------- หัว (เด็กหัวใหญ่กว่าตัว) ---------- */}
-      <group position={[0, 1.4, 0]} scale={age.headScale}>
+      <group position={[0, 1.4, 0]} scale={age.headScale} rotation={[-age.hunch * 0.7, 0, 0]}>
       <group position={[0, -1.4, 0]}>
       <mesh position={[0, 1.4, 0]}>
         <cylinderGeometry args={[0.06, 0.07, 0.1, 8]} />
@@ -261,7 +268,7 @@ export function Character({ appearance, motion, action, tool }: Props) {
       </mesh>
       {/* ตา: ตาดำตามสีที่เลือก + จุดแสงสีขาว */}
       {[-0.06, 0.06].map((x) => (
-        <group key={x} position={[x, 1.59, 0.152]}>
+        <group key={x} position={[x * (age.eyeScale > 1 ? 1.12 : 1), age.eyeScale > 1 ? 1.575 : 1.59, 0.152]} scale={age.eyeScale}>
           <mesh>
             <sphereGeometry args={[0.024, 8, 8]} />
             <meshStandardMaterial color={eye} roughness={0.3} />
@@ -277,6 +284,33 @@ export function Character({ appearance, motion, action, tool }: Props) {
         <torusGeometry args={[0.032, 0.009, 6, 14, Math.PI]} />
         <meshStandardMaterial color={lipColorValue(appearance.lipColor)} />
       </mesh>
+      {/* รอยย่น (ผู้สูงอายุ): เส้นบนหน้าผาก + ตีนกา + ร่องแก้ม */}
+      {age.wrinkles && (
+        <group>
+          {[1.655, 1.68].map((y) => (
+            <mesh key={'f' + y} position={[0, y, 0.152]} rotation={[-0.35, 0, 0]}>
+              <boxGeometry args={[0.12, 0.006, 0.004]} />
+              <meshStandardMaterial color={wrinkle} />
+            </mesh>
+          ))}
+          {[-1, 1].map((s) => (
+            <group key={'w' + s}>
+              <mesh position={[s * 0.103, 1.6, 0.128]} rotation={[0, s * 0.6, s * 0.4]}>
+                <boxGeometry args={[0.03, 0.005, 0.004]} />
+                <meshStandardMaterial color={wrinkle} />
+              </mesh>
+              <mesh position={[s * 0.103, 1.585, 0.128]} rotation={[0, s * 0.6, -s * 0.2]}>
+                <boxGeometry args={[0.028, 0.005, 0.004]} />
+                <meshStandardMaterial color={wrinkle} />
+              </mesh>
+              <mesh position={[s * 0.06, 1.515, 0.152]} rotation={[0, s * 0.35, s * 0.5]}>
+                <boxGeometry args={[0.005, 0.045, 0.004]} />
+                <meshStandardMaterial color={wrinkle} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )}
       {/* แก้ม */}
       {[-0.095, 0.095].map((x) => (
         <mesh key={'c' + x} position={[x, 1.545, 0.135]} rotation={[0, x * 4, 0]} scale={[1, 0.6, 0.3]}>
@@ -336,4 +370,11 @@ function Tool({ kind }: { kind: ToolId }) {
       </mesh>
     </group>
   )
+}
+
+/** ทำให้สี hex เข้มขึ้น (k < 1) */
+function shade(hex: string, k: number) {
+  const n = parseInt(hex.slice(1), 16)
+  const c = (v: number) => Math.round(Math.min(255, v * k)).toString(16).padStart(2, '0')
+  return '#' + c((n >> 16) & 255) + c((n >> 8) & 255) + c(n & 255)
 }

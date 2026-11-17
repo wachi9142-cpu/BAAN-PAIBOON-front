@@ -172,12 +172,38 @@ export function createSynth(ctx: AudioContext, kind: SynthKind): Voice {
 }
 
 // ---------- เสียงร้องสั้น ๆ ของสัตว์ (เล่นครั้งเดียว) ----------
-export type CallKind = 'chirp' | 'cluck' | 'quack' | 'squeak' | 'meow' | 'bleat' | 'oink'
+export type CallKind =
+  | 'chirp'
+  | 'cluck'
+  | 'quack'
+  | 'squeak'
+  | 'meow'
+  | 'bleat'
+  | 'oink'
+  | 'bark'
+  | 'howl'
+  | 'moo'
+  | 'purr'
+  | 'chatter'
+  | 'crow'
+  | 'hiss'
 
 /** เล่นเสียงร้องสังเคราะห์ 1 ครั้ง ต่อเข้า output ที่ให้มา คืนความยาวเสียง (วินาที) */
-export function playCall(ctx: AudioContext, out: AudioNode, kind: CallKind): number {
-  const t0 = ctx.currentTime + 0.02
-  const tone = (type: OscillatorType, at: number, dur: number, f: [number, number, number?], peak = 0.25, filterHz?: number) => {
+export function playCall(ctx: AudioContext, out: AudioNode, kind: CallKind, pitch = 1, times = 1): number {
+  let start = ctx.currentTime + 0.02
+  let total = 0
+  for (let i = 0; i < times; i++) {
+    const d = callOnce(ctx, out, kind, start, pitch)
+    start += d + 0.08
+    total += d + 0.08
+  }
+  return total
+}
+
+function callOnce(ctx: AudioContext, out: AudioNode, kind: CallKind, t0: number, pitch: number): number {
+  const tone = (type: OscillatorType, at: number, dur: number, fr: [number, number, number?], peak = 0.25, filter?: number) => {
+    const f = fr.map((x) => (x === undefined ? undefined : x * pitch)) as [number, number, number?]
+    const filterHz = filter ? filter * pitch : undefined
     const osc = ctx.createOscillator()
     osc.type = type
     osc.frequency.setValueAtTime(f[0], at)
@@ -247,5 +273,56 @@ export function playCall(ctx: AudioContext, out: AudioNode, kind: CallKind): num
       tone('sawtooth', t0, 0.14, [220, 160], 0.2, 600)
       tone('sawtooth', t0 + 0.2, 0.14, [230, 160], 0.2, 600)
       return 0.4
+    case 'bark':
+      // โฮ่ง ๆ: เสียงสั้นกระแทก 2 ครั้ง
+      tone('sawtooth', t0, 0.13, [380, 520, 240], 0.3, 900)
+      tone('square', t0, 0.1, [190, 140], 0.12, 500)
+      tone('sawtooth', t0 + 0.22, 0.12, [360, 500, 230], 0.28, 900)
+      return 0.4
+    case 'howl':
+      // อู้ว~ ยาว ๆ
+      tone('triangle', t0, 1.3, [380, 620, 480], 0.22, 1200)
+      tone('sine', t0, 1.3, [760, 1240, 960], 0.05)
+      return 1.35
+    case 'moo':
+      // มอ~ ทุ้มยาว
+      tone('sawtooth', t0, 1, [150, 190, 120], 0.22, 500)
+      tone('sine', t0, 1, [75, 95, 60], 0.15)
+      return 1.05
+    case 'purr': {
+      // ครืด ๆ: เสียงต่ำสั่นถี่
+      const n = 14
+      for (let i = 0; i < n; i++) tone('sawtooth', t0 + i * 0.045, 0.05, [60, 55], 0.12, 300)
+      return n * 0.045 + 0.05
+    }
+    case 'chatter': {
+      // อู๊ก อ๊าก รัว ๆ (ลิง)
+      const n = 5
+      for (let i = 0; i < n; i++) tone('square', t0 + i * 0.09, 0.08, [700 + (i % 2) * 300, 500], 0.12, 1500)
+      return n * 0.09 + 0.08
+    }
+    case 'crow':
+      // เอ้ก อี้ เอ้ก เอ้ก (ไก่ขัน)
+      tone('sawtooth', t0, 0.18, [500, 620], 0.16, 1300)
+      tone('sawtooth', t0 + 0.22, 0.2, [640, 760], 0.16, 1400)
+      tone('sawtooth', t0 + 0.46, 0.6, [760, 820, 560], 0.16, 1400)
+      return 1.1
+    case 'hiss': {
+      // ฟ่อ: เสียงลมผ่านฟิลเตอร์
+      const len = Math.floor(ctx.sampleRate * 0.6)
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len)
+      const src = ctx.createBufferSource()
+      src.buffer = buf
+      const hp = ctx.createBiquadFilter()
+      hp.type = 'highpass'
+      hp.frequency.value = 2500 * pitch
+      const g = ctx.createGain()
+      g.gain.value = 0.25
+      src.connect(hp).connect(g).connect(out)
+      src.start(t0)
+      return 0.6
+    }
   }
 }

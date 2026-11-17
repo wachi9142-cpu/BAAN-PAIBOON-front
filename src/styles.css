@@ -1460,3 +1460,30 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
   .ts-bell { animation: none; }
 }
+
+/* ฉากตัวอย่าง: ลากซ้าย-ขวาเพื่อหมุนตัวละคร */
+.preview-turn {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+.preview-turn:active {
+  cursor: grabbing;
+}
+.preview-turn {
+  position: relative;
+}
+.preview-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(46, 42, 36, 0.55);
+  color: #fff;
+  font-family: Mitr, sans-serif;
+  font-size: 13px;
+  pointer-events: none;
+}

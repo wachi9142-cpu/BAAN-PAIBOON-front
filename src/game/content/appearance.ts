@@ -27,22 +27,26 @@ export type HairStyleId =
   | 'twintails'
   | 'braid'
   | 'twinbraids'
+  | 'sidebraid'
+  | 'topknot'
 
 export const HAIR_STYLES: (Option & { id: HairStyleId })[] = [
   { id: 'short', label: 'ผมสั้น' },
-  { id: 'buzz', label: 'ผมเกรียน' },
   { id: 'bob', label: 'ผมบ็อบ' },
   { id: 'long', label: 'ผมยาว' },
-  { id: 'bun', label: 'มวยผม' },
+  { id: 'twinbraids', label: 'เปียสองข้าง' },
+  { id: 'sidebraid', label: 'เปียข้างเดียว' },
   { id: 'ponytail', label: 'หางม้า' },
+  { id: 'buzz', label: 'ผมเกรียน' },
+  { id: 'bun', label: 'มวยผม' },
+  { id: 'topknot', label: 'ผมจุก (เด็ก)' },
   { id: 'curly', label: 'ผมหยิกสั้น' },
   { id: 'longbangs', label: 'ผมยาวหน้าม้า' },
   { id: 'wavy', label: 'ผมยาวลอน' },
   { id: 'sidebuns', label: 'มวยสองข้าง' },
   { id: 'halfup', label: 'รวบครึ่งหัว' },
   { id: 'twintails', label: 'แกละสองข้าง' },
-  { id: 'braid', label: 'เปียเดี่ยว' },
-  { id: 'twinbraids', label: 'เปียคู่' },
+  { id: 'braid', label: 'เปียหลัง' },
 ]
 
 export const HAIR_COLORS: (Option & { color: string })[] = [
@@ -271,6 +275,13 @@ export interface AgeRules {
   /** สัดส่วนตัว (ความสูง) และขนาดหัว */
   bodyScale: number
   headScale: number
+  /** ความยาวขา / แขน เทียบผู้ใหญ่ (เด็กแขนขาสั้น) */
+  legScale: number
+  armScale: number
+  /** ขนาดตา (เด็กตาโต) */
+  eyeScale: number
+  /** รอยย่นบนหน้า (ผู้สูงอายุ) */
+  wrinkles: boolean
   /** หลังค่อมเล็กน้อย (เรเดียน) */
   hunch: number
   /** ความเร็วเดิน/วิ่ง เทียบผู้ใหญ่ */
@@ -288,8 +299,12 @@ export const AGE_RULES: Record<AgeGroup, AgeRules> = {
   child: {
     label: 'เด็ก',
     note: 'ต้องเข้าบ้านหรือเข้านอนก่อนมืด (ก่อน 19:00 น.) · ทำงานหนักไม่ได้',
-    bodyScale: 0.72,
-    headScale: 1.22,
+    bodyScale: 0.66,
+    headScale: 1.42,
+    legScale: 0.78,
+    armScale: 0.82,
+    eyeScale: 1.4,
+    wrinkles: false,
     hunch: 0,
     walkSpeed: 1,
     runSpeed: 1,
@@ -302,6 +317,10 @@ export const AGE_RULES: Record<AgeGroup, AgeRules> = {
     note: 'ทำงานได้ทุกอย่าง ไม่มีข้อจำกัด',
     bodyScale: 1,
     headScale: 1,
+    legScale: 1,
+    armScale: 1,
+    eyeScale: 1,
+    wrinkles: false,
     hunch: 0,
     walkSpeed: 1,
     runSpeed: 1,
@@ -311,9 +330,13 @@ export const AGE_RULES: Record<AgeGroup, AgeRules> = {
   elder: {
     label: 'ผู้สูงอายุ',
     note: 'ทำงานหนักไม่ได้ · เมื่อยง่าย เหนื่อยง่าย · เดินและวิ่งช้าลง',
-    bodyScale: 0.97,
+    bodyScale: 0.94,
     headScale: 1,
-    hunch: 0.14,
+    legScale: 0.96,
+    armScale: 1,
+    eyeScale: 0.85,
+    wrinkles: true,
+    hunch: 0.26,
     walkSpeed: 0.8,
     runSpeed: 0.65,
     heavyWork: false,
