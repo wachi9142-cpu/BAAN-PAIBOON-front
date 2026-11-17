@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { PET_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
+import { colorsFor, PET_HELD, PET_OUTFITS, PET_OUTFIT_COLORS, PET_SPECIES, applyBreed, breedsFor, defaultPet, getSpecies, patternsFor, type PetChoice, type PetSpecies } from '../game/content/pets'
 import { useGame } from '../game/store'
+import { playPetSound } from '../game/audio/petSounds'
 import { PreviewStage } from '../scenes/PreviewStage'
 import { Character } from '../scenes/models/Character'
 import { Pet } from '../scenes/models/Pet'
@@ -15,6 +16,7 @@ export function ChoosePetScreen() {
   const goTo = useGame((s) => s.goTo)
 
   const [hasPet, setHasPet] = useState(draft?.pet != null)
+  const [allBreeds, setAllBreeds] = useState(false)
   const [pet, setPet] = useState<PetChoice>(draft?.pet ?? defaultPet('dog'))
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function ChoosePetScreen() {
       const fresh = defaultPet(species)
       const customName = x.name.trim() && x.name !== defaultPet(x.species).name
       const keepPattern = patternsFor(species).some((p) => p.id === x.pattern)
-      return { ...fresh, name: customName ? x.name : fresh.name, pattern: keepPattern ? x.pattern : 'plain' }
+      return { ...fresh, name: customName ? x.name : fresh.name, pattern: keepPattern ? x.pattern : 'plain', outfit: x.outfit, outfitColor: x.outfitColor, held: x.held }
     })
 
   const finish = (withPet: boolean) => {
@@ -42,8 +44,8 @@ export function ChoosePetScreen() {
   const breeds = breedsFor(pet.species)
   const currentBreed = breeds.find((b) => b.id === pet.breed)
   // สีธรรมชาติของสัตว์ชนิดนั้นเป็นตัวเลือกแรกเสมอ
-  const bodyColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.color }, ...PET_COLORS]
-  const accentColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.patternColor }, ...PET_COLORS]
+  const bodyColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.color }, ...colorsFor(pet.species)]
+  const accentColors = [{ id: 'natural', label: 'สีธรรมชาติ', color: sp.patternColor }, ...colorsFor(pet.species)]
 
   return (
     <div className="setup">
@@ -53,7 +55,7 @@ export function ChoosePetScreen() {
             <Character appearance={draft.appearance} />
           </group>
           {hasPet && (
-            <group position={[0.55, flies ? 1.45 : 0, 0.35]} rotation={[0, -0.5, 0]} scale={pet.species === 'buffalo' ? 0.8 : 1.3}>
+            <group position={[0.55, flies ? 1.45 : 0, 0.35]} rotation={[0, -0.5, 0]} scale={pet.species === 'buffalo' || pet.species === 'cow' ? 0.8 : pet.species === 'mouse' ? 2.2 : 1.3}>
               <Pet pet={pet} />
             </group>
           )}
@@ -87,6 +89,10 @@ export function ChoosePetScreen() {
               </div>
             </div>
 
+            <button type="button" className="btn ghost small" style={{ alignSelf: "flex-start" }} onClick={() => playPetSound(pet.species, 0.9)}>
+              🔊 ฟังเสียงร้อง
+            </button>
+
             {breeds.length > 0 && (
               <div className="field">
                 <label>พันธุ์</label>
@@ -95,11 +101,11 @@ export function ChoosePetScreen() {
                     type="button"
                     className="chip"
                     aria-pressed={!pet.breed}
-                    onClick={() => patch({ breed: undefined, fur: 'short', ears: 'normal', tail: 'normal' })}
+                    onClick={() => patch({ breed: undefined, fur: 'short', ears: 'normal', tail: 'normal', size: 'medium', snout: 'normal', hump: false })}
                   >
                     ไม่ระบุพันธุ์
                   </button>
-                  {breeds.map((b) => (
+                  {(allBreeds ? breeds : breeds.filter((b, i) => i < 8 || b.id === pet.breed)).map((b) => (
                     <button
                       key={b.id}
                       type="button"
@@ -112,6 +118,11 @@ export function ChoosePetScreen() {
                       {b.label}
                     </button>
                   ))}
+                  {breeds.length > 9 && (
+                    <button type="button" className="chip more" onClick={() => setAllBreeds((v) => !v)}>
+                      {allBreeds ? 'แสดงน้อยลง ▲' : `เพิ่มเติม (+${breeds.length - 8}) ▼`}
+                    </button>
+                  )}
                 </div>
                 {currentBreed && <p className="hint" style={{ margin: '6px 0 0' }}>{currentBreed.note} — ปรับสีและลายต่อได้ด้านล่าง</p>}
               </div>
@@ -157,6 +168,37 @@ export function ChoosePetScreen() {
               onChange={(v) => patch({ patternColor: resolveColor(v, accentColors) })}
               fallbackCustom={pet.patternColor}
             />
+
+            <div className="setup-section">แต่งตัวสัตว์เลี้ยง</div>
+            <div className="field">
+              <label>ชุด / เครื่องประดับ</label>
+              <div className="chips">
+                {PET_OUTFITS.map((o) => (
+                  <button key={o.id} type="button" className="chip" aria-pressed={(pet.outfit ?? 'none') === o.id} onClick={() => patch({ outfit: o.id, outfitColor: o.color ?? pet.outfitColor })}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>ของตกแต่ง</label>
+              <div className="chips">
+                {PET_HELD.map((o) => (
+                  <button key={o.id} type="button" className="chip" aria-pressed={(pet.held ?? 'none') === o.id} onClick={() => patch({ held: o.id })}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {pet.outfit && pet.outfit !== 'none' && (
+              <ColorChoiceField
+                label="สีชุด"
+                options={PET_OUTFIT_COLORS}
+                value={colorChoice(pet.outfitColor ?? '#d23a3a', PET_OUTFIT_COLORS)}
+                onChange={(v) => patch({ outfitColor: resolveColor(v, PET_OUTFIT_COLORS) })}
+                fallbackCustom="#c9b3e6"
+              />
+            )}
           </>
         )}
 

@@ -1,21 +1,29 @@
 import { useState } from 'react'
 import {
+  ACCESSORIES,
+  ACCESSORY_COLORS,
+  BAGS,
+  BAG_COLORS,
+  CLOTH_COLORS,
   DEFAULT_APPEARANCE,
+  EYE_COLORS,
   GENDERS,
   HAIR_COLORS,
   HAIR_STYLES,
   isCustomColor,
   LIP_COLORS,
+  OUTFITS,
+  POSES,
   SHOES,
   SHOE_COLORS,
-  BAGS,
-  BAG_COLORS,
-  type ShoeId,
-  type BagId,
-  OUTFITS,
   SKIN_TONES,
+  byId,
+  type AccessoryId,
   type Appearance,
+  type BagId,
   type Gender,
+  type PoseId,
+  type ShoeId,
 } from '../game/content/appearance'
 import { useGame } from '../game/store'
 import { PreviewStage } from '../scenes/PreviewStage'
@@ -23,6 +31,8 @@ import { Character } from '../scenes/models/Character'
 import { ColorWheel } from './ColorWheel'
 
 const MAX_NAME = 20
+/** ตัวเลือกที่แสดงก่อนกด "เพิ่มเติม" */
+const SHOW_FIRST = 6
 
 export function CreateCharacterScreen() {
   const draft = useGame((s) => s.draft)
@@ -44,10 +54,17 @@ export function CreateCharacterScreen() {
     goTo('pet')
   }
 
+  // ชุดของเพศที่เลือก (และชุดทุกเพศ) ขึ้นก่อน ชุดอื่นอยู่ใน "เพิ่มเติม"
+  const outfits = [...OUTFITS].sort((a, b) => rank(a.for, look.gender) - rank(b.for, look.gender))
+  const outfit = byId(OUTFITS, look.outfit)
+  const bottomLabel = outfit.bottomShape === 'pants' || outfit.bottomShape === 'shorts' ? 'สีกางเกง' : 'สีกระโปรง'
+  const outfitColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.top }, ...CLOTH_COLORS]
+  const bottomColorOptions = [{ id: 'outfit', label: 'ตามชุด', color: outfit.bottom }, ...CLOTH_COLORS]
+
   return (
     <div className="setup">
       <div className="setup-stage">
-        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={2.5} maxDistance={7}>
+        <PreviewStage camera={[0, 1.3, 5]} target={[0, 0.9, 0]} minDistance={1.6} maxDistance={7}>
           <Character appearance={look} />
         </PreviewStage>
       </div>
@@ -80,41 +97,34 @@ export function CreateCharacterScreen() {
 
         <ChipField label="เพศ" options={GENDERS} value={look.gender} onChange={(id) => chooseGender(id as Gender)} />
         <ChipField label="สีผิว" options={SKIN_TONES} value={look.skin} onChange={(skin) => patch({ skin })} />
-        <ChipField
-          label="ทรงผม"
-          options={HAIR_STYLES}
-          value={look.hairStyle}
-          onChange={(id) => patch({ hairStyle: id as Appearance['hairStyle'] })}
-        />
+        <ColorChoiceField label="สีตา" options={EYE_COLORS} value={look.eyeColor ?? 'black'} onChange={(eyeColor) => patch({ eyeColor })} fallbackCustom="#8a4fc0" />
+        <ColorChoiceField label="สีปาก" options={LIP_COLORS} value={look.lipColor ?? 'natural'} onChange={(lipColor) => patch({ lipColor })} fallbackCustom="#d0506a" />
+
+        <div className="setup-section">ทรงผม</div>
+        <ChipField label="ทรงผม" options={HAIR_STYLES} value={look.hairStyle} onChange={(id) => patch({ hairStyle: id as Appearance['hairStyle'] })} />
         <ColorChoiceField label="สีผม" options={HAIR_COLORS} value={look.hairColor} onChange={(hairColor) => patch({ hairColor })} />
-        <ColorChoiceField
-          label="สีปาก"
-          options={LIP_COLORS}
-          value={look.lipColor ?? 'natural'}
-          onChange={(lipColor) => patch({ lipColor })}
-          fallbackCustom="#d0506a"
-        />
-        <ChipField label="เครื่องแต่งกาย" options={OUTFITS} value={look.outfit} onChange={(outfit) => patch({ outfit })} />
+
+        <div className="setup-section">การแต่งตัว</div>
+        <ChipField label="ชุด" options={outfits} value={look.outfit} onChange={(o) => patch({ outfit: o, topColor: 'outfit', bottomColor: 'outfit' })} />
+        <ColorChoiceField label="สีเสื้อ" options={outfitColorOptions} value={look.topColor ?? 'outfit'} onChange={(topColor) => patch({ topColor })} fallbackCustom="#c8a8dc" />
+        <ColorChoiceField label={bottomLabel} options={bottomColorOptions} value={look.bottomColor ?? 'outfit'} onChange={(bottomColor) => patch({ bottomColor })} fallbackCustom="#3d4f6e" />
         <ChipField label="รองเท้า" options={SHOES} value={look.shoes ?? 'sandals'} onChange={(id) => patch({ shoes: id as ShoeId })} />
-        <ColorChoiceField
-          label="สีรองเท้า"
-          options={SHOE_COLORS}
-          value={look.shoeColor ?? 'brown'}
-          onChange={(shoeColor) => patch({ shoeColor })}
-          fallbackCustom="#c4566a"
-        />
+        <ColorChoiceField label="สีรองเท้า" options={SHOE_COLORS} value={look.shoeColor ?? 'brown'} onChange={(shoeColor) => patch({ shoeColor })} fallbackCustom="#c4566a" />
+
+        <div className="setup-section">เครื่องประดับ</div>
+        <ChipField label="บนศีรษะ / ใบหน้า" options={ACCESSORIES} value={look.accessory ?? 'none'} onChange={(id) => patch({ accessory: id as AccessoryId })} />
+        {look.accessory && look.accessory !== 'none' && (
+          <ColorChoiceField label="สีเครื่องประดับ" options={ACCESSORY_COLORS} value={look.accessoryColor ?? 'navy'} onChange={(accessoryColor) => patch({ accessoryColor })} fallbackCustom="#e58fa0" />
+        )}
         <ChipField label="กระเป๋า" options={BAGS} value={look.bag ?? 'none'} onChange={(id) => patch({ bag: id as BagId })} />
         {look.bag && look.bag !== 'none' && (
-          <ColorChoiceField
-            label="สีกระเป๋า"
-            options={BAG_COLORS}
-            value={look.bagColor ?? 'indigo'}
-            onChange={(bagColor) => patch({ bagColor })}
-            fallbackCustom="#5c7a3a"
-          />
+          <ColorChoiceField label="สีกระเป๋า" options={BAG_COLORS} value={look.bagColor ?? 'indigo'} onChange={(bagColor) => patch({ bagColor })} fallbackCustom="#5c7a3a" />
         )}
 
-        <p className="hint">ลากเมาส์บนตัวละครเพื่อหมุนดูรอบตัว</p>
+        <div className="setup-section">ท่าทาง</div>
+        <ChipField label="ท่ายืน" options={POSES} value={look.pose ?? 'stand'} onChange={(id) => patch({ pose: id as PoseId })} />
+
+        <p className="hint">ลากเมาส์บนตัวละครเพื่อหมุนดูรอบตัว · ล้อเมาส์เพื่อซูมดูใบหน้า</p>
 
         <div className="setup-footer">
           <button type="button" className="btn ghost" onClick={() => goTo('title')}>
@@ -129,7 +139,25 @@ export function CreateCharacterScreen() {
   )
 }
 
-/** เลือกสี: สีตัวอย่าง + "สีอื่น ๆ" ที่เปิดวงล้อสีให้เลือกได้ทุกสี (ใช้กับสีผม สีปาก สีสัตว์เลี้ยง) */
+function rank(forGender: Gender | undefined, current: Gender) {
+  return forGender === current ? 0 : forGender === undefined ? 1 : 2
+}
+
+/** แสดง n ตัวแรก + ปุ่ม "เพิ่มเติม" (ตัวที่เลือกอยู่จะแสดงเสมอแม้อยู่ในส่วนที่ซ่อน) */
+function useMore<T extends { id: string }>(options: T[], selected: (o: T) => boolean) {
+  const [open, setOpen] = useState(false)
+  const many = options.length > SHOW_FIRST + 1
+  const shown = !many || open ? options : options.filter((o, i) => i < SHOW_FIRST || selected(o))
+  const hidden = options.length - shown.length
+  const toggle = many ? (
+    <button type="button" className="chip more" onClick={() => setOpen((v) => !v)}>
+      {open ? 'แสดงน้อยลง ▲' : `เพิ่มเติม (+${hidden}) ▼`}
+    </button>
+  ) : null
+  return { shown, toggle }
+}
+
+/** เลือกสี: สีตัวอย่าง + "สีอื่น ๆ" ที่เปิดวงล้อสีให้เลือกได้ทุกสี (ใช้กับสีผม สีปาก สีสัตว์เลี้ยง ฯลฯ) */
 export function ColorChoiceField({
   label,
   options,
@@ -145,16 +173,18 @@ export function ColorChoiceField({
 }) {
   const custom = isCustomColor(value)
   const [lastCustom, setLastCustom] = useState(custom ? value : fallbackCustom)
+  const { shown, toggle } = useMore(options, (o) => o.id === value)
   return (
     <div className="field">
       <label>{label}</label>
       <div className="chips">
-        {options.map((o) => (
+        {shown.map((o) => (
           <button key={o.id} type="button" className="chip" aria-pressed={o.id === value} onClick={() => onChange(o.id)}>
             <span className="swatch" style={{ background: o.color }} />
             {o.label}
           </button>
         ))}
+        {toggle}
         <button type="button" className="chip" aria-pressed={custom} onClick={() => onChange(lastCustom)}>
           <span className="swatch rainbow" style={custom ? { background: value } : undefined} />
           สีอื่น ๆ
@@ -184,11 +214,12 @@ function ChipField({
   value: string
   onChange: (id: string) => void
 }) {
+  const { shown, toggle } = useMore(options, (o) => o.id === value)
   return (
     <div className="field">
       <label>{label}</label>
       <div className="chips">
-        {options.map((o) => {
+        {shown.map((o) => {
           const swatch = o.color ?? o.top
           return (
             <button key={o.id} type="button" className="chip" aria-pressed={o.id === value} onClick={() => onChange(o.id)}>
@@ -197,6 +228,7 @@ function ChipField({
             </button>
           )
         })}
+        {toggle}
       </div>
     </div>
   )

@@ -32,3 +32,10 @@
 | music-home.mp3 | ในบ้าน (ใช้เมื่อมีระบบเข้าบ้าน Part 3) |
 
 แหล่งเสียงฟรี: Pixabay (ใช้เชิงพาณิชย์ได้) · Freesound (เลือกไฟล์ CC0)
+
+## เสียงร้องสัตว์เลี้ยง (เล่นตอนนั่งรอเป็นครั้งคราว และตอนลุกวิ่งตาม)
+วางไฟล์ `pet-<ชนิด>.mp3` เช่น pet-dog.mp3, pet-cat.mp3, pet-cow.mp3, pet-buffalo.mp3, pet-pig.mp3,
+pet-goat.mp3, pet-sheep.mp3, pet-monkey.mp3, pet-squirrel.mp3, pet-mouse.mp3, pet-rabbit.mp3,
+pet-bird.mp3, pet-chicken.mp3, pet-duck.mp3, pet-goose.mp3, pet-turtle.mp3
+
+ถ้ายังไม่มีไฟล์: แมว หมู แพะ แกะ กระรอก หนู นก ไก่ เป็ด ห่าน ใช้เสียงสังเคราะห์แทน · ชนิดอื่นเงียบไว้ก่อน

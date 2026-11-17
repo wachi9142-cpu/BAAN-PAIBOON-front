@@ -782,3 +782,18 @@ kbd {
   height: 20px;
   accent-color: var(--green);
 }
+
+/* หัวข้อกลุ่มในหน้าสร้างตัวละคร + ปุ่ม "เพิ่มเติม" */
+.setup-section {
+  font-family: 'Mitr', sans-serif;
+  font-size: 18px;
+  color: var(--green-deep);
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 4px;
+  margin-top: 6px;
+}
+.chip.more {
+  border-style: dashed;
+  color: var(--green-deep);
+  background: transparent;
+}

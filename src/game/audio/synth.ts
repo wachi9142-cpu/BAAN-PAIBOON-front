@@ -170,3 +170,82 @@ export function createSynth(ctx: AudioContext, kind: SynthKind): Voice {
       return birds(ctx)
   }
 }
+
+// ---------- เสียงร้องสั้น ๆ ของสัตว์ (เล่นครั้งเดียว) ----------
+export type CallKind = 'chirp' | 'cluck' | 'quack' | 'squeak' | 'meow' | 'bleat' | 'oink'
+
+/** เล่นเสียงร้องสังเคราะห์ 1 ครั้ง ต่อเข้า output ที่ให้มา คืนความยาวเสียง (วินาที) */
+export function playCall(ctx: AudioContext, out: AudioNode, kind: CallKind): number {
+  const t0 = ctx.currentTime + 0.02
+  const tone = (type: OscillatorType, at: number, dur: number, f: [number, number, number?], peak = 0.25, filterHz?: number) => {
+    const osc = ctx.createOscillator()
+    osc.type = type
+    osc.frequency.setValueAtTime(f[0], at)
+    if (f[2] !== undefined) {
+      osc.frequency.linearRampToValueAtTime(f[1], at + dur * 0.4)
+      osc.frequency.linearRampToValueAtTime(f[2], at + dur)
+    } else {
+      osc.frequency.exponentialRampToValueAtTime(f[1], at + dur)
+    }
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, at)
+    g.gain.exponentialRampToValueAtTime(peak, at + Math.min(0.03, dur * 0.2))
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+    let node: AudioNode = osc
+    if (filterHz) {
+      const bp = ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.frequency.value = filterHz
+      bp.Q.value = 2.5
+      osc.connect(bp)
+      node = bp
+    }
+    node.connect(g).connect(out)
+    osc.start(at)
+    osc.stop(at + dur + 0.05)
+  }
+  switch (kind) {
+    case 'chirp': {
+      let t = t0
+      for (let i = 0; i < 3; i++) {
+        tone('sine', t, 0.09, [2800 + i * 300, 4200], 0.2)
+        t += 0.13
+      }
+      return 0.5
+    }
+    case 'cluck': {
+      // กุ๊ก กุ๊ก กุ๊ก
+      let t = t0
+      for (let i = 0; i < 3; i++) {
+        tone('square', t, 0.08, [420, 300], 0.12, 900)
+        t += 0.16
+      }
+      return 0.55
+    }
+    case 'quack':
+      // ก๊าบ ก๊าบ
+      tone('sawtooth', t0, 0.18, [520, 360], 0.18, 1100)
+      tone('sawtooth', t0 + 0.26, 0.18, [500, 340], 0.18, 1100)
+      return 0.5
+    case 'squeak':
+      tone('sine', t0, 0.07, [3200, 4300], 0.12)
+      tone('sine', t0 + 0.11, 0.06, [3400, 4500], 0.1)
+      return 0.25
+    case 'meow':
+      // เหมียว: เสียงขึ้นแล้วลง
+      tone('triangle', t0, 0.55, [520, 820, 430], 0.22, 1400)
+      return 0.6
+    case 'bleat':
+      // แบะ ๆ (แพะ/แกะ): เสียงสั่น
+      {
+        const n = 6
+        for (let i = 0; i < n; i++) tone('sawtooth', t0 + i * 0.07, 0.08, [440 - i * 6, 420 - i * 6], 0.12, 1000)
+      }
+      return 0.5
+    case 'oink':
+      // อู๊ด อู๊ด
+      tone('sawtooth', t0, 0.14, [220, 160], 0.2, 600)
+      tone('sawtooth', t0 + 0.2, 0.14, [230, 160], 0.2, 600)
+      return 0.4
+  }
+}

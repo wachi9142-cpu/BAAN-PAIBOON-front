@@ -10,7 +10,7 @@
  * - ไม่มีไฟล์ → ใช้เสียงสังเคราะห์ (ถ้ามี) หรือเงียบ ไม่ error
  */
 import type { LoopLayer, OneShotLayer } from '../content/soundscape'
-import { createSynth } from './synth'
+import { createSynth, playCall, type CallKind } from './synth'
 
 const AUDIO_DIR = '/audio/'
 const FADE = 2.5 // วินาที
@@ -100,6 +100,23 @@ class AudioEngine {
     src.connect(g).connect(this.buses.sfx)
     src.start()
     this.duckFor(buf.duration)
+  }
+
+  /** เสียงร้องสัตว์: ใช้ไฟล์ถ้ามี ไม่งั้นใช้เสียงสังเคราะห์ (ถ้ามี) ไม่งั้นเงียบ */
+  async playCallOrFile(file: string, synth: CallKind | undefined, volume = 0.7) {
+    if (!this.ctx) return
+    const buf = await this.load(file)
+    if (buf) {
+      void this.playSfx(file, volume)
+      return
+    }
+    if (!synth || !this.ctx) return
+    const g = this.ctx.createGain()
+    g.gain.value = volume
+    g.connect(this.buses.sfx)
+    const dur = playCall(this.ctx, g, synth)
+    this.duckFor(dur)
+    window.setTimeout(() => g.disconnect(), (dur + 0.5) * 1000)
   }
 
   stopAll() {
