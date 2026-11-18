@@ -69,8 +69,8 @@ export function GrandHome() {
         <MainHouse />
       </Editable>
       {/* แคร่หน้าประตู = ที่นอนของน้องหมา + แคร่ใหญ่ 2 ตัวข้างครัว */}
-      <Editable id="home:frontbench" name="แคร่หน้าประตู + น้องหมา" x={-4.4} z={-0.3} origin={O}>
-        <group position={[3.6, 0, 0.1]}>
+      <Editable id="home:frontbench" name="แคร่หน้าประตู + น้องหมา" x={-3.9} z={-0.3} origin={O}>
+        <group position={[4.1, 0, 0.1]}>
           <Bench x={-8} z={-0.4} w={2.2} d={1.2} />
           <HousePets only="dog" />
         </group>
@@ -163,9 +163,12 @@ export function GrandHome() {
 }
 
 // ---------------------------------------------------------------------------
-/** บ้านไม้สองชั้น พื้นปูน: ชั้นล่างก่อปูน หน้าต่างสแตนเลสมุ้งลวดยาว ประตูบ้านสีน้ำเงินบานใหญ่ · ชั้นบนไม้ หน้าต่างคู่ 8 บาน */
+/** บ้านไม้สองชั้น พื้นปูน: ชั้นล่างก่อปูน มีมุ้งลวดสแตนเลสรอบบ้าน ประตูน้ำเงินบานคู่กว้าง 3 ม. · ชั้นบนไม้ หน้าต่างคู่ 11 บาน */
 /** บ้านหลัก: ใหญ่ขึ้น (ผู้สร้าง 18 พ.ย. 2569) · ชั้นล่างทั้งชั้นเป็นห้องครัว ประตูน้ำเงินด้าน +z */
 export const MAIN_HOUSE = { x: -7.5, z: -6, W: 13, D: 9 }
+/** ประตูน้ำเงิน: กลางประตู (x ภายในบ้าน) · ความกว้าง */
+const DOOR_X = 1.4
+const DOOR_W = 3
 function MainHouse() {
   const W = MAIN_HOUSE.W
   const D = MAIN_HOUSE.D
@@ -183,29 +186,23 @@ function MainHouse() {
         <RBox args={[W, low, D]} radius={0.25} />
         <meshStandardMaterial color="#eadfc8" />
       </mesh>
-      {/* ประตูบ้านสีน้ำเงินบานใหญ่ — ด้านเหนือ (หันเข้าลานในบ้าน ฝั่งครัว) ตามที่ผู้สร้างกำหนด 18 พ.ย. 2569 */}
-      <mesh position={[1.4, 1.25, D / 2 + 0.03]}>
-        <RBox args={[1.6, 2.1, 0.08]} radius={0.04} />
+      {/* ประตูบ้านสีน้ำเงินบานกว้าง (บานคู่) ด้าน +z หันเข้าลานในบ้าน */}
+      <mesh position={[DOOR_X, 1.3, D / 2 + 0.03]}>
+        <RBox args={[DOOR_W, 2.2, 0.08]} radius={0.04} />
         <meshStandardMaterial color="#2f5f9a" />
       </mesh>
-      {/* หน้าต่างสแตนเลสมุ้งลวดยาวครึ่งบ้าน (ด้านหน้า) */}
-      <mesh position={[-2.2, 1.6, -D / 2 - 0.03]}>
-        <RBox args={[3.8, 1.1, 0.06]} radius={0.03} />
-        <meshStandardMaterial color="#a8b2b8" metalness={0.6} roughness={0.35} />
+      <mesh position={[DOOR_X, 1.3, D / 2 + 0.08]}>
+        <boxGeometry args={[0.04, 2.1, 0.02]} />
+        <meshStandardMaterial color="#1f3f6a" />
       </mesh>
-      {/* หน้าต่างบานใหญ่ 2 บาน ผ้าม่านสีขาว (ด้านตะวันตก) */}
-      {[-1.2, 1.2].map((z) => (
-        <group key={z} position={[-W / 2 - 0.03, 1.6, z]}>
-          <mesh rotation={[0, Math.PI / 2, 0]}>
-            <RBox args={[1.4, 1.3, 0.06]} radius={0.03} />
-            <meshStandardMaterial color="#6d8fa8" />
-          </mesh>
-          <mesh position={[-0.02, -0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[1.2, 1.1]} />
-            <meshStandardMaterial color="#ffffff" transparent opacity={0.8} side={2} />
-          </mesh>
-        </group>
+      {[-0.25, 0.25].map((dx) => (
+        <mesh key={dx} position={[DOOR_X + dx, 1.25, D / 2 + 0.1]}>
+          <boxGeometry args={[0.05, 0.3, 0.04]} />
+          <meshStandardMaterial color="#c8c8c8" metalness={0.7} roughness={0.3} />
+        </mesh>
       ))}
+      {/* มุ้งลวดสแตนเลสรอบบ้าน เฉพาะชั้น 1 (ครึ่งบนของผนัง) — ไม่ใช่หน้าต่างบานเดียว เป็นแนวยาวรอบบ้าน เว้นช่องประตู */}
+      <MeshBand W={W} D={D} y0={1.25} y1={2.75} doors={[{ side: 'S', at: DOOR_X, w: DOOR_W + 0.3 }, { side: 'E', at: 1.6, w: 1.3 }]} />
       {/* ประตูครัว (ด้านตะวันออก) */}
       <mesh position={[W / 2 + 0.03, 1.15, 1.6]} rotation={[0, Math.PI / 2, 0]}>
         <RBox args={[1, 1.9, 0.06]} radius={0.03} />
@@ -846,4 +843,63 @@ function Surroundings() {
       <TrunkTree x={-13} z={6} h={2.6} r={1.5} color="#3f6e33" fruit={5} fruitColor="#8ac040" fruitR={0.1} />
     </group>
   )
+}
+
+/** แนวมุ้งลวดสแตนเลสรอบผนัง: กรอบสแตนเลสเงา เสาแบ่งช่องทุก ~1 ม. ตาข่ายสีเทาโปร่ง · เว้นช่องประตู */
+function MeshBand({ W, D, y0, y1, doors }: { W: number; D: number; y0: number; y1: number; doors: { side: 'N' | 'S' | 'E' | 'W'; at: number; w: number }[] }) {
+  const h = y1 - y0
+  const yc = (y0 + y1) / 2
+  // ด้าน: S = +z (ประตู), N = −z, E = +x, W = −x · แต่ละด้านคือแกนยาว (u) และตำแหน่ง/การหมุน
+  const sides: { side: 'N' | 'S' | 'E' | 'W'; len: number; pos: (u: number) => [number, number]; rot: number }[] = [
+    { side: 'S', len: W, pos: (u) => [u, D / 2 + 0.04], rot: 0 },
+    { side: 'N', len: W, pos: (u) => [u, -D / 2 - 0.04], rot: 0 },
+    { side: 'E', len: D, pos: (u) => [W / 2 + 0.04, u], rot: Math.PI / 2 },
+    { side: 'W', len: D, pos: (u) => [-W / 2 - 0.04, u], rot: Math.PI / 2 },
+  ]
+  const out: React.ReactNode[] = []
+  for (const sd of sides) {
+    // ช่วงที่มีมุ้ง (ตัดช่องประตูออก) เว้นมุมบ้าน 0.35 ม.
+    let segs: [number, number][] = [[-sd.len / 2 + 0.35, sd.len / 2 - 0.35]]
+    for (const d of doors.filter((x) => x.side === sd.side)) {
+      const a = d.at - d.w / 2
+      const b = d.at + d.w / 2
+      segs = segs.flatMap(([s0, s1]) => {
+        if (b <= s0 || a >= s1) return [[s0, s1] as [number, number]]
+        const r: [number, number][] = []
+        if (a - s0 > 0.4) r.push([s0, a])
+        if (s1 - b > 0.4) r.push([b, s1])
+        return r
+      })
+    }
+    segs.forEach(([s0, s1], i) => {
+      const len = s1 - s0
+      const mid = (s0 + s1) / 2
+      const [px, pz] = sd.pos(mid)
+      const n = Math.max(1, Math.round(len / 1))
+      out.push(
+        <group key={sd.side + i} position={[px, yc, pz]} rotation={[0, sd.rot, 0]}>
+          {/* ตาข่าย */}
+          <mesh>
+            <planeGeometry args={[len, h]} />
+            <meshStandardMaterial color="#7f8a90" metalness={0.5} roughness={0.5} transparent opacity={0.72} side={2} />
+          </mesh>
+          {/* กรอบบน-ล่าง */}
+          {[h / 2, -h / 2].map((y) => (
+            <mesh key={y} position={[0, y, 0.01]}>
+              <boxGeometry args={[len + 0.06, 0.07, 0.05]} />
+              <meshStandardMaterial color="#d4d8da" metalness={0.8} roughness={0.25} />
+            </mesh>
+          ))}
+          {/* เสาแบ่งช่อง */}
+          {Array.from({ length: n + 1 }).map((_, k) => (
+            <mesh key={k} position={[-len / 2 + (k * len) / n, 0, 0.01]}>
+              <boxGeometry args={[0.05, h, 0.05]} />
+              <meshStandardMaterial color="#d4d8da" metalness={0.8} roughness={0.25} />
+            </mesh>
+          ))}
+        </group>,
+      )
+    })
+  }
+  return <group>{out}</group>
 }

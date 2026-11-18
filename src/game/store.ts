@@ -1,5 +1,5 @@
 import type { TreeState, GroundDrop } from './treeTypes'
-import type { PlacedStructure } from './content/structures'
+import type { PlacedStructure, StructureId } from './content/structures'
 import { bagSlots, slotsUsed, type ItemId } from './content/items'
 import { emptyBed, GARDEN_BEDS, type BedState } from './content/garden'
 import { create } from 'zustand'
@@ -62,6 +62,8 @@ export interface SaveData {
   garden: BedState[]
   /** สิ่งปลูกสร้างที่วางเองในที่ดิน */
   structures: PlacedStructure[]
+  /** คลังของ: สิ่งปลูกสร้างที่เก็บไว้ (นำกลับมาวางใหม่ได้โดยไม่เสียวัตถุดิบ) */
+  storedStructures?: Partial<Record<StructureId, number>>
   /** ของในกล่องเก็บของ (ตาม uid ของกล่อง) */
   chests: Record<string, Partial<Record<ItemId, number>>>
   /** ต้นไม้ที่ถูกฟัน/โค่น (ตามลำดับใน TREES) */

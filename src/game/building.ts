@@ -6,8 +6,7 @@ import { create } from 'zustand'
 import { useGame } from './store'
 import { canAfford } from './inventory'
 import { bagSlots, ITEMS, slotsUsed, type Cost, type ItemId } from './content/items'
-import { canPlace, CHEST_SLOTS, rectOf, STRUCTURES, type PlacedStructure, type StructureId } from './content/structures'
-import { PLOTS } from './content/village'
+import { canPlace, CHEST_SLOTS, inTerritory, rectOf, STRUCTURES, type PlacedStructure, type StructureId } from './content/structures'
 
 export type BuildTool = StructureId | 'remove'
 
@@ -21,8 +20,10 @@ interface BuildState {
   near: string | null
   /** เปิดกล่องเก็บของ (uid) */
   chestOpen: string | null
+  /** เปิดจากการกดค้าง: วางครั้งเดียวแล้วปิดโหมดสร้าง */
+  once: boolean
 }
-export const useBuild = create<BuildState>(() => ({ active: false, tool: null, rot: 0, hover: null, near: null, chestOpen: null }))
+export const useBuild = create<BuildState>(() => ({ active: false, tool: null, rot: 0, hover: null, near: null, chestOpen: null, once: false }))
 
 type Inv = Partial<Record<ItemId, number>>
 const toast = (title: string, body?: string, tone: 'info' | 'success' | 'warn' = 'info') => useGame.getState().toast({ title, body, tone })
@@ -32,14 +33,13 @@ export function toggleBuild(on?: boolean) {
   const s = useBuild.getState()
   const next = on ?? !s.active
   if (next && g.save) {
-    const p = PLOTS[0]
     const [px, pz] = g.save.position
-    if (Math.hypot(px - p.center[0], pz - p.center[1]) > 26) {
-      toast('กลับไปที่ดินของคุณก่อน', 'โหมดสร้างใช้ได้ในที่ดินของตัวเอง (ซอยไปบ้านผู้เล่น ทางตะวันออกของหมู่บ้าน)', 'info')
+    if (!inTerritory(px, pz, g.save.ownedPlotIds)) {
+      toast('กลับไปที่บ้านของคุณก่อน', 'สร้าง/ย้ายของได้ในอาณาเขตของตัวเอง (บ้านตารัง–ยายเลียน หรือที่ดินของคุณ)', 'info')
       return
     }
   }
-  useBuild.setState({ active: next, tool: next ? s.tool : null, hover: null })
+  useBuild.setState({ active: next, tool: next ? s.tool : null, hover: null, once: false })
   if (next) toast('🔨 โหมดสร้าง', 'เลือกของด้านล่าง แล้วคลิกพื้นเพื่อวาง · R หมุน · B หรือ Esc ออก', 'info')
 }
 
@@ -79,14 +79,20 @@ export function placeAt(x: number, z: number) {
     toast('วางตรงนี้ไม่ได้', why, 'warn')
     return
   }
-  if (!canAfford(def.cost)) {
+  // มีในคลัง: เอาออกมาวางได้เลย ไม่เสียวัตถุดิบ
+  const stored = g.save.storedStructures?.[tool] ?? 0
+  if (stored <= 0 && !canAfford(def.cost)) {
     toast('วัตถุดิบไม่พอ', 'ต้องใช้ ' + costText(def.cost), 'warn')
     return
   }
   const s: PlacedStructure = { uid: Math.random().toString(36).slice(2, 10), id: tool, x, z, rot }
-  useGame.setState({ save: { ...g.save, inventory: spend(g.save.inventory, def.cost), structures: [...g.save.structures, s] }, dirty: true })
+  const save = stored > 0
+    ? { ...g.save, storedStructures: { ...g.save.storedStructures, [tool]: stored - 1 }, structures: [...g.save.structures, s] }
+    : { ...g.save, inventory: spend(g.save.inventory, def.cost), structures: [...g.save.structures, s] }
+  useGame.setState({ save, dirty: true })
   g.saveNow('event')
-  toast(`${def.icon} สร้าง${def.name}แล้ว`, def.note, 'success')
+  toast(`${def.icon} ${stored > 0 ? 'วาง' : 'สร้าง'}${def.name}แล้ว`, stored > 0 ? 'เอาออกจากคลังมาวาง' : def.note, 'success')
+  if (useBuild.getState().once) useBuild.setState({ active: false, tool: null, hover: null, once: false })
 }
 
 export function structureAt(x: number, z: number) {
@@ -176,4 +182,53 @@ export function moveItem(uid: string, id: ItemId, qty: number, toChest: boolean)
   }
   useGame.setState({ save: { ...g.save, inventory: bag, chests: { ...g.save.chests, [uid]: box } }, dirty: true })
   g.saveNow('event')
+}
+
+// ---------- กดค้าง: ย้าย / เก็บเข้าคลัง ----------
+/** ย้ายสิ่งปลูกสร้างไปตำแหน่งใหม่ (คืนเหตุผลถ้าวางไม่ได้) */
+export function moveStructure(uid: string, x: number, z: number, rot: number): string | null {
+  const g = useGame.getState()
+  if (!g.save) return 'ยังไม่ได้เริ่มเกม'
+  const s = g.save.structures.find((t) => t.uid === uid)
+  if (!s) return 'ไม่พบของชิ้นนี้'
+  const others = g.save.structures.filter((t) => t.uid !== uid)
+  const why = canPlace(s.id, x, z, rot, others, g.save.ownedPlotIds)
+  if (why) return why
+  useGame.setState({ save: { ...g.save, structures: g.save.structures.map((t) => (t.uid === uid ? { ...t, x, z, rot } : t)) }, dirty: true })
+  g.saveNow('event')
+  return null
+}
+export function moveProblem(uid: string, x: number, z: number, rot: number) {
+  const g = useGame.getState().save
+  if (!g) return 'ยังไม่ได้เริ่มเกม'
+  const s = g.structures.find((t) => t.uid === uid)
+  if (!s) return 'ไม่พบของชิ้นนี้'
+  return canPlace(s.id, x, z, rot, g.structures.filter((t) => t.uid !== uid), g.ownedPlotIds)
+}
+
+/** เก็บเข้าคลัง: ของหายจากพื้น ไปอยู่ในคลัง นำกลับมาวางใหม่ได้ (ไม่เสียวัตถุดิบ) */
+export function storeStructure(uid: string) {
+  const g = useGame.getState()
+  if (!g.save) return
+  const s = g.save.structures.find((t) => t.uid === uid)
+  if (!s) return
+  const def = STRUCTURES[s.id]
+  const box = g.save.chests[uid]
+  if (box && Object.values(box).some((q) => (q ?? 0) > 0)) {
+    toast('ในกล่องยังมีของอยู่', 'เอาของออกจากกล่องก่อนแล้วค่อยเก็บเข้าคลัง', 'warn')
+    return
+  }
+  const chests = { ...g.save.chests }
+  delete chests[uid]
+  const stored = { ...(g.save.storedStructures ?? {}) }
+  stored[s.id] = (stored[s.id] ?? 0) + 1
+  useGame.setState({ save: { ...g.save, chests, storedStructures: stored, structures: g.save.structures.filter((t) => t.uid !== uid) }, dirty: true })
+  g.saveNow('event')
+  toast(`📦 เก็บ${def.name}เข้าคลังแล้ว`, 'กดค้างที่พื้นว่างในบ้าน → เลือกของในคลังเพื่อวางใหม่', 'info')
+}
+
+/** เปิดเมนูสร้างแล้ววางครั้งเดียว (จากการกดค้างพื้นว่าง) */
+export function startPlacing(tool: StructureId, at?: [number, number]) {
+  useBuild.setState({ active: true, tool, once: true, hover: at ?? null })
+  toast(`วาง${STRUCTURES[tool].name}`, 'เลื่อนเมาส์ไปที่ที่ต้องการ แล้วคลิกเพื่อวาง · หมุนล้อเมาส์/R หมุน · คลิกขวาหรือ Esc ยกเลิก', 'info')
 }

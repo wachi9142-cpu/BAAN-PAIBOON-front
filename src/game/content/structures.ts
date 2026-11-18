@@ -3,7 +3,8 @@
 import type { Cost } from './items'
 import type { Rect } from './temple'
 import { GARDEN_BEDS, GARDEN_JAR, BED_SIZE } from './garden'
-import { PLOTS, type Vec2 } from './village'
+import { PLACES, PLOTS, type Vec2 } from './village'
+import { HOME_BOX, HOME_SOLIDS } from '../../scenes/GrandHome'
 
 export type StructureId = 'workbench' | 'chest' | 'fence' | 'scarecrow' | 'shed' | 'pen' | 'greenhouse'
 
@@ -90,12 +91,21 @@ const FENCE_GAP = 0.5
 
 /** เขตที่ดินที่วางของได้ (ที่ดินของฉัน ลบระยะห่างจากรั้ว) */
 export function buildArea(ownedPlotIds: string[]): Rect[] {
-  return PLOTS.filter((p) => ownedPlotIds.includes(p.id)).map((p) => ({
+  const out: Rect[] = PLOTS.filter((p) => ownedPlotIds.includes(p.id)).map((p) => ({
     minX: p.center[0] - p.size[0] / 2 + FENCE_GAP,
     maxX: p.center[0] + p.size[0] / 2 - FENCE_GAP,
     minZ: p.center[1] - p.size[1] / 2 + FENCE_GAP,
     maxZ: p.center[1] + p.size[1] / 2 - FENCE_GAP,
   }))
+  // บ้านตารัง–ยายเลียน (บ้านฟ่าง) เป็นอาณาเขตของตัวเองด้วย
+  const hp = PLACES.find((p) => p.id === 'home-tarang')
+  if (hp) out.push({ minX: hp.pos[0] + HOME_BOX.x0 + FENCE_GAP, maxX: hp.pos[0] + HOME_BOX.x1 - FENCE_GAP, minZ: hp.pos[1] + HOME_BOX.z0 + FENCE_GAP, maxZ: hp.pos[1] + HOME_BOX.z1 - FENCE_GAP })
+  return out
+}
+
+/** อยู่ในอาณาเขตของตัวเองไหม */
+export function inTerritory(x: number, z: number, ownedPlotIds: string[]) {
+  return buildArea(ownedPlotIds).some((a) => x >= a.minX && x <= a.maxX && z >= a.minZ && z <= a.maxZ)
 }
 
 /** เขตห้ามสร้างในที่ดิน: ตัวบ้าน (+ทางเดินหน้าบ้าน) · ทางเข้าประตูรั้ว · แปลงผัก */
@@ -110,6 +120,9 @@ export function blockedZones(): Rect[] {
     { minX: p.center[0] - p.size[0] / 2, maxX: hx - 3, minZ: p.center[1] - 1.6, maxZ: p.center[1] + 1.6 },
   ]
   out.push({ minX: GARDEN_JAR[0] - 0.6, maxX: GARDEN_JAR[0] + 0.6, minZ: GARDEN_JAR[1] - 0.6, maxZ: GARDEN_JAR[1] + 0.6 })
+  // บ้านตา: ตัวบ้าน ครัว ยุ้ง เล้า คอก (เผื่อทางเดินรอบ 0.6 ม.)
+  const hp = PLACES.find((pl) => pl.id === 'home-tarang')
+  if (hp) for (const [x, z, w, d] of HOME_SOLIDS) out.push({ minX: hp.pos[0] + x - w / 2 - 0.6, maxX: hp.pos[0] + x + w / 2 + 0.6, minZ: hp.pos[1] + z - d / 2 - 0.6, maxZ: hp.pos[1] + z + d / 2 + 0.6 })
   for (const [bx, bz] of GARDEN_BEDS) {
     const h = BED_SIZE / 2 + 0.25
     out.push({ minX: bx - h, maxX: bx + h, minZ: bz - h, maxZ: bz + h })

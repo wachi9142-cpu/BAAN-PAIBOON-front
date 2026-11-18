@@ -9,6 +9,8 @@ import { toggleFastWalk, useMove } from '../game/movement'
 import { TouchControls } from './TouchControls'
 import { LayoutEditor } from './LayoutEditor'
 import { LayoutDragger } from '../scenes/LayoutDragger'
+import { HoldInteract } from '../scenes/HoldInteract'
+import { HoldMenu } from './HoldMenu'
 import { SwimBar, WaterMenu } from './WaterMenu'
 import { useWater } from '../game/water'
 import { activateWater, waterHint } from '../game/waterTick'
@@ -265,6 +267,7 @@ export function WorldScreen() {
         <HomeInterior />
         <WaterLife />
         <LayoutDragger />
+        <HoldInteract />
         {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
         <PlayClock />
         <PetBond />
@@ -282,6 +285,7 @@ export function WorldScreen() {
       <WaterMenu />
       <TouchControls />
       <LayoutEditor />
+      <HoldMenu />
       <TalkWindow />
       {pauseOpen && !menu && (
         <div className="menu-backdrop pause-backdrop" onClick={() => setPauseOpen(false)}>

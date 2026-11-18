@@ -185,6 +185,7 @@ export function Player() {
       water: () => ({ ...useWater.getState(), depth: waterRt.depth, pos: [...pos.current], jumpT: jumpT.current, y: root.current?.position.y, gesture: useGame.getState().gesture, riding: useGame.getState().riding, play: !!playPose(performance.now()) }),
       useWater,
       jumpReq,
+      game: useGame,
     }
   }, [])
 

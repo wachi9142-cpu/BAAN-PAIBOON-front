@@ -4,21 +4,32 @@ import { useGame } from '../game/store'
 import { placeAt, placeProblem, snap, structureAt, useBuild } from '../game/building'
 import { blockedZones, buildArea, footprint, rectOf, STRUCTURES, type PlacedStructure, type StructureId } from '../game/content/structures'
 import type { Rect } from '../game/content/temple'
-import { PLOTS } from '../game/content/village'
 import { RBox } from './models/RBox'
+import { useHold } from './HoldInteract'
 
 /** สิ่งปลูกสร้างที่ผู้เล่นวางไว้ + เลเยอร์โหมดสร้าง */
 export function Structures() {
   const list = useGame((s) => s.save?.structures)
   const active = useBuild((s) => s.active)
+  const drag = useHold((s) => s.drag)
   if (!list) return null
   return (
     <group>
-      {list.map((s) => (
-        <group key={s.uid} position={[s.x, 0, s.z]} rotation={[0, (s.rot * Math.PI) / 2, 0]}>
-          <StructureModel id={s.id} />
-        </group>
-      ))}
+      {list.map((s) => {
+        // กำลังกดค้างลากชิ้นนี้: แสดงที่ตำแหน่งเมาส์ ยกลอยขึ้นเล็กน้อย + พื้นเขียว/แดง
+        const d = drag?.uid === s.uid ? drag : null
+        const x = d ? d.x : s.x
+        const z = d ? d.z : s.z
+        const rot = d ? d.rot : s.rot
+        return (
+          <group key={s.uid}>
+            <group position={[x, d ? 0.25 : 0, z]} rotation={[0, (rot * Math.PI) / 2, 0]}>
+              <StructureModel id={s.id} />
+            </group>
+            {d && <ZoneRect r={rectOf(s.id, x, z, rot)} color={d.ok ? '#3fcf6a' : '#e0443a'} opacity={0.55} y={0.06} />}
+          </group>
+        )
+      })}
       {active && <BuildLayer placed={list} />}
     </group>
   )
@@ -32,7 +43,6 @@ function BuildLayer({ placed }: { placed: PlacedStructure[] }) {
   const owned = useGame((s) => s.save?.ownedPlotIds ?? [])
   const areas = useMemo(() => buildArea(owned), [owned])
   const blocked = useMemo(() => blockedZones(), [])
-  const p = PLOTS[0]
 
   const onMove = (e: ThreeEvent<PointerEvent>) => {
     const h: [number, number] = [snap(e.point.x), snap(e.point.z)]
@@ -73,8 +83,8 @@ function BuildLayer({ placed }: { placed: PlacedStructure[] }) {
   return (
     <group>
       {/* พื้นรับเมาส์ (มองไม่เห็น) รอบที่ดิน */}
-      <mesh position={[p.center[0], 0.03, p.center[1]]} rotation={[-Math.PI / 2, 0, 0]} onPointerMove={onMove} onClick={onClick}>
-        <planeGeometry args={[p.size[0] + 16, p.size[1] + 16]} />
+      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerMove={onMove} onClick={onClick}>
+        <planeGeometry args={[500, 500]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {areas.map((a, i) => (

@@ -2705,3 +2705,26 @@ button.save-ind:hover {
 .layout-row button.primary { background: #4f7a3a; color: #fff; border-color: transparent; }
 .layout-row button:disabled { opacity: 0.5; cursor: default; }
 .layout-hint { color: #7a7a62; font-size: 12px; }
+
+/* ---------- กดค้าง: เมนูสร้าง/จัดการของ ---------- */
+.hold-menu {
+  position: fixed; z-index: 60; width: 280px; max-height: 360px; overflow: auto; padding: 12px; border-radius: 16px;
+  background: rgba(255, 250, 238, 0.95); backdrop-filter: blur(8px); box-shadow: 0 8px 26px rgba(0, 0, 0, 0.18);
+  font: 13px 'Mitr', sans-serif; color: #3a3a2a; display: flex; flex-direction: column; gap: 8px;
+}
+.hold-list { display: flex; flex-direction: column; gap: 6px; }
+.hold-item {
+  display: flex; gap: 10px; align-items: center; text-align: left; padding: 8px 10px; border-radius: 12px;
+  border: 1px solid rgba(80, 90, 60, 0.18); background: #fffdf6; font: inherit; cursor: pointer;
+}
+.hold-item:hover { background: #f1f7e6; }
+.hold-item.poor { opacity: 0.5; cursor: default; }
+.hold-item small { display: block; color: #7a7a62; font-size: 11px; }
+.hold-icon { font-size: 20px; width: 26px; text-align: center; }
+.hold-hint { margin: 0; color: #7a7a62; font-size: 12px; }
+.hold-close { align-self: flex-end; padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(80, 90, 60, 0.25); background: #fff; font: inherit; cursor: pointer; }
+.hold-drag-tip {
+  position: absolute; left: 50%; top: 74px; transform: translateX(-50%); z-index: 50; padding: 8px 16px; border-radius: 999px;
+  background: rgba(230, 250, 230, 0.95); color: #2f5a2a; font: 14px 'Mitr', sans-serif; pointer-events: none;
+}
+.hold-drag-tip.bad { background: rgba(255, 228, 220, 0.95); color: #8a2a12; }
