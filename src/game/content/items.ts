@@ -33,6 +33,10 @@ export type ItemId =
   | 'shirt_silk'
   | 'net'
   | 'trap_cage'
+  | 'basket_round'
+  | 'basket_tote'
+  | 'basket_bag'
+  | 'basket_tray'
   | 'seed_morningglory'
   | 'morningglory'
   | 'seed_scallion'
@@ -155,6 +159,10 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   mango_ripe: { id: 'mango_ripe', name: 'มะม่วงสุก', icon: '🥭', kind: 'food', stack: 20, sell: 15, note: 'มะม่วงน้ำดอกไม้สุกหอมหวาน', food: 10 },
   bubble_helmet: { id: 'bubble_helmet', name: 'หมวกฟองอากาศ', icon: '🥽', kind: 'tool', stack: 1, sell: 90, note: 'สวมครอบศีรษะเป็นฟองอากาศใส หายใจใต้น้ำได้ ~2 นาที (ไม่มี = กลั้นได้ ~12 วิ) · ขึ้นผิวน้ำแล้วอากาศเติมเอง · ดำน้ำ: กด C ค้าง · ขึ้น: Space' },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'เลิกใช้แล้ว — แลกเป็นสวิงจับสัตว์ + กรงดักสัตว์ให้อัตโนมัติ' },
+  basket_round: { id: 'basket_round', name: 'ตะกร้าหวายทรงกลมหูหิ้ว', icon: '🧺', kind: 'treasure', stack: 5, sell: 175, note: 'ตะกร้าหวายใบใหญ่ หูจับสองข้าง ฝีมือตาปิ่น · ใส่ผ้า ใส่ผลไม้' },
+  basket_tote: { id: 'basket_tote', name: 'ตะกร้าทรงสูงหูหิ้ว', icon: '🧺', kind: 'treasure', stack: 5, sell: 175, note: 'ตะกร้าไม้ไผ่ทรงสูง หูหิ้วคู่ ฝีมือตาปิ่น · ใส่ของไปตลาด' },
+  basket_bag: { id: 'basket_bag', name: 'กระเป๋าสานลายดอก', icon: '👜', kind: 'wear', stack: 5, sell: 175, note: 'กระเป๋าสานหวายลายดอก หูหิ้วโค้ง ฝีมือตาปิ่น · เครื่องแต่งกาย' },
+  basket_tray: { id: 'basket_tray', name: 'กระบุงตะกร้าใบเตี้ย', icon: '🧺', kind: 'treasure', stack: 5, sell: 175, note: 'ตะกร้าปากกว้างใบเตี้ย มีหูจับ ฝีมือตาปิ่น · ใส่ผักเก็บจากสวน' },
   net: { id: 'net', name: 'สวิงจับสัตว์', icon: '🥅', kind: 'tool', stack: 1, sell: 40, note: 'ด้ามไม้ไผ่ ตาข่ายเชือกกล้วย · ใช้กับสัตว์เพชรเหลือง (ตัวเล็ก/วิ่งเร็ว) เดินเข้าไปใกล้ ๆ แล้วกด E ตวัดสวิง' },
   trap_cage: { id: 'trap_cage', name: 'กรงดักสัตว์', icon: '🪤', kind: 'tool', stack: 1, sell: 90, note: 'กรงไม้ไผ่ประตูตก ใช้ซ้ำได้ · สัตว์เพชรแดง: ป้อนกล้วยให้เชื่องก่อน แล้วกด E วางกรงใส่กล้วยเป็นเหยื่อ รอสัตว์เดินเข้ากรง' },
 }
@@ -222,6 +230,10 @@ export const SHOP: ShopEntry[] = [
   { id: 'sapling', name: 'ต้นกล้าไม้ ×2', icon: '🌱', price: 20, gives: { item: 'sapling', qty: 2 } },
   { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', price: 60, gives: { item: 'rod', qty: 1 } },
   { id: 'net', name: 'สวิงจับสัตว์', icon: '🥅', price: 60, gives: { item: 'net', qty: 1 } },
+  { id: 'basket_round', name: 'ตะกร้าหวายทรงกลมหูหิ้ว', icon: '🧺', price: 350, gives: { item: 'basket_round', qty: 1 } },
+  { id: 'basket_tote', name: 'ตะกร้าทรงสูงหูหิ้ว', icon: '🧺', price: 350, gives: { item: 'basket_tote', qty: 1 } },
+  { id: 'basket_bag', name: 'กระเป๋าสานลายดอก', icon: '👜', price: 350, gives: { item: 'basket_bag', qty: 1 } },
+  { id: 'basket_tray', name: 'กระบุงตะกร้าใบเตี้ย', icon: '🧺', price: 350, gives: { item: 'basket_tray', qty: 1 } },
   { id: 'trap_cage', name: 'กรงดักสัตว์', icon: '🪤', price: 150, gives: { item: 'trap_cage', qty: 1 } },
   { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง ×3', icon: '🌱', price: 10, gives: { item: 'seed_morningglory', qty: 3 } },
   { id: 'seed_scallion', name: 'เมล็ดต้นหอม ×3', icon: '🌱', price: 12, gives: { item: 'seed_scallion', qty: 3 } },

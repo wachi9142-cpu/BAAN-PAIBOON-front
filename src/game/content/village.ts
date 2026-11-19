@@ -43,7 +43,7 @@ export interface Place {
   /** ร้านค้า: big = ร้านใหญ่ริมถนน · stall = ร้านประจำซอย */
   style?: 'big' | 'stall'
   /** บ้านชาวบ้าน: บังคับแบบบ้าน / สีหลังคา */
-  houseStyle?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2' | 'modern'
+  houseStyle?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2' | 'modern' | 'cottage' | 'raised'
   roof?: string
   /** ข้อความเมื่อผู้เล่นเดินมาถึง */
   arriveText?: string
@@ -59,6 +59,8 @@ export interface Place {
   frontYard?: number
   /** มีรั้วรอบที่ดิน (ประตูรั้วด้านหน้า) */
   fence?: boolean
+  /** ขยายรั้วออกไปด้านหน้าบ้านอีกกี่เมตร (ลานหน้าบ้านในรั้ว ไม่มีต้นไม้) */
+  fenceFront?: number
 }
 
 export interface Plot {
@@ -98,13 +100,13 @@ export const ROADS: Road[] = [
   { from: [0, 3.5], to: [0, 52.25], width: 4.5 },
   { from: [0, -3.5], to: [0, -38], width: 4.5 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
-  { from: [30, 3.5], to: [30, 104], width: 4.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้ · ต่อขึ้นเหนือผ่านซอยบ้านใหม่ 5 หลัง (19 พ.ย.)
+  { from: [26, 3.5], to: [26, 104], width: 4.5 }, // ย้ายไปทางซ้าย 4 ม. (ผู้สร้าง 20 พ.ย.) // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้ · ต่อขึ้นเหนือผ่านซอยบ้านใหม่ 5 หลัง (19 พ.ย.)
   // แยกจากซอย 1 ไปทางตะวันออก เลียบรั้วด้านหน้าบ้านแม่ฉัตร (ผู้สร้าง 19 พ.ย. 2569)
-  { from: [32.25, 47.5], to: [80, 47.5], width: 4.5 },
+  { from: [28.25, 47.5], to: [80, 47.5], width: 4.5 },
   { from: [-37.5, 3.5], to: [-37.5, 115.25], width: 4.5 }, // ซอย 2 (ถนนดินแดง 2 เลน) · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
   // ซอย 2: ช่วงแรกบ้าน 2–3 หลัง → คอกควาย ยุ้งข้าว พื้นที่ส่วนบุคคล (มีรั้ว) → สี่แยก (ทางสี่แพร่ง)
   // แยกขวา (ตะวันออก) = ถนนดินแดงเข้ากลุ่มบ้านตารัง–ยายเลียน (บ้านตาอยู่เหนือถนน · บ้านพ่อน้องน้ำฝนอยู่ตรงข้าม) · แยกซ้ายไปทุ่งนา
-  { from: [-35.25, 54.5], to: [27.75, 54.5], width: 4.5 },
+  { from: [-35.25, 54.5], to: [23.75, 54.5], width: 4.5 },
   // หลังรั้วฝั่งเหนือของบ้านฟ่าง = ถนนดินแดงแนวนอน 2 เลน ต่อซอย 2 กับถนนเลียบรั้วตะวันออก (ขอบเดินได้ของแผนที่ 120)
   { from: [-39.75, 113], to: [74.25, 113], width: 4.5 }, // ต่อไปทางตะวันออกจนถึงหลังบ้านน้าโรจน์ (ผู้สร้าง 20 พ.ย.)
   { from: [72, 200], to: [72, 82], width: 4.5 }, // ต่อขึ้นเหนือออกไปนอกหมู่บ้าน (ผู้สร้าง 20 พ.ย.) // เลี้ยวลงใต้ไปหลังสวนมะม่วง/บ้านน้าโรจน์
@@ -235,7 +237,7 @@ export const PLACES: Place[] = [
     id: 'board-headman',
     name: 'บอร์ดประกาศหน้าบ้านผู้ใหญ่บ้าน',
     kind: 'questboard',
-    pos: [25.9, 46],
+    pos: [21.9, 46],
     size: [3, 1],
     rotation: Math.PI / 2,
     arriveText: 'ประกาศจากผู้ใหญ่บ้าน งานช่วยเหลือชาวบ้าน และตามหาของหาย',
@@ -297,22 +299,19 @@ export const PLACES: Place[] = [
   { id: 'house-rot', name: 'บ้านน้าโรจน์', kind: 'npchouse', houseStyle: 'modern', pos: [72, 63.5], rotation: Math.PI, size: [11, 7], color: '#b98252', arriveText: 'บ้านชั้นเดียวสไตล์โมเดิร์นของน้าโรจน์ · ปีกฝั่งบ่อปลาเปิดเป็นร้านตัดผมชาย-หญิง ช่างโรจน์ · มีกำแพงอิฐกั้นสวนมะนาว และบ่อปลาคาร์ฟ', solidRadius: 4.6 },
   // หลังบ้านน้าโรจน์: ครัวนอก (มีโต๊ะกินข้าว) + ต้นมัลเบอร์รี่ 3 ต้นเรียงติดกัน
   // ซอย 1 ช่วงเหนือ: บ้านใหม่ 5 หลัง สองฝั่งซอย ทุกหลังหันหน้าลงทางใต้ (ถนนเส้นหน้า) เว้นลานหน้าบ้าน ~4 ม. ไม่ชิดถนน (ผู้สร้าง 19 พ.ย. 2569)
-  { id: 'house-s1a', name: 'บ้านป้าบุญเรือน', kind: 'npchouse', houseStyle: 'stilt', pos: [22.5, 67.5], rotation: Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#8a6040', solidRadius: 2.6 },
-  { id: 'house-s1b', name: 'บ้านลุงทองดี', kind: 'npchouse', houseStyle: 'halfhalf', roof: '#a8483a', pos: [22.5, 74], rotation: Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#d8c8a8', solidRadius: 2.6 },
-  { id: 'house-s1c', name: 'บ้านพี่แสงเดือน', kind: 'npchouse', houseStyle: 'concrete', roof: '#5a7a8a', pos: [37.5, 66], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#efe6d2', solidRadius: 2.6 },
-  { id: 'house-s1d', name: 'บ้านน้าคำมี', kind: 'npchouse', houseStyle: 'wood2', pos: [37.5, 72.5], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#9a7048', solidRadius: 2.6 },
-  { id: 'house-s1e', name: 'บ้านยายสมบูรณ์', kind: 'npchouse', houseStyle: 'stilt', pos: [37.5, 79], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#7a5434', solidRadius: 2.6 },
+  { id: 'house-s1a', name: 'บ้านป้าบุญเรือน', kind: 'npchouse', houseStyle: 'stilt', pos: [18.5, 67.5], rotation: Math.PI / 2, size: [6.4, 7], houseScale: 0.58, fence: true, color: '#8a6040', solidRadius: 2.6 },
+  { id: 'house-s1b', name: 'บ้านลุงทองดี', kind: 'npchouse', houseStyle: 'halfhalf', roof: '#a8483a', pos: [18.5, 74], rotation: Math.PI / 2, size: [6.4, 7], houseScale: 0.58, fence: true, color: '#d8c8a8', solidRadius: 2.6 },
+  { id: 'house-s1c', name: 'บ้านตาปิ่น', kind: 'npchouse', houseStyle: 'cottage', pos: [42.5, 70.5], rotation: -Math.PI / 2, size: [10.5, 11], fenceFront: 4, /* รั้วหน้าแนวเดียวกับรั้วลานบ้านน้องเนย (x 33) */ color: '#c8743a', arriveText: 'บ้านไม้ยกพื้นสีส้มของตาปิ่น มีชานหน้าบ้านกับราวไม้ บันไดสามขั้น', solidRadius: 3 }, // ย้ายเข้าไปหลังแถวบ้าน (ผู้สร้าง 20 พ.ย.)
+  { id: 'shop-pinbasket', name: 'แผงตะกร้าสานตาปิ่น', kind: 'shop', style: 'stall', pos: [34.7, 66.7], size: [3, 2.5], arriveText: 'ตะกร้าสานมือฝีมือตาปิ่น ราคา 350 บาททุกแบบ · กด E เลือกซื้อ', solidRadius: 0 }, // แผงวาดใน Cottage.tsx (ผู้สร้าง 20 พ.ย.)
+  { id: 'house-s1n', name: 'บ้านน้องปิ่น', kind: 'npchouse', houseStyle: 'raised', pos: [42.5, 84], rotation: -Math.PI / 2, size: [14, 11], fenceFront: 4, arriveText: 'บ้านสองชั้นยกสูง ใต้ถุนเป็นครัวกับโต๊ะกินข้าว ชั้นบนไม้ 3 ห้องนอน ระเบียงยาว บันไดไม้ด้านข้าง', solidRadius: 4 }, // ผู้สร้าง 20 พ.ย.
   // ซอย 1 (ผู้สร้าง 20 พ.ย.): บ้านเรียงเป็นแถวสองฝั่งถนน หันหน้าเข้าถนน ทุกหลังมีรั้ว
-  { id: 'house-s1f', name: 'บ้านริมซอย 1 (ฝั่งตะวันตก)', kind: 'npchouse', houseStyle: 'wood2', pos: [22.5, 80.5], rotation: Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#8a6444', solidRadius: 2.6 },
-  { id: 'shop-kit', name: 'ร้านค้าน้ากิจ', kind: 'shop', style: 'stall', color: '#c8783a', pos: [22.5, 87], rotation: Math.PI / 2, size: [6.2, 6.5], fence: true, arriveText: 'ร้านขายของชำประจำซอย 1 ของน้ากิจ', solidRadius: 0 },
-  { id: 'house-s1g', name: 'บ้านริมซอย 1 (ฝั่งตะวันออก)', kind: 'npchouse', houseStyle: 'concrete', roof: '#8a4a3a', pos: [37.5, 85.5], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#e8dcc4', solidRadius: 2.6 },
-  { id: 'house-s1h', name: 'บ้านริมซอย 1 (ท้ายซอย)', kind: 'npchouse', houseStyle: 'stilt', pos: [37.5, 92], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#7a5434', solidRadius: 2.6 },
-  { id: 'house-s1i', name: 'บ้านริมซอย 1 (สุดซอย)', kind: 'npchouse', houseStyle: 'halfhalf', roof: '#5a7a8a', pos: [37.5, 98.5], rotation: -Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#d8c8a8', solidRadius: 2.6 },
+  { id: 'house-s1f', name: 'บ้านริมซอย 1 (ฝั่งตะวันตก)', kind: 'npchouse', houseStyle: 'wood2', pos: [18.5, 80.5], rotation: Math.PI / 2, size: [6.4, 7], houseScale: 0.58, fence: true, color: '#8a6444', solidRadius: 2.6 },
+  { id: 'shop-kit', name: 'ร้านค้าน้ากิจ', kind: 'shop', style: 'stall', color: '#c8783a', pos: [18.5, 87], rotation: Math.PI / 2, size: [6.4, 7], fence: true, arriveText: 'ร้านขายของชำประจำซอย 1 ของน้ากิจ', solidRadius: 0 },
   { id: 'rot-kitchen', name: 'ครัวนอกบ้านน้าโรจน์', kind: 'outkitchen', pos: [71.8, 70.2], rotation: Math.PI, size: [4.6, 3.4], arriveText: 'ครัวนอกบ้าน มีเตาถ่านนึ่งข้าวเหนียว โอ่งน้ำ และโต๊ะกินข้าว', solidRadius: 0 },
   { id: 'rot-mulberry', name: 'ต้นมัลเบอร์รี่น้าโรจน์', kind: 'mulberry', pos: [65.2, 70.4], size: [4, 4], arriveText: 'ต้นมัลเบอร์รี่ (หม่อน) 3 ต้น ลูกสุกสีม่วงดำ กินได้', solidRadius: 0 },
   { id: 'rot-mango', name: 'สวนมะม่วงน้าโรจน์', kind: 'mangoorchard', pos: [73, 76.8], size: [20.5, 7], arriveText: 'สวนมะม่วงหลายพันธุ์ อาร์ทูอีทู น้ำดอกไม้สีม่วง มะม่วงยักษ์ เขียวใหญ่ เขียวเสวย น้ำดอกไม้สีทอง', solidRadius: 0 },
   // หลังบ้านน้องเนย (ระหว่างบ้านคุณตามะไฟกับสวนมะม่วงน้าโรจน์): สวนหมากราว 30 ต้น (ผู้สร้าง 19 พ.ย. 2569)
-  { id: 'areca-grove', name: 'สวนหมาก', kind: 'arecagrove', pos: [51, 83], size: [17, 9], arriveText: 'สวนหมากราว 30 ต้น ลำต้นสูงเรียว ทะลายหมากสุกสีส้ม', solidRadius: 0 },
+  { id: 'areca-grove', name: 'สวนหมาก', kind: 'arecagrove', pos: [57, 90.5], size: [17, 9], arriveText: 'สวนหมากราว 30 ต้น ลำต้นสูงเรียว ทะลายหมากสุกสีส้ม', solidRadius: 0 },
   { id: 'rot-koi', name: 'บ่อปลาคาร์ฟน้าโรจน์', kind: 'koipond', pos: [78.5, 54.8], size: [5, 7], arriveText: 'บ่อปลาคาร์ฟหลากสี 5 ตัว มีน้ำตกจำลองเล็ก ๆ ไหลลงบ่อ เสียงน้ำเย็นชื่นใจ', solidRadius: 2.3 },
   { id: 'lot-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'fencedlot', pos: [46.5, 57.1], rotation: Math.PI / 2, size: [14, 27], solidRadius: 0 },
   { id: 'house-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'npchouse', houseStyle: 'concrete', roof: '#7a8a96', pos: [52.5, 57.1], rotation: -Math.PI / 2, size: [9, 7.5], houseScale: 1.5, color: '#ece4d4', arriveText: 'บ้านปูนชั้นเดียวหลังใหญ่ ครอบครัวห้าคนของน้องเนย น้องโน๊ต น้องนิว · ลานจอดหน้าบ้านมีรถไถ กระบะ มอเตอร์ไซค์ จักรยาน', solidRadius: 5.2 },
@@ -333,8 +332,8 @@ export const PLACES: Place[] = [
   { id: 'house-daeng', name: 'บ้านยายแดง', kind: 'npchouse', pos: [-45, 66], rotation: Math.PI / 2, size: [6, 5], color: '#b0704a', arriveText: 'บ้านยายแดง ลูกสาวอี๊ดเอี๊ยง หลานน้องไม้วายุ · อยู่ตรงข้ามบ้านฟ่างพอดี', solidRadius: 4.2 },
   { id: 'house-wan', name: 'บ้านยายวาน', kind: 'npchouse', pos: [-72, 72], rotation: Math.PI / 2, size: [6, 5], color: '#8a6a48', arriveText: 'บ้านยายวานกับมินท์หลานสาว · หน้าบ้านเป็นลานกว้าง เด็ก ๆ วิ่งเล่นและจอดจักรยาน', solidRadius: 4.2, frontYard: 18 },
   // ข้างบ้านฟ่างฝั่งตะวันออก (ชิดรั้ว ไม่มีถนนคั่น): บ้านคุณตามะไฟ หันหน้าลงถนนเส้นหน้า (ทิศใต้)
-  { id: 'house-mafai', name: 'บ้านคุณตามะไฟ', kind: 'npchouse', pos: [22.5, 61], rotation: Math.PI / 2, size: [6.2, 6.5], houseScale: 0.72, fence: true, color: '#9a7048', arriveText: 'บ้านคุณตามะไฟ เพื่อนบ้านติดกับบ้านฟ่างฝั่งตะวันออก', solidRadius: 2.6 },
-  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [23.5, 40], rotation: Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
+  { id: 'house-mafai', name: 'บ้านคุณตามะไฟ', kind: 'npchouse', pos: [18.5, 61], rotation: Math.PI / 2, size: [6.4, 7], houseScale: 0.58, fence: true, color: '#9a7048', arriveText: 'บ้านคุณตามะไฟ เพื่อนบ้านติดกับบ้านฟ่างฝั่งตะวันออก', solidRadius: 2.6 },
+  { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [19.5, 40], rotation: Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
 // โหมด "ย้ายที่": ผู้สร้างย้ายตำแหน่ง/หมุนสถานที่ไว้ → ใช้ค่าที่บันทึกแทนค่าในโค้ด (ก่อนระบบอื่นคำนวณผัง กล่องชน ต้นไม้)
@@ -396,6 +395,16 @@ export function isBlockedForDecor(p: Vec2) {
     const lx = dx * Math.cos(r) - dz * Math.sin(r)
     const lz = dx * Math.sin(r) + dz * Math.cos(r)
     if (Math.abs(lx) < 9 && lz > 2 && lz < 4.5 + pl.frontYard + 2) return true
+  }
+  // รั้วที่ยื่นออกไปหน้าบ้าน (fenceFront): ลานในรั้วต้องโล่ง
+  for (const pl of PLACES) {
+    if (!pl.fenceFront) continue
+    const r = pl.rotation ?? 0
+    const dx = p[0] - pl.pos[0]
+    const dz = p[1] - pl.pos[1]
+    const lx = dx * Math.cos(r) - dz * Math.sin(r)
+    const lz = dx * Math.sin(r) + dz * Math.cos(r)
+    if (Math.abs(lx) < pl.size[0] / 2 + 1.5 && lz > -pl.size[1] / 2 - 1.5 && lz < pl.size[1] / 2 + pl.fenceFront + 1.5) return true
   }
   // บ้านฟ่าง (ดู HOME_BOX ใน GrandHome.tsx): x −33..15, z 58..109 · ช่วง x 15..21 เป็นพื้นว่างนอกรั้ว (คงกรอบเดิมไว้ ไม่ให้ต้นไม้สุ่มทั้งหมู่บ้านเปลี่ยนที่)
   if (p[0] > -35 && p[0] < 26 && p[1] > 56 && p[1] < 118) return true

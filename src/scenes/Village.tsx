@@ -1,3 +1,5 @@
+import { Cottage } from './models/Cottage'
+import { RaisedHouse } from './models/RaisedHouse'
 import { editables, useLayoutEdit } from '../game/layoutEdit'
 import { Barn, FarmLand } from './FarmLand'
 import { WoodYard } from './WoodYard'
@@ -207,6 +209,7 @@ function PlaceMesh({ place }: { place: Place }) {
       )
       break
     case 'shop':
+      if (place.id === 'shop-pinbasket') break // แผงตะกร้าตาปิ่น วาดใน Cottage.tsx
       labelY = place.style === 'stall' ? 4.6 : 6
       body = place.style === 'stall' ? <Stall w={w} d={d} color={place.color ?? '#3f7a8c'} name={place.name.replace(/ \(ซอย \d\)/, '')} /> : <BigStore w={w} d={d} />
       if (place.fence) body = <group>{body}<group rotation={[0, Math.PI, 0]}><FencedLot w={w} d={d} /></group></group>
@@ -357,7 +360,11 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 8
       body = (
         <group>
-          {place.houseStyle === 'modern' ? (
+          {place.houseStyle === 'raised' ? (
+            <RaisedHouse />
+          ) : place.houseStyle === 'cottage' ? (
+            <Cottage />
+          ) : place.houseStyle === 'modern' ? (
             <ModernHouse shopWing={place.id === 'house-rot' ? -1 : undefined} />
           ) : (
           <group scale={place.houseScale ?? 1}>
@@ -368,8 +375,8 @@ function PlaceMesh({ place }: { place: Place }) {
           {place.frontYard && <KidsYard depth={place.frontYard} />}
           {/* รั้วรอบที่ดิน: ประตูรั้วอยู่ด้านหน้าบ้าน (หันเข้าถนน) */}
           {place.fence && (
-            <group rotation={[0, Math.PI, 0]}>
-              <FencedLot w={w} d={d} />
+            <group position={[0, 0, (place.fenceFront ?? 0) / 2]} rotation={[0, Math.PI, 0]}>
+              <FencedLot w={w} d={d + (place.fenceFront ?? 0)} />
             </group>
           )}
         </group>
@@ -919,7 +926,15 @@ function FencedLot({ w, d, pad }: { w: number; d: number; pad?: boolean }) {
       </mesh>
       <PicketFence x={0} z={dd} len={w} />
       <PicketFence x={h} z={0} len={d} rot={Math.PI / 2} />
-      <PicketFence x={-h} z={0} len={d} rot={Math.PI / 2} />
+      {pad ? (
+        // บ้านญาติติดกัน (บ้านตาปิ่น): เว้นช่องทางเดินทะลุถึงกันที่รั้วข้าง
+        <>
+          <PicketFence x={-h} z={(-dd + (-5.5 - 1.6)) / 2} len={-5.5 - 1.6 + dd} rot={Math.PI / 2} />
+          <PicketFence x={-h} z={(dd + (-5.5 + 1.6)) / 2} len={dd - (-5.5 + 1.6)} rot={Math.PI / 2} />
+        </>
+      ) : (
+        <PicketFence x={-h} z={0} len={d} rot={Math.PI / 2} />
+      )}
       <PicketFence x={(-h + -gate) / 2} z={-dd} len={h - gate} />
       <PicketFence x={(h + gate) / 2} z={-dd} len={h - gate} />
       {/* เสาประตูรั้ว */}

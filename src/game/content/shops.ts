@@ -22,7 +22,7 @@ export const SHOPS: Record<string, ShopDef> = {
     owner: 'ป้าศรี',
     icon: '🛒',
     note: 'ร้านค้าขนาดใหญ่ริมถนนใหญ่ ของครบที่สุด รับซื้อทุกอย่าง',
-    goods: SHOP,
+    goods: SHOP.filter((e) => !e.id.startsWith('basket_')),
   },
   'shop-plants': {
     id: 'shop-plants',
@@ -106,6 +106,15 @@ export const SHOPS: Record<string, ShopDef> = {
     note: 'ซอย 6 · เบ็ดตกปลา รับซื้อปลาและดอกบัวราคาดี',
     goods: pick(['rod']).map((e) => ({ ...e, price: 50 })),
     buys: ['fish_tilapia', 'fish_catfish', 'fish_barb', 'lotus'],
+  },
+  'shop-pinbasket': {
+    id: 'shop-pinbasket',
+    name: 'แผงตะกร้าสานตาปิ่น',
+    owner: 'ตาปิ่น',
+    icon: '🧺',
+    note: 'ตะกร้าสานมือฝีมือตาปิ่น ราคา 350 บาททุกแบบ',
+    goods: pick(['basket_round', 'basket_tote', 'basket_bag', 'basket_tray']),
+    buys: ['vine', 'branch'],
   },
   'shop-pet': {
     id: 'shop-pet',
