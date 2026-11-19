@@ -16,6 +16,7 @@ import { ArecaPalmTree, CoconutPalm } from './models/Palms'
 import { MangoTree, type MangoVariety } from './Orchard'
 import { Windy } from './Wind'
 import { CreamFence } from './models/CreamFence'
+import { BambooClump } from './models/BambooClump'
 import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
 import type { PetChoice } from '../game/content/pets'
@@ -30,7 +31,7 @@ import type { PetChoice } from '../game/content/pets'
  */
 export const HOME_BOX = { x0: -17, x1: 33, z0: -13, z1: 38 }
 /** ช่องทางเข้ารถยนต์ 1 คัน ที่รั้วฝั่งเหนือ (ติดถนนดินแดงแนวนอนหลังบ้าน): x กลางช่อง · ครึ่งความกว้าง */
-export const HOME_BACK_GATE = { x: 1.5, half: 4.5 }
+export const HOME_BACK_GATE = { x: 9.5, half: 4.5 } // ย้ายไปทางตะวันออก 8 ม. (ผู้สร้าง 19 พ.ย.)
 /** มุมรั้วด้านซอย 2 ฝั่งถนนหลังบ้าน (มุม x0, z1) ไม่มีรั้ว เป็นพื้นที่ว่างทางลัดเดินเข้าออก — เว้นกี่เมตรจากมุมทั้งสองด้าน */
 export const HOME_CORNER_GAP = 4
 /** ช่องทางเข้าออกที่รั้วฝั่งซอย 2 (ข้างรถ หน้ายุ้งข้าว) ไม่มีรั้ว (ผู้สร้าง 19 พ.ย. 2569): z กลางช่อง · ครึ่งความกว้าง */
@@ -53,7 +54,7 @@ const BASE_SOLIDS: [number, number, number, number, string][] = [
   [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
   [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
   [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
-  [6.8, -11, 4.8, 3.8, 'watertower'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
+  [6.8, -11, 4.8, 3.8, 'watertower2'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
 export function homeSolids(): [number, number, number, number][] {
@@ -121,7 +122,7 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
-      <Editable id="home:watertower" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={6.8} z={-11} r={2.6} origin={O}>
+      <Editable id="home:watertower2" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={6.8} z={-11} r={2.6} origin={O}>
         <group position={[6.8, 0, -11]}>
           <WaterTower />
         </group>
@@ -840,24 +841,12 @@ const PalmModel = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: n
     </group>
   )
 
+/** กอไผ่ (แบบภาพอ้างอิง: ลำเรียวหลายสิบลำ ใบฝอยครึ้มช่วงบน) ไหวตามลม */
 const BambooModel = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
-    {Array.from({ length: 9 }).map((_, i) => {
-      const a = i * 0.7
-      const h = 5 + (i % 3)
-      return (
-        <group key={i} position={[Math.cos(a) * 0.4, 0, Math.sin(a) * 0.4]} rotation={[Math.sin(a) * 0.12, 0, Math.cos(a) * 0.12]}>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.05, 0.06, h, 6]} />
-            <meshStandardMaterial color="#8db35a" />
-          </mesh>
-          <mesh position={[0, h - 0.3, 0]} scale={[0.7, 1.2, 0.7]}>
-            <icosahedronGeometry args={[0.5, 1]} />
-            <meshStandardMaterial color="#6aa84f" flatShading />
-          </mesh>
-        </group>
-      )
-    })}
+    <Windy h={7.5} amp={0.5} flutter={1.8}>
+      <BambooClump seed={x * 0.37 + z * 0.91} culms={16} height={7.2} />
+    </Windy>
   </group>
 )
 
@@ -951,7 +940,8 @@ function Surroundings() {
   return (
     <group>
       {/* แนวมะพร้าวรอบบ้าน (หลังแนวมะพร้าวคือรั้วไม้) */}
-      {[-13, -9, -5, 8, 11, 14, 17, 20, 23, 26, 29].map((x, i) => (
+      {/* ต้นมะพร้าวแนวรั้วหลัง: เว้นช่องประตูหลังใหม่ (x 5–14) · 2 ต้นที่ขวางย้ายไปแทนช่องประตูเดิม */}
+      {[-13, -9, -5, -1, 3, 15, 18, 21, 24, 27, 30].map((x, i) => (
         <Palm key={'cn' + x} x={x} z={d} h={5 + (i % 3) * 0.6} />
       ))}
       {/* 2 ต้นที่เคยขึ้นกลางช่องประตูข้าง (z 7, 12) ย้ายไปแนวที่มีรั้ว (z 14.6, 23.5) — ผู้สร้าง 19 พ.ย. */}
@@ -979,6 +969,9 @@ function Surroundings() {
       ))}
       {/* ไผ่กอใหญ่ */}
       <Bamboo x={-14} z={12} />
+      {/* แนวกอไผ่ริมรั้วตะวันตก ถัดจากมะม่วงหิมพานต์ (ผู้สร้าง 19 พ.ย.) */}
+      <Bamboo x={-14.4} z={30.6} />
+      <Bamboo x={-14.2} z={33.2} />
       <Bamboo x={14} z={12} />
       {/* ลำไย: กลางรั้วบ้าน 1 ต้น + หลังห้องน้ำ 2 ต้น */}
       <TrunkTree x={0} z={-11.8} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
@@ -990,7 +983,7 @@ function Surroundings() {
         [-9.5, 26.5],
         [-13, 28.8],
       ].map(([x, z], i) => (
-        <Editable key={'cashew' + i} id={`home:cashew:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
+        <Editable key={'cashew' + i} id={`home:cashew2:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
         <group position={[x, 0, z]}>
           <CashewTree seed={i + 3} scale={1 + (i % 2) * 0.12} />
         </group>
