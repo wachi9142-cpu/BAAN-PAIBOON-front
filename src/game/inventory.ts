@@ -1,4 +1,4 @@
-import { tendTree, treeHint } from './trees'
+import { tendTree, treeHint, chopTool, punchRock, rockHint } from './trees'
 /**
  * กระเป๋า เก็บของ คราฟ ซื้อ-ขาย — ทำงานกับเซฟใน useGame
  * ทุกครั้งที่ของในกระเป๋าเปลี่ยน = เหตุการณ์สำคัญ → บันทึกทันที
@@ -153,7 +153,7 @@ function takeFrom(key: string) {
 
 /** คำแนะนำที่ขึ้นบนจอเมื่อยืนใกล้ */
 export function gatherHint(t: GatherTarget) {
-  if (t.kind === 'rock') return 'กด E — เก็บก้อนหิน'
+  if (t.kind === 'rock') return chopTool() === 'hand' ? 'กด E — ' + rockHint(t.index) : 'กด E — เก็บก้อนหิน'
   return 'กด E — ' + treeHint(t.index)
   const tree = TREES[t.index]
   if (tree.kind === 'banana') return 'กด E — ลอกเชือกกล้วย'
@@ -163,6 +163,10 @@ export function gatherHint(t: GatherTarget) {
 export function gather(t: GatherTarget) {
   if (t.kind === 'tree') {
     tendTree(t.index)
+    return
+  }
+  if (t.kind === 'rock' && chopTool() === 'hand') {
+    punchRock(t.index)
     return
   }
   const key = `${t.kind}:${t.index}`

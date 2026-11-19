@@ -9,8 +9,7 @@ import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
 import { TextSprite } from './TextSprite'
-import { hitTree, IMPACT, pickupNear, swing, tendTree, useTools } from '../game/trees'
-import { TREES } from '../game/content/village'
+import { hitRock, hitTree, IMPACT, pickupNear, punchRock, swing, swingTargetPos, tendTree, useTools } from '../game/trees'
 import { findUsable, useBuild } from '../game/building'
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -304,21 +303,23 @@ export function Player() {
         swing.current = -1
         swing.queued = false
       } else {
-        const tr = TREES[swing.tree]
-        const want = Math.atan2(tr.pos[0] - pos.current[0], tr.pos[1] - pos.current[1])
+        const tp = swingTargetPos()
+        const want = Math.atan2(tp[0] - pos.current[0], tp[1] - pos.current[1])
         let diff = want - heading.current
         diff = Math.atan2(Math.sin(diff), Math.cos(diff))
         heading.current += diff * Math.min(1, dt * 14)
         swing.current += dt / swing.dur
         if (!swing.hit && swing.current >= IMPACT) {
           swing.hit = true
-          hitTree(swing.tree, Math.atan2(pos.current[0] - tr.pos[0], pos.current[1] - tr.pos[1]))
+          if (swing.kind === 'rock') hitRock(swing.tree)
+          else hitTree(swing.tree, Math.atan2(pos.current[0] - tp[0], pos.current[1] - tp[1]))
         }
         if (swing.current >= 1) {
           swing.current = -1
           if (swing.queued) {
             swing.queued = false
-            tendTree(swing.tree)
+            if (swing.kind === 'rock') punchRock(swing.tree)
+            else tendTree(swing.tree)
           }
         }
         mx = 0

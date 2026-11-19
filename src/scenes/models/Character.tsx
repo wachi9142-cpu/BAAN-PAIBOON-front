@@ -31,6 +31,7 @@ import { Mouth } from './Mouth'
 import { SARONG_OUTFITS, sarongAccent, sarongTexture } from '../../game/content/sarong'
 import { Accessory } from './Accessory'
 import { RBox } from './RBox'
+import { handPain } from '../../game/handStrike'
 
 interface Props {
   appearance: Appearance
@@ -43,7 +44,7 @@ interface Props {
   /** ถอดรองเท้า (ในโบสถ์) */
   barefoot?: boolean
   /** จังหวะเหวี่ยงขวาน/ทุบ 0→1 (-1 = ไม่ได้ทำ) */
-  chop?: { current: number }
+  chop?: { current: number; kind?: 'tree' | 'rock' }
   /** สีอัญมณีบนคฑา */
   wandGem?: GemColor
   /** กำลังชี้คฑายิงลำแสง */
@@ -223,18 +224,55 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
         rz = -0.1
       }
     }
+    let punchBow = 0
+    // อาการเจ็บมือ (เฉพาะผู้เล่น): 1 สะบัดมือ · 2 จับมือตัวเอง · 3 กุมมือก้มตัวพัก
+    if (chop && cp < 0 && m === 0) {
+      const nowMs = performance.now()
+      if (nowMs < handPain.until) {
+        const t = (nowMs - handPain.start) / 1000
+        if (handPain.level === 1) {
+          ;[rx, rz] = [-0.75 + Math.sin(t * 26) * 0.32, -0.25 + Math.sin(t * 26) * 0.18]
+        } else {
+          const rub = Math.sin(t * 9) * 0.06
+          ;[lx, lz, rx, rz] = [-1.05 + rub, 0.5, -0.95, -0.42]
+          punchBow = handPain.level === 3 ? 0.28 : 0.1
+        }
+      }
+    }
     if (cp >= 0) {
       const up = cp < 0.45 ? cp / 0.45 : cp < 0.58 ? 1 - (cp - 0.45) / 0.13 : 0
       const x = -0.45 - up * 2.4
-      if (axeHeld) [lx, lz, rx, rz] = [x, 0.3, x, -0.3]
-      else [rx, rz] = [x + 0.1, -0.15]
-      if (armL.current && axeHeld) {
-        armL.current.rotation.x = x
-        armL.current.rotation.z = 0.3
-      }
-      if (armR.current) {
-        armR.current.rotation.x = axeHeld ? x : x + 0.1
-        armR.current.rotation.z = axeHeld ? -0.3 : -0.15
+      if (axeHeld) {
+        ;[lx, lz, rx, rz] = [x, 0.3, x, -0.3]
+        if (armL.current) {
+          armL.current.rotation.x = x
+          armL.current.rotation.z = 0.3
+        }
+        if (armR.current) {
+          armR.current.rotation.x = x
+          armR.current.rotation.z = -0.3
+        }
+      } else {
+        // มือเปล่า: กำหมัด ง้างแขนไปข้างหลัง (ย่อตัวออกแรง) แล้วกระแทกเร็ว ๆ ค้างนิดหนึ่งแล้วดึงกลับ
+        const wind = cp < 0.45 ? Math.sin((cp / 0.45) * Math.PI * 0.5) : cp < 0.55 ? 1 - (cp - 0.45) / 0.1 : 0
+        const hit = cp < 0.45 ? 0 : cp < 0.55 ? (cp - 0.45) / 0.1 : cp < 0.7 ? 1 : 1 - (cp - 0.7) / 0.3
+        if (chop?.kind === 'rock') {
+          // ทุบหินที่พื้น: ยกกำปั้นเหนือหัว แล้วทุบลงพร้อมก้มตัว
+          rx = -0.3 - wind * 2.5 - hit * 0.55
+          rz = -0.12
+          ;[lx, lz] = [-0.5 - hit * 0.4, 0.25]
+          punchBow = hit * 0.45 - wind * 0.08
+        } else {
+          // ต่อยต้นไม้: ง้างหมัดไปข้างหลังระดับอก แล้วพุ่งหมัดตรงไปข้างหน้า มืออีกข้างยกการ์ด
+          rx = 0.55 * wind - 1.55 * hit - 0.2 * (1 - wind - hit)
+          rz = -0.35 * wind - 0.05
+          ;[lx, lz] = [-1.05 + hit * 0.3, 0.45]
+          punchBow = hit * 0.14 - wind * 0.06
+        }
+        if (armR.current) {
+          armR.current.rotation.x = rx
+          armR.current.rotation.z = rz
+        }
       }
     }
     if (armL.current) {
@@ -351,7 +389,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     }
     // วิ่ง = โน้มตัวไปข้างหน้า · เดินเร็ว = โน้มเล็กน้อย
     const lean = pose === 'ride' || pose === 'swim' || pose === 'paddle' ? 0 : m >= 2 ? 0.16 : m >= 1.5 ? 0.06 : 0
-    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + lean + (kneel ? bow * 1.15 : 0))
+    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + lean + (kneel ? bow * 1.15 : 0) + punchBow)
     if (body.current) {
       const down = kneel ? -0.62 * age.legScale : (pose === 'sit' && m === 0) || pose === 'paddle' ? -0.42 * age.legScale : 0
       body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * (m >= 2 ? 0.09 : m >= 1.5 ? 0.06 : 0.035) : lerp(body.current.position.y, down)

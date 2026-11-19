@@ -11,6 +11,8 @@ import { CHOP_TOOLS, HAND_HURT, REGROW_DAYS, SAPLING_DAYS, TREE_RULES, type Chop
 import { TREES } from './content/village'
 import type { GroundDrop, TreeState } from './treeTypes'
 import { useSettings } from './settings'
+import { handStatus, registerStrike, restingHand } from './handStrike'
+import { ROCKS } from './content/village'
 
 // ---------- เครื่องมือในมือ ----------
 export type HeldTool = ChopTool | 'wand'
@@ -36,7 +38,7 @@ export function equip(t: HeldTool) {
     return
   }
   const d = CHOP_TOOLS[t]
-  useGame.getState().toast({ title: `${d.icon} ถือ${d.name}`, body: t === 'hand' ? 'ทุบต้นไม้ด้วยมือได้ แต่ได้ไม้น้อยและเจ็บมือ' : 'เดินไปที่ต้นไม้แล้วกด E เพื่อฟัน', tone: 'info' })
+  useGame.getState().toast({ title: `${d.icon} ถือ${d.name}`, body: t === 'hand' ? 'ทุบต้นไม้และก้อนหินด้วยมือได้ · ทุบติดกันเกิน 20 ครั้งจะเริ่มเจ็บมือ' : 'เดินไปที่ต้นไม้แล้วกด E เพื่อฟัน', tone: 'info' })
 }
 
 /** ขวานหาย (ขายไปแล้ว) → กลับเป็นมือเปล่า */
@@ -47,7 +49,7 @@ export function checkEquipped() {
 
 // ---------- จังหวะเหวี่ยง (Player อ่านทุกเฟรม) ----------
 /** progress: -1 = ไม่ได้เหวี่ยง, 0→1 = กำลังเหวี่ยง · hit ที่ 0.55 */
-export const swing = { current: -1, tree: -1, dur: 0.6, hit: false, queued: false }
+export const swing = { current: -1, tree: -1, dur: 0.6, hit: false, queued: false, kind: 'tree' as 'tree' | 'rock' }
 export const IMPACT = 0.55
 
 /** เอฟเฟกต์ของแต่ละต้น (เวลาจริง ms): สั่น / เริ่มล้ม */
@@ -90,7 +92,7 @@ export function treeHint(i: number) {
   if (phase === 'sapling') return `🌱 ต้นกล้ากำลังโต`
   const tool = CHOP_TOOLS[chopTool()]
   const left = Math.max(1, Math.ceil((rule.hp - (st && !st.felledAt ? st.dmg : 0)) / tool.power))
-  if (tool.id === 'hand') return `✋ ทุบ${rule.name}ด้วยมือ (อีก ${left} ครั้ง · เจ็บมือ)`
+  if (tool.id === 'hand') return `✋ ทุบ${rule.name}ด้วยมือ (อีก ${left} ครั้ง · ${handStatus('tree')})`
   return `🪓 ฟัน${rule.name} (อีก ${left} ครั้ง)`
 }
 
@@ -108,12 +110,14 @@ export function tendTree(i: number) {
   }
   // กดระหว่างเหวี่ยงอยู่ = ต่อคิวฟันครั้งถัดไปทันทีที่จบ
   if (swing.current >= 0) {
-    if (swing.tree === i) swing.queued = true
+    if (swing.tree === i && swing.kind === 'tree') swing.queued = true
     return
   }
+  if (chopTool() === 'hand' && restingHand()) return
   swing.queued = false
   swing.current = 0
   swing.tree = i
+  swing.kind = 'tree'
   swing.dur = CHOP_TOOLS[chopTool()].swing
   swing.hit = false
 }
@@ -133,11 +137,8 @@ export function hitTree(i: number, fromAngle: number) {
   treeFx.set(i, { ...treeFx.get(i), shakeAt: performance.now() })
   playChop(tool.id === 'hand' ? 0.5 : 1)
 
-  // มือเปล่า: เจ็บตัว
-  if (tool.id === 'hand') {
-    g.changeStats({ health: -HAND_HURT[tr.kind] })
-    if (!st) toast('✋ เจ็บมือ!', 'ทุบต้นไม้ด้วยมือได้ไม้น้อยและเสียชีวิตทีละนิด — ทำขวานที่โต๊ะประดิษฐ์หรือซื้อที่ร้านดีกว่า', 'warn')
-  }
+  // มือเปล่า: นับครั้งที่ทุบต้นไม้ (ครั้งที่ 20 ขึ้นไปเริ่มเจ็บมือ · ต้นแข็งเจ็บกว่า)
+  if (tool.id === 'hand') registerStrike('tree', HAND_HURT[tr.kind] / 1.5)
   g.changeStats({ thirst: -0.4, hunger: -0.2 })
 
   const drops = [...g.save.drops]
@@ -174,6 +175,70 @@ export function hitTree(i: number, fromAngle: number) {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10)
+
+// ---------- ทุบก้อนหินด้วยมือเปล่า ----------
+/** ทุบครบ 3 ครั้ง ได้หิน 1 ก้อน · กองหินหนึ่งกองให้หินได้ 3 ก้อน แล้วต้องรอสักพัก */
+const ROCK_HITS_PER_STONE = 3
+const ROCK_STONES = 3
+const ROCK_REGROW_MS = 90_000
+const rockState = new Map<number, { dmg: number; got: number; since: number }>()
+export const rockFx = new Map<number, number>()
+
+export function rockHint(i: number) {
+  const r = rockState.get(i)
+  if (r && r.got >= ROCK_STONES && Date.now() - r.since < ROCK_REGROW_MS) return 'กองหินนี้แตกหมดแล้ว รอสักพัก'
+  const left = ROCK_HITS_PER_STONE - (r?.dmg ?? 0)
+  return `✋ ทุบก้อนหินด้วยมือ (อีก ${left} ครั้งได้หิน · ${handStatus('rock')})`
+}
+
+/** กด E ที่ก้อนหิน (ถือมือเปล่า) */
+export function punchRock(i: number) {
+  if (swing.current >= 0) {
+    if (swing.tree === i && swing.kind === 'rock') swing.queued = true
+    return
+  }
+  if (restingHand()) return
+  const r = rockState.get(i)
+  if (r && r.got >= ROCK_STONES) {
+    if (Date.now() - r.since < ROCK_REGROW_MS) {
+      toast('กองหินนี้แตกหมดแล้ว', 'รอสักพักแล้วค่อยกลับมาใหม่ หรือไปหากองอื่น', 'info')
+      return
+    }
+    rockState.delete(i)
+  }
+  swing.queued = false
+  swing.current = 0
+  swing.tree = i
+  swing.kind = 'rock'
+  swing.dur = 0.75
+  swing.hit = false
+}
+
+/** จังหวะกำปั้นกระทบหิน (เรียกจาก Player) */
+export function hitRock(i: number) {
+  const g = useGame.getState()
+  if (!g.save) return
+  rockFx.set(i, performance.now())
+  playChop(0.35)
+  registerStrike('rock', 1.6)
+  g.changeStats({ thirst: -0.3, hunger: -0.15 })
+  const r = rockState.get(i) ?? { dmg: 0, got: 0, since: Date.now() }
+  r.dmg += 1
+  if (r.dmg >= ROCK_HITS_PER_STONE) {
+    r.dmg = 0
+    const n = addItem('stone', 1)
+    if (n > 0) {
+      if (r.got === 0) r.since = Date.now()
+      r.got += 1
+      toast('🪨 หิน +1', r.got >= ROCK_STONES ? 'กองหินนี้แตกหมดแล้ว' : undefined, 'success')
+    } else toast('กระเป๋าเต็มแล้ว', 'ขายหรือฝากของก่อนแล้วค่อยมาทุบใหม่', 'warn')
+    if (r.got >= ROCK_STONES) swing.queued = false
+  }
+  rockState.set(i, r)
+}
+
+/** ตำแหน่งเป้าที่กำลังทุบอยู่ */
+export const swingTargetPos = (): [number, number] => (swing.kind === 'rock' ? ROCKS[swing.tree] : TREES[swing.tree].pos)
 
 function dropNear(x: number, z: number, item: ItemId, qty: number, r: number): GroundDrop {
   const a = Math.random() * Math.PI * 2

@@ -9,6 +9,7 @@ import { useGame } from '../game/store'
 import type { Group } from 'three'
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { rockFx } from '../game/trees'
 import { BananaTree } from './models/BananaTree'
 import { Treasures } from './Treasure'
 import { ChoppableTrees } from './ChoppableTrees'
@@ -541,10 +542,24 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
 
 /** กองหินเล็ก ๆ ริมทาง (เก็บก้อนหินได้) */
 function Rocks() {
+  // โดนทุบ: กองหินสั่นสั้น ๆ
+  const refs = useRef<(Group | null)[]>([])
+  useFrame(() => {
+    const now = performance.now()
+    for (const [i, t] of rockFx) {
+      const g = refs.current[i]
+      if (!g) continue
+      const e = (now - t) / 1000
+      if (e > 0.35) {
+        g.position.x = ROCKS[i][0]
+        rockFx.delete(i)
+      } else g.position.x = ROCKS[i][0] + Math.sin(e * 70) * 0.04 * (1 - e / 0.35)
+    }
+  })
   return (
     <group>
       {ROCKS.map(([x, z], i) => (
-        <group key={i} position={[x, 0, z]} rotation={[0, i * 1.7, 0]}>
+        <group key={i} ref={(el) => { refs.current[i] = el }} position={[x, 0, z]} rotation={[0, i * 1.7, 0]}>
           <mesh position={[0, 0.18, 0]} scale={[1.2, 0.75, 1]} castShadow receiveShadow>
             <dodecahedronGeometry args={[0.32, 0]} />
             <meshStandardMaterial color="#8d8a84" />
