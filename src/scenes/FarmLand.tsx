@@ -86,7 +86,7 @@ function Buffalo({ pet, pos, rot }: { pet: PetChoice; pos: [number, number, numb
   )
 }
 
-function Barn({ x, z }: { x: number; z: number }) {
+export function Barn({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
       {[-1, 1].flatMap((sx) =>

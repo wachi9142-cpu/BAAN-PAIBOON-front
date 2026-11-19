@@ -42,6 +42,7 @@ import { Weather } from '../scenes/Weather'
 import { Festivals } from '../scenes/Festivals'
 import { VillageLife } from '../scenes/VillageLife'
 import { StreetLights } from '../scenes/StreetLights'
+import { SoftWorld } from '../scenes/SoftWorld'
 import { doFestSpot, useFestival } from '../game/festival'
 import { FESTIVALS, setDateOverride, thaiShort, today } from '../game/content/calendar'
 import { forceWeather, seasonLabel, useWeather, WEATHER } from '../game/weather'
@@ -290,6 +291,7 @@ export function WorldScreen() {
         <Festivals />
         <VillageLife />
         <StreetLights />
+        <SoftWorld />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
         <Wildlife />

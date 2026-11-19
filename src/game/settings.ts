@@ -7,6 +7,8 @@ interface Settings {
   mouseSensitivity: number
   /** โทนภาพนุ่มตา 0 (สีจัดเดิม) – 1 (นุ่มที่สุด) */
   softLook?: number
+  /** เอฟเฟกต์ภาพสวย (เงาฟุ้ง แสงเรือง) — ปิดถ้าเครื่องไม่แรง */
+  prettyFx?: boolean
   showLabels: boolean
   autoSave: boolean
   /** บันทึกอัตโนมัติทุกกี่นาที */
@@ -42,6 +44,7 @@ export const useSettings = create<Settings>()(
     (set) => ({
       mouseSensitivity: 1,
       softLook: 0.7,
+      prettyFx: true,
       showLabels: true,
       autoSave: true,
       autoSaveMinutes: 2,

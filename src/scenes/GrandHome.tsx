@@ -392,7 +392,7 @@ function RestingPet({ pet, pos, rot }: { pet: PetChoice; pos: [number, number, n
   )
 }
 
-function Car({ x, z }: { x: number; z: number }) {
+export function Car({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]}>
       <mesh position={[0, 0.65, 0]} castShadow>
@@ -597,7 +597,7 @@ function CookHouse({ x, z }: { x: number; z: number }) {
   )
 }
 
-function OutdoorToilets({ x, z }: { x: number; z: number }) {
+export function OutdoorToilets({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
       <mesh position={[0, 1.1, 0]} castShadow receiveShadow>

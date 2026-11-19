@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, type Group, type Texture } from 'three'
 import type { PetChoice, PetPattern } from '../../game/content/pets'
@@ -112,9 +112,31 @@ function Fur({ pet, tex }: { pet: PetChoice; tex: Texture | null }) {
 
 const Mat = ({ c }: { c: string }) => <meshStandardMaterial color={c} />
 
-function Eyes({ y, z, gap, r = 0.02 }: { y: number; z: number; gap: number; r?: number }) {
+/** แนว Soft 3D การ์ตูน: หัวสัตว์ใหญ่ขึ้น (ขยายกลุ่มหัวที่มีดวงตาอยู่) · ตาโตขึ้น · แก้มชมพู */
+const CHIBI_HEAD = 1.22
+const CHIBI_EYE = 1.3
+
+function Eyes({ y, z, gap, r: r0 = 0.02 }: { y: number; z: number; gap: number; r?: number }) {
+  const r = r0 * CHIBI_EYE
+  const mark = useRef<Group>(null)
+  useLayoutEffect(() => {
+    // ขยายหัวทั้งหัว (กลุ่มแม่ของดวงตา) ครั้งเดียว
+    const head = mark.current?.parent
+    if (head && !head.userData.chibi) {
+      head.userData.chibi = true
+      head.scale.multiplyScalar(CHIBI_HEAD)
+    }
+  }, [])
   return (
     <>
+      <group ref={mark} />
+      {/* แก้มชมพูใต้ตา */}
+      {[-gap, gap].map((x) => (
+        <mesh key={'ck' + x} position={[x * 1.25, y - r * 1.9, z - r * 0.4]} scale={[1.2, 0.75, 0.4]}>
+          <sphereGeometry args={[r * 0.95, 12, 8]} />
+          <meshStandardMaterial color="#f29a9a" transparent opacity={0.55} roughness={0.9} />
+        </mesh>
+      ))}
       {/* ตาขาว + ตาดำ + จุดแสง → มองเห็นได้แม้ตัวสัตว์สีเข้ม */}
       {[-gap, gap].map((x) => (
         <group key={x} position={[x, y, z]}>

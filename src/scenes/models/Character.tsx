@@ -56,8 +56,8 @@ interface Props {
 export const JUMP_CROUCH = 0.16
 export const JUMP_LAND = 0.86
 
-export type CharacterAction = 'sweep' | 'hoe' | 'talk'
-export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi'
+export type CharacterAction = 'sweep' | 'hoe' | 'talk' | 'inspect'
+export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi' | 'toolbelt'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -177,6 +177,13 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       const up = p < 0.75 ? p / 0.75 : 1 - (p - 0.75) / 0.25
       const x = -0.5 - up * 1.6
       ;[lx, lz, rx, rz] = [x, -0.25, x, 0.25]
+    } else if (m === 0 && action === 'inspect') {
+      // ตรวจเสาไฟฟ้า: มือขวาแตะเสา ไล่มือขึ้นลงตรวจรอยร้าว · บางช่วงเอามือเท้าเอวเงยดูสายไฟ
+      const ph = (idle.current * 0.12) % 1
+      if (ph < 0.6) {
+        const scan = Math.sin(idle.current * 0.9) * 0.25
+        ;[lx, lz, rx, rz] = [-0.15, 0.08, -1.35 + scan, -0.05]
+      } else ;[lx, lz, rx, rz] = [-0.2, 0.55, -0.2, -0.55]
     } else if (m === 0 && action === 'talk') {
       // คุย: ยกมือประกอบเป็นพัก ๆ
       const g = Math.max(0, Math.sin(idle.current * 1.3)) * 0.5
@@ -570,7 +577,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
           </group>
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
           {i === 1 && tool === 'wand' && <WandModel gem={wandGem ?? 'purple'} />}
-          {i === 1 && tool && tool !== 'pole' && tool !== 'wand' && <Tool kind={tool} />}
+          {i === 1 && tool && tool !== 'pole' && tool !== 'wand' && tool !== 'toolbelt' && <Tool kind={tool} />}
           {i === 0 && cane !== 'none' && <Cane kind={cane} />}
           {i === 1 && elder && appearance.basket && !tool && bag !== 'handbag' && <Basket />}
           {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && (
@@ -583,6 +590,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
 
       <BodyBag bag={bag} color={bagColor} female={female} />
       {tool === 'pole' && <CarryPole />}
+      {tool === 'toolbelt' && <ToolBelt />}
       {kidItem !== 'none' && (
         // ของที่กอดไว้หน้าอก (ตำแหน่งเดียวกับมือสองข้างที่ประคอง)
         <group ref={kidChest} position={[0, 1.98, 0.2]} scale={1.5} visible={false}>
@@ -594,7 +602,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
 
       {/* ---------- หัว (เด็กหัวใหญ่กว่าตัว) ---------- */}
       {/* หัววางเหนือยอดไหล่ เว้นคอให้เห็นราว 1/3 ของความสูงหัว */}
-      <group position={[0, 1.26 + shoulder * 0.5 + NECK_SHOW, 0]} scale={age.headScale * HEAD_BOOST} rotation={[-age.hunch * 0.7, 0, 0]}>
+      <group position={[0, 1.26 + shoulder * 0.5 + NECK_SHOW, 0]} scale={age.headScale * HEAD_BOOST * (child ? CHIBI_HEAD_CHILD : CHIBI_HEAD)} rotation={[-age.hunch * 0.7, 0, 0]}>
       <group position={[0, -1.4, 0]}>
       <mesh position={[0, 1.37, 0]}>
         <cylinderGeometry args={female ? [0.054, 0.064, 0.2, 16] : [0.072, 0.085, 0.2, 16]} />
@@ -640,7 +648,7 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
         ))}
       {/* ตา: ตาดำตามสีที่เลือก + จุดแสงสีขาว */}
       {([-1, 1] as const).map((s) => (
-        <group key={s} position={[s * eyeX, eyeY, faceZ(eyeX, eyeY) - 0.006]} scale={age.eyeScale * 1.06}>
+        <group key={s} position={[s * eyeX, eyeY, faceZ(eyeX, eyeY) - 0.006]} scale={age.eyeScale * 1.06 * CHIBI_EYE}>
           <Eye color={eye} style={appearance.eyeStyle ?? 'round'} side={s} female={female} skin={skin} />
         </group>
       ))}
@@ -684,9 +692,9 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       )}
       {/* แก้ม */}
       {[-0.095, 0.095].map((x) => (
-        <mesh key={'c' + x} position={[x, 1.525, 0.137]} rotation={[0, x * 4, 0]} scale={[1, 0.6, 0.3]}>
-          <sphereGeometry args={[0.026, 14, 10]} />
-          <meshStandardMaterial color="#e48f86" transparent opacity={0.55} />
+        <mesh key={'c' + x} position={[x * 1.06, 1.52, 0.137]} rotation={[0, x * 4, 0]} scale={[1.15, 0.7, 0.3]}>
+          <sphereGeometry args={[0.032, 16, 12]} />
+          <meshStandardMaterial color="#f0918a" transparent opacity={0.62} roughness={0.9} />
         </mesh>
       ))}
 
@@ -797,6 +805,11 @@ function Tool({ kind }: { kind: ToolId }) {
 
 /** หัวใหญ่ขึ้นเล็กน้อยทุกวัย (สัดส่วนน่ารักแบบ cozy game) */
 const HEAD_BOOST = 1.04
+/** แนวภาพ Soft 3D การ์ตูน (ผู้สร้าง 19 พ.ย. 2569): หัวโตขึ้นแบบ chibi — เด็กโตอยู่แล้วจึงเพิ่มน้อยกว่า */
+const CHIBI_HEAD = 1.3
+const CHIBI_HEAD_CHILD = 1.12
+/** ตาโตขึ้น */
+const CHIBI_EYE = 1.2
 /** ความยาวคอที่เห็น (เหนือไหล่) ≈ 1/3 ของความสูงหัว */
 const NECK_SHOW = 0.06
 
@@ -1110,6 +1123,39 @@ function WandModel({ gem }: { gem: GemColor }) {
           </mesh>
         </group>
       )}
+    </group>
+  )
+}
+
+/** เข็มขัดเครื่องมือช่างไฟ: กระเป๋าหนังสองข้าง มีไขควง คีม ประแจโผล่ */
+function ToolBelt() {
+  const LEATHER = '#8a5a34'
+  return (
+    <group position={[0, 0.93, 0]}>
+      <mesh>
+        <cylinderGeometry args={[0.2, 0.2, 0.06, 18, 1, true]} />
+        <meshStandardMaterial color="#5a3a22" side={2} />
+      </mesh>
+      <mesh position={[0, 0, 0.2]}>
+        <boxGeometry args={[0.07, 0.05, 0.02]} />
+        <meshStandardMaterial color="#c8ccd0" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {[-1, 1].map((s) => (
+        <group key={s} position={[s * 0.19, -0.08, 0.06]} rotation={[0, s * 0.5, 0]}>
+          <mesh>
+            <RBox args={[0.1, 0.14, 0.06]} radius={0.015} />
+            <meshStandardMaterial color={LEATHER} roughness={0.85} />
+          </mesh>
+          <mesh position={[-0.025, 0.1, 0]}>
+            <cylinderGeometry args={[0.008, 0.008, 0.1, 6]} />
+            <meshStandardMaterial color={s > 0 ? '#d83a2a' : '#2a6ac9'} />
+          </mesh>
+          <mesh position={[0.02, 0.1, 0]}>
+            <boxGeometry args={[0.02, 0.09, 0.012]} />
+            <meshStandardMaterial color="#c8ccd0" metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
     </group>
   )
 }

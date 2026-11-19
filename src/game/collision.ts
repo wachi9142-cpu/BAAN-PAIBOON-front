@@ -24,6 +24,8 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
     const plot = PLOTS[0]
     const [w, d] = getHouse(playerHouseId).footprint
     out.push({ x: plot.center[0] + plot.houseOffset[0], z: plot.center[1] + plot.houseOffset[1], r: Math.max(w, d) * 0.62 })
+    // บ้านแม่ฉัตร: รถที่จอด (2 วง) + ห้องน้ำนอกบ้าน
+    out.push({ x: plot.center[0] - 0.5, z: plot.center[1] + 4.4, r: 1 }, { x: plot.center[0] - 0.5, z: plot.center[1] + 6.6, r: 1 }, { x: plot.center[0] - 7, z: plot.center[1] - 1.5, r: 1.5 }, { x: plot.center[0] + 3.4, z: plot.center[1] + 4.9, r: 0.9 }, { x: plot.center[0] + 3.4, z: plot.center[1] + 5.9, r: 0.9 })
   }
   out.push(...templeWalls())
   out.push(...campusWalls())

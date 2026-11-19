@@ -1,7 +1,8 @@
 import { editables, useLayoutEdit } from '../game/layoutEdit'
-import { FarmLand } from './FarmLand'
+import { Barn, FarmLand } from './FarmLand'
 import { WoodYard } from './WoodYard'
 import { OvergrownLot } from './OvergrownLot'
+import { Car, OutdoorToilets } from './GrandHome'
 import { GrandHome } from './GrandHome'
 import { BigStore, Campus, EventGround, Garage, Lake, RoadSurface, Stall } from './VillageLayout'
 import { useGame } from '../game/store'
@@ -49,7 +50,6 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
       <Garden />
       <Structures />
       <Treasures />
-      <Mountains />
     </group>
   )
 }
@@ -64,7 +64,8 @@ function Ground() {
 }
 
 /** ทิวเขาไกล ๆ รอบหมู่บ้าน (ฉากหลัง เดินไปไม่ถึง) */
-function Mountains() {
+// ภูเขากรวยเดิม (เลิกใช้: ใช้เนินเขาเขียวใน SoftWorld แทน) — เก็บไว้เผื่ออยากกลับไปใช้
+export function Mountains() {
   const peaks = useMemo(() => {
     const out: { x: number; z: number; r: number; h: number; c: string }[] = []
     const colors = ['#5f7f5a', '#6b8c63', '#557552', '#738f6a']
@@ -200,6 +201,14 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 3
       body = <Lake w={w} d={d} />
       break
+    case 'fencedlot':
+      labelY = 0
+      body = <FencedLot w={w} d={d} />
+      break
+    case 'barnyard':
+      labelY = 4
+      body = <BarnYard w={w} d={d} />
+      break
     case 'overgrown':
       labelY = 3
       body = <OvergrownLot w={w} d={d} />
@@ -313,7 +322,7 @@ function PlaceMesh({ place }: { place: Place }) {
   return (
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {body}
-      <Label text={place.name} y={labelY} />
+      {labelY > 0 && <Label text={place.name} y={labelY} />}
     </group>
   )
 }
@@ -445,7 +454,9 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
     const out: [number, number][] = []
     const step = 2
     for (let x = -w / 2; x <= w / 2 + 0.01; x += step) {
-      out.push([x, -d / 2], [x, d / 2])
+      out.push([x, -d / 2])
+      // ด้านถนน (เหนือ): เว้นช่องทางเข้าที่จอดรถหน้าบ้าน
+      if (Math.abs(x + 0.5) > 3) out.push([x, d / 2])
     }
     for (let z = -d / 2 + step; z < d / 2 - 0.01; z += step) {
       // เว้นช่องประตูรั้วด้านถนน (ทิศตะวันตก)
@@ -474,6 +485,7 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
           <House design={getHouse(houseId)} />
         </group>
       )}
+      {plot.id === 'start-plot' && <MaeChatYard />}
       <group position={[-w / 2 + 1.5, 0, 0]}>
         <Label text={plot.houseName ?? (ownerName ? `บ้านของ${ownerName}` : plot.name)} y={houseId ? 8 : 2} color="#2b4a28" />
       </group>
@@ -585,3 +597,298 @@ function BoardBadge({ id }: { id: string }) {
   )
 }
 
+
+/** ลานหน้าบ้านแม่ฉัตร (พิกัดภายในแปลง): ที่จอดรถหน้าบ้าน · สวนดอกไม้ริมถนน · ห้องน้ำนอกบ้าน */
+function MaeChatYard() {
+  const flowers = ['#f29ab8', '#f6d65a', '#e85a6a', '#c9a0e8', '#ffffff', '#f2a65a']
+  return (
+    <group>
+      {/* ที่จอดรถ: ลานปูน + รถ 1 คัน */}
+      <mesh position={[-0.5, 0.035, 5.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[9, 4.5]} />
+        <meshStandardMaterial color="#cfc9bb" roughness={0.95} />
+      </mesh>
+      {/* จอดหันหัวเข้าบ้าน (แนวตั้งฉากกับถนน) */}
+      <group position={[-0.5, 0, 5.5]}>
+        <Car x={0} z={0} />
+      </group>
+      {/* โต๊ะไม้นั่งกินข้าวข้างที่จอดรถ: โต๊ะยาว + ม้านั่ง 2 ข้าง + กระติบข้าวเหนียว ถ้วยกับข้าว */}
+      <DiningTable x={3.4} z={5.4} />
+      {/* แนวหน้าบ้านริมรั้ว: ช่อง 1 ชั้นวางไม้ประดับ · ช่อง 2 สวนดาวเรือง · ช่อง 3 แปลงสมุนไพร */}
+      <PlantShelf x={2.6} z={8.1} />
+      <MarigoldBed x={5.5} z={8.1} />
+      <HerbBed x={8.4} z={8.1} />
+      {/* สวนดอกไม้: ขอบไม้ + กอดอกไม้หลากสี */}
+      <group position={[-7.2, 0, 5.5]}>
+        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[4, 4]} />
+          <meshStandardMaterial color="#7a5a3e" roughness={1} />
+        </mesh>
+        {Array.from({ length: 12 }, (_, i) => (
+          <Bush key={i} x={-1.4 + (i % 4) * 0.95} z={-1.3 + Math.floor(i / 4) * 1.3} s={0.55 + (i % 3) * 0.08} flowers={flowers[i % flowers.length]} />
+        ))}
+      </group>
+      {/* ห้องน้ำนอกบ้าน */}
+      {/* ประตูห้องน้ำหันเข้าหาบ้าน */}
+      <group position={[-7, 0, -1.5]} rotation={[0, -Math.PI / 2, 0]}>
+        <OutdoorToilets x={0} z={0} />
+      </group>
+    </group>
+  )
+}
+
+/** โต๊ะไม้กินข้าวหน้าบ้าน (แบบบ้านชนบท): โต๊ะยาว ม้านั่งยาวสองฝั่ง มีกระติบข้าวเหนียวกับถ้วยกับข้าว */
+function DiningTable({ x, z }: { x: number; z: number }) {
+  const WOOD = '#8a5a34'
+  const DARK = '#6b4428'
+  return (
+    <group position={[x, 0, z]}>
+      {/* พื้นโต๊ะ */}
+      <mesh position={[0, 0.76, 0]} castShadow receiveShadow>
+        <RBox args={[1.2, 0.08, 2.2]} radius={0.03} />
+        <meshStandardMaterial color={WOOD} roughness={0.85} />
+      </mesh>
+      {[-0.5, 0.5].flatMap((lx) => [-0.95, 0.95].map((lz) => (
+        <mesh key={lx + ':' + lz} position={[lx, 0.37, lz]} castShadow>
+          <boxGeometry args={[0.08, 0.74, 0.08]} />
+          <meshStandardMaterial color={DARK} />
+        </mesh>
+      )))}
+      {/* ม้านั่งสองฝั่ง */}
+      {[-1, 1].map((sd) => (
+        <group key={sd} position={[sd * 0.95, 0, 0]}>
+          <mesh position={[0, 0.44, 0]} castShadow receiveShadow>
+            <RBox args={[0.34, 0.06, 2.1]} radius={0.02} />
+            <meshStandardMaterial color={WOOD} roughness={0.85} />
+          </mesh>
+          {[-0.85, 0.85].map((lz) => (
+            <mesh key={lz} position={[0, 0.21, lz]}>
+              <boxGeometry args={[0.07, 0.42, 0.07]} />
+              <meshStandardMaterial color={DARK} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {/* กระติบข้าวเหนียว + ถ้วยกับข้าว + จานสังกะสี */}
+      <mesh position={[0, 0.9, -0.5]}>
+        <cylinderGeometry args={[0.13, 0.11, 0.2, 14]} />
+        <meshStandardMaterial color="#c8a46a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 1.02, -0.5]}>
+        <cylinderGeometry args={[0.14, 0.13, 0.05, 14]} />
+        <meshStandardMaterial color="#b8945a" />
+      </mesh>
+      {[[-0.25, 0.15, '#e86a3a'], [0.25, 0.3, '#5a9a3a'], [0, 0.65, '#d8b04a']].map(([bx, bz, c], i) => (
+        <group key={i} position={[bx as number, 0.82, bz as number]}>
+          <mesh>
+            <cylinderGeometry args={[0.13, 0.08, 0.08, 14]} />
+            <meshStandardMaterial color="#f2efe6" />
+          </mesh>
+          <mesh position={[0, 0.035, 0]}>
+            <cylinderGeometry args={[0.11, 0.11, 0.02, 14]} />
+            <meshStandardMaterial color={c as string} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0.3, 0.83, -0.15]}>
+        <cylinderGeometry args={[0.06, 0.05, 0.12, 10]} />
+        <meshStandardMaterial color="#c0c4c8" metalness={0.3} roughness={0.5} />
+      </mesh>
+    </group>
+  )
+}
+
+/** ช่อง 1: ชั้นไม้ขั้นบันได วางกระถางไม้ประดับ */
+function PlantShelf({ x, z }: { x: number; z: number }) {
+  const leaf = ['#4f8a3a', '#6aa04a', '#3f7a3a', '#7ab050']
+  const pot = ['#b5653a', '#c47a4a', '#a8583a', '#d08a5a']
+  return (
+    <group position={[x, 0, z]}>
+      {[0, 1, 2].map((k) => (
+        <group key={k}>
+          <mesh position={[0, 0.25 + k * 0.32, 0.3 - k * 0.3]} castShadow>
+            <boxGeometry args={[2.4, 0.06, 0.34]} />
+            <meshStandardMaterial color="#8a5a34" roughness={0.85} />
+          </mesh>
+          {[-0.8, 0, 0.8].map((px, i) => (
+            <group key={i} position={[px + (k % 2) * 0.25, 0.28 + k * 0.32, 0.3 - k * 0.3]}>
+              <mesh position={[0, 0.09, 0]}>
+                <cylinderGeometry args={[0.11, 0.08, 0.18, 12]} />
+                <meshStandardMaterial color={pot[(i + k) % pot.length]} roughness={0.9} />
+              </mesh>
+              <mesh position={[0, 0.28, 0]} scale={[1, 0.9 + ((i + k) % 3) * 0.15, 1]}>
+                <sphereGeometry args={[0.16, 14, 10]} />
+                <meshStandardMaterial color={leaf[(i * 2 + k) % leaf.length]} roughness={0.9} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      ))}
+      {[-1.15, 1.15].map((px) => (
+        <mesh key={px} position={[px, 0.5, 0]}>
+          <boxGeometry args={[0.07, 1, 0.9]} />
+          <meshStandardMaterial color="#6b4428" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ช่อง 2: สวนดอกดาวเรือง (ส้ม–เหลือง) ขอบไม้ */
+function MarigoldBed({ x, z }: { x: number; z: number }) {
+  const spots = Array.from({ length: 18 }, (_, i) => [(i % 6) * 0.42 - 1.05, Math.floor(i / 6) * 0.42 - 0.42] as const)
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.08, 0]}>
+        <boxGeometry args={[2.7, 0.16, 1.35]} />
+        <meshStandardMaterial color="#7a5232" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.5, 1.15]} />
+        <meshStandardMaterial color="#5a4030" roughness={1} />
+      </mesh>
+      {spots.map(([sx, sz], i) => (
+        <group key={i} position={[sx, 0.17, sz]}>
+          <mesh position={[0, 0.12, 0]} scale={[1, 0.8, 1]}>
+            <sphereGeometry args={[0.13, 10, 8]} />
+            <meshStandardMaterial color="#4f8a3a" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.27, 0]} scale={[1, 0.75, 1]}>
+            <sphereGeometry args={[0.11, 14, 10]} />
+            <meshStandardMaterial color={i % 3 === 0 ? '#f6c23a' : '#f08a1e'} roughness={0.8} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** ช่อง 3: แปลงสมุนไพร — ตะไคร้ กะเพรา พริก ข่า สะระแหน่ */
+function HerbBed({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.08, 0]}>
+        <boxGeometry args={[2.7, 0.16, 1.35]} />
+        <meshStandardMaterial color="#7a5232" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.5, 1.15]} />
+        <meshStandardMaterial color="#5a4030" roughness={1} />
+      </mesh>
+      {/* ตะไคร้: ใบยาวเรียวเป็นกอ */}
+      {[-0.9, -0.5].map((px) => (
+        <group key={px} position={[px, 0.17, -0.2]}>
+          {Array.from({ length: 7 }, (_, i) => (
+            <mesh key={i} position={[Math.cos(i) * 0.05, 0.3, Math.sin(i) * 0.05]} rotation={[Math.cos(i * 2) * 0.35, 0, Math.sin(i * 2) * 0.35]}>
+              <coneGeometry args={[0.025, 0.65, 4]} />
+              <meshStandardMaterial color="#8ab04a" roughness={0.9} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {/* กะเพรา / สะระแหน่: พุ่มเตี้ยใบเขียวเข้ม */}
+      {[-0.05, 0.35, 0.75].map((px, i) => (
+        <mesh key={px} position={[px, 0.3, i % 2 ? 0.25 : -0.2]} scale={[1, 0.75, 1]}>
+          <sphereGeometry args={[0.17, 12, 10]} />
+          <meshStandardMaterial color={i === 1 ? '#5aa04a' : '#3f7a34'} roughness={0.9} />
+        </mesh>
+      ))}
+      {/* พริก: พุ่มมีเม็ดแดง */}
+      <group position={[1.0, 0.17, 0.2]}>
+        <mesh position={[0, 0.2, 0]}>
+          <sphereGeometry args={[0.16, 12, 10]} />
+          <meshStandardMaterial color="#4f8a3a" roughness={0.9} />
+        </mesh>
+        {[0, 1, 2, 3].map((k) => (
+          <mesh key={k} position={[Math.cos(k * 1.6) * 0.13, 0.22 + (k % 2) * 0.06, Math.sin(k * 1.6) * 0.13]} rotation={[0, 0, Math.PI]}>
+            <coneGeometry args={[0.025, 0.09, 6]} />
+            <meshStandardMaterial color="#d8322a" roughness={0.6} />
+          </mesh>
+        ))}
+      </group>
+      {/* ข่า: ใบใหญ่ตั้ง */}
+      {[0, 1].map((k) => (
+        <mesh key={k} position={[-0.6 + k * 0.15, 0.4, 0.3]} rotation={[0.2, k, 0.15]} scale={[0.35, 1, 0.06]}>
+          <sphereGeometry args={[0.28, 10, 8]} />
+          <meshStandardMaterial color="#6a9a3a" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ลานยุ้งข้าว + กองฟางก้อนใหญ่ (บ้านพี่เอม) */
+function BarnYard({ w, d }: { w: number; d: number }) {
+  const stacks: [number, number, number][] = [
+    [2.6, 1.6, 1.5],
+    [-0.4, 2.4, 1.25],
+    [3.6, -1.2, 1.0],
+    [1.2, 0.1, 0.8],
+  ]
+  return (
+    <group>
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color="#b9a372" roughness={1} />
+      </mesh>
+      {/* ยุ้งข้าวใต้ถุนสูง */}
+      <Barn x={-3} z={-1.2} />
+      {/* กองฟางก้อนใหญ่ทรงโดม มีเสาไม้กลางกอง */}
+      {stacks.map(([x, z, s], i) => (
+        <group key={i} position={[x, 0, z]} scale={s}>
+          <mesh position={[0, 0.75, 0]} scale={[1.25, 1, 1.25]} castShadow receiveShadow>
+            <sphereGeometry args={[1, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={i % 2 ? '#e2c46a' : '#d8b65a'} roughness={1} />
+          </mesh>
+          <mesh position={[0, 0.38, 0]} scale={[1.25, 0.75, 1.25]} castShadow>
+            <cylinderGeometry args={[1, 1.05, 1, 24]} />
+            <meshStandardMaterial color={i % 2 ? '#d8b65a' : '#cfac50'} roughness={1} />
+          </mesh>
+          <mesh position={[0, 1.95, 0]}>
+            <cylinderGeometry args={[0.04, 0.05, 0.6, 6]} />
+            <meshStandardMaterial color="#6b4a2e" />
+          </mesh>
+        </group>
+      ))}
+      {/* ฟางร่วงบนพื้น */}
+      {Array.from({ length: 10 }, (_, i) => (
+        <mesh key={'s' + i} position={[Math.cos(i * 2.3) * 3.5 + 1, 0.04, Math.sin(i * 2.3) * 2.6]} rotation={[-Math.PI / 2, 0, i]}>
+          <planeGeometry args={[0.6, 0.12]} />
+          <meshStandardMaterial color="#e2c46a" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ที่ดินมีรั้วล้อม (รั้วไม้ระแนง) · ประตูทางเข้าด้านหน้า (−z ด้านถนน) กว้าง 3 ม. · พื้นหญ้าตัดเรียบ */
+function FencedLot({ w, d }: { w: number; d: number }) {
+  const h = w / 2
+  const dd = d / 2
+  const gate = 1.5
+  return (
+    <group>
+      <mesh position={[0, 0.021, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color="#9fbf62" roughness={1} />
+      </mesh>
+      {/* ทางเดินปูนจากประตูถึงหน้าบ้าน */}
+      <mesh position={[0, 0.03, -dd + 1.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.2, 3.2]} />
+        <meshStandardMaterial color="#d6d0c2" roughness={0.95} />
+      </mesh>
+      <PicketFence x={0} z={dd} len={w} />
+      <PicketFence x={h} z={0} len={d} rot={Math.PI / 2} />
+      <PicketFence x={-h} z={0} len={d} rot={Math.PI / 2} />
+      <PicketFence x={(-h + -gate) / 2} z={-dd} len={h - gate} />
+      <PicketFence x={(h + gate) / 2} z={-dd} len={h - gate} />
+      {/* เสาประตูรั้ว */}
+      {[-gate, gate].map((x) => (
+        <mesh key={x} position={[x, 0.6, -dd]} castShadow>
+          <boxGeometry args={[0.18, 1.2, 0.18]} />
+          <meshStandardMaterial color="#d8d2c4" />
+        </mesh>
+      ))}
+    </group>
+  )
+}

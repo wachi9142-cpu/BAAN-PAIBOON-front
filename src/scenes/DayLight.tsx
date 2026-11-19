@@ -1,12 +1,14 @@
 import { useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Sky } from '@react-three/drei'
 import { Color, Fog, type AmbientLight, type DirectionalLight, type HemisphereLight, type Mesh, type PointLight } from 'three'
 import { exactMinute } from '../game/clock'
 import { LIGHT_KEYS, type LightKey } from '../game/content/daytime'
 import { PLACES } from '../game/content/village'
 import { TEMPLE } from '../game/content/temple'
 import { weatherRt } from '../game/weather'
+import { skyAt } from './SoftWorld'
+const skyTop = new Color()
+const skyBottom = new Color()
 
 const tmpA = new Color()
 const tmpB = new Color()
@@ -75,6 +77,9 @@ export function DayLight() {
     sunRef.current.intensity *= 1 - 0.78 * cl
     hemiRef.current.intensity *= 1 - 0.32 * cl
     ambRef.current.intensity = ambRef.current.intensity * (1 - 0.2 * cl) + weatherRt.flash * 0.7
+    // หมอกกลืนกับขอบฟ้า (ท้องฟ้าไล่สี) แล้วค่อยเทาลงตามเมฆ
+    skyAt(m, skyTop, skyBottom)
+    fog.color.lerp(skyBottom, 0.75)
     fog.color.lerp(tmpB.set('#9aa2a8'), Math.min(0.75, cl * 0.6 + weatherRt.fog * 0.4))
     // ไฟตะเกียงยามค่ำ
     for (const l of lampRefs.current) if (l) l.intensity = s.lamps * 7
@@ -82,7 +87,6 @@ export function DayLight() {
 
   return (
     <>
-      <Sky ref={skyRef as never} distance={450000} sunPosition={[1, 0.3, 0.3]} turbidity={3.5} rayleigh={0.7} mieCoefficient={0.004} mieDirectionalG={0.75} />
       <hemisphereLight ref={hemiRef} args={['#fff4dc', '#8a9a62', 1.45]} />
       <ambientLight ref={ambRef} color="#ffe9c8" intensity={0.35} />
       <directionalLight

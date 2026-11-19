@@ -102,6 +102,24 @@ export function Accessory({ kind, color }: { kind: AccessoryId; color: string })
           </mesh>
         </group>
       )
+    case 'hardhat':
+      // หมวกนิรภัยช่างไฟฟ้า: โดมมีสัน + ปีกหมวกรอบ
+      return (
+        <group position={[0, 1.69, 0]}>
+          <mesh castShadow scale={[1, 0.9, 1.08]}>
+            <sphereGeometry args={[0.2, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.005, 0.02]} scale={[1, 1, 1.12]}>
+            <cylinderGeometry args={[0.235, 0.235, 0.025, 20]} />
+            <M c={color} />
+          </mesh>
+          <mesh position={[0, 0.17, 0]} scale={[0.3, 0.25, 1.05]}>
+            <sphereGeometry args={[0.2, 12, 8]} />
+            <M c={color} />
+          </mesh>
+        </group>
+      )
     case 'beanie':
       return (
         <group position={[0, 1.66, 0]}>

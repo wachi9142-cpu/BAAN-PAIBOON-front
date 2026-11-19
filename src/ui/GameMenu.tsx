@@ -565,6 +565,32 @@ export function SettingsTab() {
         <span>ความไวเมาส์</span>
         <input type="range" min={0.3} max={2} step={0.1} value={settings.mouseSensitivity} onChange={(e) => settings.set({ mouseSensitivity: Number(e.target.value) })} />
       </label>
+      {import.meta.env.DEV && (
+        <div className="setting" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+          <span>🧪 ของทดสอบ (เฉพาะตอนพัฒนา)</span>
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => {
+              const g = useGame.getState()
+              if (!g.save) return
+              const inv = { ...g.save.inventory }
+              inv.wand = Math.max(1, inv.wand ?? 0)
+              inv.treat = (inv.treat ?? 0) + 10
+              inv.feed = (inv.feed ?? 0) + 10
+              useGame.setState({ save: { ...g.save, inventory: inv }, dirty: true })
+              equip('wand')
+              g.toast({ title: '🪄 ได้ไม้คฑาแล้ว (ถืออยู่)', body: 'เลือกสีอัญมณีได้ 4 แบบ (เขียว เหลือง แดง ม่วง) ที่วงกลมเหนือแถบไอเทม · แถมกล้วยสุก 10 + อาหารสัตว์ 10', tone: 'success' })
+            }}
+          >
+            🪄 รับไม้คฑา + อัญมณีครบ 4 สี
+          </button>
+        </div>
+      )}
+      <label className="setting" title="เงาฟุ้งตามซอกมุม แสงเรืองนุ่ม ขอบภาพนุ่ม — ปิดถ้าเกมกระตุก">
+        <span>เอฟเฟกต์ภาพสวย (เครื่องแรง)</span>
+        <input type="checkbox" checked={settings.prettyFx ?? true} onChange={(e) => settings.set({ prettyFx: e.target.checked })} />
+      </label>
       <label className="setting" title="ลดสีจัดและความตัดกันของภาพ ให้สบายตา">
         <span>โทนภาพนุ่มตา ({Math.round((settings.softLook ?? 0.7) * 100)}%)</span>
         <input type="range" min={0} max={1} step={0.05} value={settings.softLook ?? 0.7} onChange={(e) => settings.set({ softLook: Number(e.target.value) })} />

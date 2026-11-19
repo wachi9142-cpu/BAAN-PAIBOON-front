@@ -9,7 +9,7 @@ export type VillagerBehavior =
   /** เดินไปกลับตามจุด แวะยืนพักเป็นระยะ */
   | { kind: 'walk'; path: Vec2[]; pauseSec?: number }
   /** ยืนทำงานกับที่ ค่อย ๆ ขยับไปตามแนวถนน */
-  | { kind: 'work'; action: 'sweep' | 'hoe'; pos: Vec2; heading: number; drift?: number }
+  | { kind: 'work'; action: 'sweep' | 'hoe' | 'inspect'; pos: Vec2; heading: number; drift?: number }
   /** ยืนเฉย ๆ / ยืนคุย หันหน้าเข้าหาจุด */
   | { kind: 'stand'; pos: Vec2; faceTo: Vec2; talk?: boolean }
 
@@ -17,7 +17,7 @@ export interface Villager {
   id: string
   appearance: Appearance
   behavior: VillagerBehavior
-  tool?: 'broom' | 'hoe' | 'pole'
+  tool?: 'broom' | 'hoe' | 'pole' | 'toolbelt'
 }
 
 // ชุดชาวบ้าน: เสื้อแขนยาวสีฟ้า ม่วง แดง ขาว · กางเกงสีเข้ม · หมวกปีกกว้าง
@@ -46,6 +46,24 @@ const man = (top: string, extra: Partial<Appearance> = {}): Appearance => ({
 })
 
 export const VILLAGERS: Villager[] = [
+  // น้ายศ: น้าชายคนเล็กของฟ่าง วิศวกรไฟฟ้า · ยืนตรวจเสาไฟฟ้าคอนกรีตหน้าบ้านตา (เสาริมถนนหน้ารั้ว)
+  {
+    id: 'yot',
+    appearance: {
+      gender: 'male',
+      skin: 'tan',
+      hairStyle: 'short',
+      hairColor: 'black',
+      outfit: 'mohom',
+      topColor: '#cbbd96',
+      bottomColor: '#4a4c50',
+      shoes: 'boots',
+      accessory: 'hardhat',
+      accessoryColor: 'yellow',
+    } as Appearance,
+    tool: 'toolbelt',
+    behavior: { kind: 'work', action: 'inspect', pos: [-13.3, 56.55], heading: 0, drift: 0 },
+  },
   // คนเดินไปมาตามถนน
   { id: 'walk-1', appearance: woman('#6f8fc4'), behavior: { kind: 'walk', path: [[-60, 1.2], [20, 1.2]], pauseSec: 4 } },
   {
@@ -118,6 +136,16 @@ export interface NpcInfo {
   greet: string[]
 }
 export const NPC_INFO: Record<string, NpcInfo> = {
+  yot: {
+    name: 'น้ายศ (น้าชายคนเล็ก · วิศวกรไฟฟ้า)',
+    greet: [
+      'อ้าว หลานฟ่าง! น้ากำลังตรวจเสาไฟหน้าบ้านอยู่ เดี๋ยวไปกินข้าวด้วยกันนะ',
+      'เสาต้นนี้ต้องดูรอยร้าวกับสายที่หย่อนเกินไป ฝนตกบ่อยต้องระวังไฟรั่ว',
+      'อย่าเข้าใกล้สายไฟที่ขาดห้อยลงมานะลูก ถ้าเห็นให้รีบบอกน้า',
+      'สายดำ ๆ ข้างล่างเป็นสายโทรศัพท์กับอินเทอร์เน็ต ส่วนสายบนสุดคือสายไฟฟ้าแรงสูง',
+      'โตขึ้นอยากเป็นวิศวกรแบบน้าไหม? ต้องตั้งใจเรียนเลขกับวิทย์นะ',
+    ],
+  },
   hawker: { name: 'ป้าบัว แม่ค้าหาบเร่', vendor: true, greet: ['มาจ้า ๆ ผลไม้สด ๆ จากสวนเลยลูก', 'วันนี้มะม่วงหวานนะ ลองชิมไหม', 'เดินมาทั้งวัน เมื่อยขาแต่ใจยังสู้'] },
   'walk-1': { name: 'น้าแก้ว', greet: ['ไปไหนมาจ๊ะ', 'อากาศดีนะวันนี้'] },
   'walk-2': { name: 'ตาทอง', greet: ['หลานเอ๊ย กินข้าวหรือยัง', 'สมัยตายังหนุ่ม ทุ่งนาตรงนี้กว้างสุดตา'] },

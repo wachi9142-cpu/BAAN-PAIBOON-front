@@ -80,8 +80,8 @@ export function Weather() {
     if (scene.fog && 'near' in scene.fog) {
       const f = scene.fog as { near: number; far: number }
       const vis = 1 - Math.min(0.85, w.fog * 0.85 + w.rain * 0.45)
-      f.near = 8 + 52 * vis
-      f.far = 70 + 250 * vis
+      f.near = 15 + 95 * vis
+      f.far = 80 + 400 * vis
     }
     // เม็ดฝน
     const mesh = rain.current

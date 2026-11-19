@@ -363,7 +363,7 @@ export const eyeColorValue = (v: string | undefined) =>
   !v ? EYE_COLORS[0].color : isCustomColor(v) ? v : byId(EYE_COLORS, v).color
 
 // ---------- เครื่องประดับ ----------
-export type AccessoryId = 'none' | 'glasses' | 'ribbon' | 'hairclip' | 'flowercrown' | 'headband' | 'cap' | 'beanie' | 'beret' | 'strawhat' | 'widehat' | 'headphones'
+export type AccessoryId = 'none' | 'glasses' | 'ribbon' | 'hairclip' | 'flowercrown' | 'headband' | 'cap' | 'beanie' | 'beret' | 'strawhat' | 'widehat' | 'headphones' | 'hardhat'
 export const ACCESSORIES: (Option & { id: AccessoryId })[] = [
   { id: 'none', label: 'ไม่มี' },
   { id: 'glasses', label: 'แว่นตา' },
@@ -377,6 +377,7 @@ export const ACCESSORIES: (Option & { id: AccessoryId })[] = [
   { id: 'beret', label: 'หมวกเบเร่ต์' },
   { id: 'strawhat', label: 'หมวกสาน' },
   { id: 'widehat', label: 'หมวกปีกกว้าง' },
+  { id: 'hardhat', label: 'หมวกนิรภัย' },
 ]
 export const ACCESSORY_COLORS: (Option & { color: string })[] = [
   { id: 'navy', label: 'กรมท่า', color: '#26324f' },
