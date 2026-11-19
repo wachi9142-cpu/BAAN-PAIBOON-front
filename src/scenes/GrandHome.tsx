@@ -1,5 +1,7 @@
 import { useMemo, useRef } from 'react'
-import { CanvasTexture, RepeatWrapping } from 'three'
+import { CanvasTexture, RepeatWrapping, Vector3, type Group } from 'three'
+import { useFrame } from '@react-three/fiber'
+import { exactMinute } from '../game/clock'
 import { RBox } from './models/RBox'
 import { CashewTree } from './models/CashewTree'
 import { WaterTower } from './models/WaterTower'
@@ -11,6 +13,10 @@ import { BananaTree } from './models/BananaTree'
 import { Pet } from './models/Pet'
 import { SignBoard } from './SignBoard'
 import { ArecaPalmTree, CoconutPalm } from './models/Palms'
+import { MangoTree, type MangoVariety } from './Orchard'
+import { Windy } from './Wind'
+import { CreamFence } from './models/CreamFence'
+import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
 import type { PetChoice } from '../game/content/pets'
 
@@ -22,7 +28,7 @@ import type { PetChoice } from '../game/content/pets'
  * ขอบเขตรั้วบ้าน (พิกัดภายใน เทียบจุดกลางเดิม) — ขยายพื้นที่ไปทางตะวันออกและทางเหนือ (ผู้สร้าง 18 พ.ย. 2569: "บ้านฟ่างใหญ่กว่านี้")
  * ฝั่งตะวันตก (ติดซอย 2) และฝั่งใต้ (ติดถนนดินแดง/ประตู) อยู่ที่เดิม
  */
-export const HOME_BOX = { x0: -15, x1: 33, z0: -13, z1: 38 }
+export const HOME_BOX = { x0: -17, x1: 33, z0: -13, z1: 38 }
 /** ช่องทางเข้ารถยนต์ 1 คัน ที่รั้วฝั่งเหนือ (ติดถนนดินแดงแนวนอนหลังบ้าน): x กลางช่อง · ครึ่งความกว้าง */
 export const HOME_BACK_GATE = { x: 1.5, half: 4.5 }
 /** มุมรั้วด้านซอย 2 ฝั่งถนนหลังบ้าน (มุม x0, z1) ไม่มีรั้ว เป็นพื้นที่ว่างทางลัดเดินเข้าออก — เว้นกี่เมตรจากมุมทั้งสองด้าน */
@@ -149,19 +155,19 @@ export function GrandHome() {
       </Editable>
       <Orchard />
       <Surroundings />
-      {/* รั้วไม้รอบบ้าน (เว้นประตูหน้าบ้าน) */}
-      <PicketFence x={(x0 + HOME_GATE[0] - 2) / 2} z={z0} len={HOME_GATE[0] - 2 - x0} />
-      <PicketFence x={(HOME_GATE[0] + 2 + x1) / 2} z={z0} len={x1 - HOME_GATE[0] - 2} />
-      <PicketFence x={(x0 + HOME_CORNER_GAP + HOME_BACK_GATE.x - HOME_BACK_GATE.half) / 2} z={z1} len={HOME_BACK_GATE.x - HOME_BACK_GATE.half - x0 - HOME_CORNER_GAP} />
-      <PicketFence x={(HOME_BACK_GATE.x + HOME_BACK_GATE.half + x1) / 2} z={z1} len={x1 - HOME_BACK_GATE.x - HOME_BACK_GATE.half} />
+      {/* รั้วไม้ระแนงสีครีม หัวเสาลูกบอล รอบบ้าน (เว้นประตูหน้าบ้าน) — ผู้สร้าง 19 พ.ย. */}
+      <CreamFence x={(x0 + HOME_GATE[0] - 2) / 2} z={z0} len={HOME_GATE[0] - 2 - x0} />
+      <CreamFence x={(HOME_GATE[0] + 2 + x1) / 2} z={z0} len={x1 - HOME_GATE[0] - 2} />
+      <CreamFence x={(x0 + HOME_CORNER_GAP + HOME_BACK_GATE.x - HOME_BACK_GATE.half) / 2} z={z1} len={HOME_BACK_GATE.x - HOME_BACK_GATE.half - x0 - HOME_CORNER_GAP} />
+      <CreamFence x={(HOME_BACK_GATE.x + HOME_BACK_GATE.half + x1) / 2} z={z1} len={x1 - HOME_BACK_GATE.x - HOME_BACK_GATE.half} />
       {/* ทางรถเข้าออกด้านหลัง (ดินอัด) */}
       <mesh position={[HOME_BACK_GATE.x, 0.028, z1 - 3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[HOME_BACK_GATE.half * 2 - 1, 6]} />
         <meshStandardMaterial color="#b8865a" roughness={1} />
       </mesh>
-      <PicketFence x={x0} z={(z0 + HOME_SIDE_GAP.z - HOME_SIDE_GAP.half) / 2} len={HOME_SIDE_GAP.z - HOME_SIDE_GAP.half - z0} rot={Math.PI / 2} />
-      <PicketFence x={x0} z={(HOME_SIDE_GAP.z + HOME_SIDE_GAP.half + z1 - HOME_CORNER_GAP) / 2} len={z1 - HOME_CORNER_GAP - HOME_SIDE_GAP.z - HOME_SIDE_GAP.half} rot={Math.PI / 2} />
-      <PicketFence x={x1} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
+      <CreamFence x={x0} z={(z0 + HOME_SIDE_GAP.z - HOME_SIDE_GAP.half) / 2} len={HOME_SIDE_GAP.z - HOME_SIDE_GAP.half - z0} rot={Math.PI / 2} />
+      <CreamFence x={x0} z={(HOME_SIDE_GAP.z + HOME_SIDE_GAP.half + z1 - HOME_CORNER_GAP) / 2} len={z1 - HOME_CORNER_GAP - HOME_SIDE_GAP.z - HOME_SIDE_GAP.half} rot={Math.PI / 2} />
+      <CreamFence x={x1} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
       {/* ป้ายหน้าบ้าน */}
       <group position={[HOME_GATE[0] + 2.6, 0, z0 - 0.3]}>
         {[-0.45, 0.45].map((x) => (
@@ -733,6 +739,7 @@ function ChickenCoop({ x, z }: { x: number; z: number }) {
 function PigPen({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
+      <PigSounds />
       <mesh position={[0, 0.4, 0]} castShadow>
         <RBox args={[2.5, 0.8, 2.5]} radius={0.1} />
         <meshStandardMaterial color="#bdb7aa" />
@@ -780,6 +787,16 @@ const homeO = (): [number, number] => {
 const TrunkTree = (p: Parameters<typeof TrunkTreeModel>[0]) => (
   <Editable id={'home:tree:' + p.x + ':' + p.z} name="ต้นไม้" x={p.x} z={p.z} r={(p.r ?? 1.2) + 0.8} origin={homeO()}>
     <TrunkTreeModel {...p} />
+  </Editable>
+)
+/** ต้นมะม่วงในบ้านฟ่าง: แบบเดียวกับสวนบ้านน้าโรจน์ มีลูกสุกเหลือง-ส้มปน · ลากย้ายได้ */
+const Mango = ({ x, z, s = 1, v }: { x: number; z: number; s?: number; v: MangoVariety }) => (
+  <Editable id={'home:tree:' + x + ':' + z} name="ต้นมะม่วง" x={x} z={z} r={1.6 * s + 0.8} origin={homeO()}>
+    <group position={[x, 0, z]} scale={s}>
+      <Windy h={5 * s} amp={0.24} flutter={1}>
+        <MangoTree variety={v} seed={x * 0.7 + z * 0.3} />
+      </Windy>
+    </group>
   </Editable>
 )
 const Palm = (p: Parameters<typeof PalmModel>[0]) => (
@@ -860,17 +877,17 @@ function Orchard() {
   return (
     <group>
       {/* มะม่วงต้นใหญ่ 3 ต้น (ผูกเปล) */}
-      <TrunkTree x={9.6} z={-7.6} h={2.6} r={1.7} color="#3f6e33" fruit={6} fruitColor="#e8c040" fruitR={0.1} />
-      <TrunkTree x={12.5} z={-9.5} h={2.6} r={1.6} color="#467a37" fruit={5} fruitColor="#e8c040" fruitR={0.1} />
-      <TrunkTree x={12.5} z={-3} h={2.5} r={1.6} color="#3f6e33" />
+      <Mango x={9.6} z={-7.6} s={1.05} v="ndm-gold" />
+      <Mango x={12.5} z={-9.5} s={1} v="khiew" />
+      <Mango x={12.5} z={-3} s={1} v="r2e2" />
       {/* เปลผูกระหว่างมะม่วง */}
       <mesh position={[11.05, 1.2, -8.55]} rotation={[0, 0.58, 0]}>
         <RBox args={[3.2, 0.06, 0.7]} radius={0.03} />
         <meshStandardMaterial color="#d0503e" />
       </mesh>
       {/* มะม่วงแคระ 2 ต้น (ปีนเล่นได้) */}
-      <TrunkTree x={8.5} z={-3.5} h={1.2} r={1.1} color="#4f8640" fruit={4} fruitColor="#9ac040" />
-      <TrunkTree x={6} z={-6} h={1.2} r={1} color="#4f8640" fruit={3} fruitColor="#9ac040" />
+      <Mango x={8.5} z={-3.5} s={0.6} v="ndm-gold" />
+      <Mango x={6} z={-6} s={0.55} v="khiew" />
       {/* ชมพู่แคระ 4 ต้น */}
       {[
         [6, 0.5],
@@ -937,14 +954,15 @@ function Surroundings() {
       {[-13, -9, -5, 8, 11, 14, 17, 20, 23, 26, 29].map((x, i) => (
         <Palm key={'cn' + x} x={x} z={d} h={5 + (i % 3) * 0.6} />
       ))}
-      {[-8, -3, 2, 7, 12, 17, 21, 26, 31, 35].map((z, i) => (
-        // ต้นมะพร้าวที่ชิดตัวบ้าน (z −8, −3, 2) เปลี่ยนเป็นต้นมะม่วง (ผู้สร้าง 19 พ.ย.) · สองต้นแรกอยู่ติดผนังบ้าน ย้ายไปลานหน้าบ้านฝั่งถนน
+      {/* 2 ต้นที่เคยขึ้นกลางช่องประตูข้าง (z 7, 12) ย้ายไปแนวที่มีรั้ว (z 14.6, 23.5) — ผู้สร้าง 19 พ.ย. */}
+      {[-8, -3, 2, 14.6, 23.5, 17, 21, 26, 31, 35].map((z, i) => (
+        // ต้นมะพร้าวที่ชิดตัวบ้าน (z −8, −3, 2) เปลี่ยนเป็นต้นมะม่วง · เรียงเป็นแถวยาวตามรั้วฝั่งตะวันตก ระหว่างรั้วกับตัวบ้าน (ผู้สร้าง 19 พ.ย.)
         z === -8 ? (
-          <TrunkTree key={'cw' + z} x={-12.3} z={-11.9} h={1.5} r={1.0} color="#467a37" fruit={4} fruitColor="#e8c040" fruitR={0.09} />
+          <Mango key={'cw' + z} x={-15.9} z={-10.5} s={0.6} v="ndm-gold" />
         ) : z === -3 ? (
-          <TrunkTree key={'cw' + z} x={-8.5} z={-11.9} h={1.5} r={1.0} color="#3f6e33" fruit={4} fruitColor="#e8c040" fruitR={0.09} />
+          <Mango key={'cw' + z} x={-15.9} z={-7} s={0.6} v="r2e2" />
         ) : z === 2 ? (
-          <TrunkTree key={'cw' + z} x={-13.3} z={2.6} h={2.4} r={1.4} color="#467a37" fruit={5} fruitColor="#e8c040" fruitR={0.1} />
+          <Mango key={'cw' + z} x={-15.9} z={-3.5} s={0.6} v="ndm-purple" />
         ) : (
           <Palm key={'cw' + z} x={-h - 0.4} z={z} h={5.4 + (i % 2) * 0.5} />
         )
@@ -966,11 +984,11 @@ function Surroundings() {
       <TrunkTree x={0} z={-11.8} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-3.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-0.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
-      {/* มะม่วงหิมพานต์ 3 ต้น: มุมสนามหญ้าตะวันตกเฉียงเหนือ (ผู้สร้างกำหนดจุด 18 พ.ย. 2569) · ผลสีส้มแดง */}
+      {/* มะม่วงหิมพานต์ 3 ต้น: ย้ายไปใกล้แนวมะพร้าวริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย. 2569 · เดิมกำหนดจุด 18 พ.ย.) · ผลสีส้มแดง */}
       {[
-        [-11.5, 15],
-        [-8.5, 18],
-        [-12, 19.8],
+        [-12.5, 23.5],
+        [-9.5, 26.5],
+        [-13, 28.8],
       ].map(([x, z], i) => (
         <Editable key={'cashew' + i} id={`home:cashew:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
         <group position={[x, 0, z]}>
@@ -978,8 +996,8 @@ function Surroundings() {
         </group>
         </Editable>
       ))}
-      {/* มะม่วงเขียวใหญ่ */}
-      <TrunkTree x={-13} z={6} h={2.6} r={1.5} color="#3f6e33" fruit={5} fruitColor="#8ac040" fruitR={0.1} />
+      {/* มะม่วงเขียวใหญ่ (ต้นที่ 4 ของแถวริมรั้วตะวันตก) */}
+      <Mango x={-15.9} z={0} s={0.6} v="big-green" />
     </group>
   )
 }
@@ -1389,4 +1407,21 @@ function WoodPanelDoor() {
       </mesh>
     </group>
   )
+}
+
+/** หมูในคอกร้อง "อู๊ด อู๊ด" เป็นระยะ (ตอนหิว/ช่วงเช้า-เย็นบ่อยขึ้น) */
+function PigSounds() {
+  const g = useRef<Group>(null)
+  const next = useRef(4 + Math.random() * 10)
+  const wp = useMemo(() => new Vector3(), [])
+  useFrame((_, dt) => {
+    next.current -= Math.min(dt, 0.1)
+    if (next.current > 0 || !g.current) return
+    const m = exactMinute()
+    const feeding = (m > 360 && m < 480) || (m > 960 && m < 1080)
+    next.current = feeding ? 6 + Math.random() * 10 : 14 + Math.random() * 26
+    g.current.getWorldPosition(wp)
+    callSound('oink', wp.x, wp.z, 0.5)
+  })
+  return <group ref={g} />
 }

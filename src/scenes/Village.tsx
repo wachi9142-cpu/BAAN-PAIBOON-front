@@ -35,7 +35,7 @@ import { RBox } from './models/RBox'
 import { Bicycle, Pickup, Tractor } from './models/Vehicles'
 import { KoiPond, LemonGarden, ParkPad, RotWalls } from './RotHome'
 import { MulberryRow, OutdoorKitchen } from './RotBackyard'
-import { MangoOrchard } from './Orchard'
+import { MangoOrchard, MangoTree } from './Orchard'
 import { ArecaGrove } from './ArecaGrove'
 import { CoconutPalm } from './models/Palms'
 import { ModernHouse } from './ModernHouse'
@@ -623,27 +623,10 @@ export function Tree({ tree }: { tree: TreeSpot }) {
         </group>
       )
     case 'mango':
-      // มะม่วง: พุ่มกลมหลายก้อนซ้อนกัน (ไม่เป็นเหลี่ยม)
+      // มะม่วง: แบบเดียวกับสวนบ้านน้าโรจน์ · ต้นมะม่วงทั่วหมู่บ้านลูกเขียวล้วน
       return (
-        <group position={[x, 0, z]} scale={s}>
-          <mesh position={[0, 1.2, 0]} castShadow>
-            <cylinderGeometry args={[0.24, 0.36, 2.4, 14]} />
-            <meshStandardMaterial color="#6b5440" roughness={0.9} />
-          </mesh>
-          {(
-            [
-              [0, 3.3, 0, 1.7, '#3f6e33'],
-              [1.05, 3.0, 0.35, 1.15, '#4a7d3a'],
-              [-1.0, 3.05, -0.25, 1.2, '#467a37'],
-              [0.15, 4.15, -0.3, 1.15, '#4f8640'],
-              [-0.2, 3.1, 1.0, 1.0, '#437535'],
-            ] as const
-          ).map(([px, py, pz, r, c], k) => (
-            <mesh key={k} position={[px, py, pz]} castShadow receiveShadow>
-              <icosahedronGeometry args={[r, 3]} />
-              <meshStandardMaterial color={c} roughness={0.95} />
-            </mesh>
-          ))}
+        <group position={[x, 0, z]} scale={s * 1.25}>
+          <MangoTree variety="green" seed={x * 0.31 + z * 0.17} ripe={false} />
         </group>
       )
   }

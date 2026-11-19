@@ -61,7 +61,7 @@ export function MulberryBush({ seed, s = 1 }: { seed: number; s?: number }) {
   )
 }
 
-export type MangoVariety = 'r2e2' | 'ndm-purple' | 'khiew' | 'ndm-gold' | 'giant' | 'big-green'
+export type MangoVariety = 'r2e2' | 'ndm-purple' | 'khiew' | 'ndm-gold' | 'giant' | 'big-green' | 'green'
 export const MANGO_NAMES: Record<MangoVariety, string> = {
   r2e2: 'มะม่วงอาร์ทูอีทู',
   'ndm-purple': 'มะม่วงน้ำดอกไม้สีม่วง',
@@ -69,9 +69,11 @@ export const MANGO_NAMES: Record<MangoVariety, string> = {
   'ndm-gold': 'มะม่วงน้ำดอกไม้สีทอง',
   giant: 'มะม่วงยักษ์',
   'big-green': 'มะม่วงเขียวใหญ่',
+  green: 'ต้นมะม่วง',
 }
 const FRUIT: Record<MangoVariety, { color: string; blush: string; r: number; sc: [number, number, number]; stalk: number; cap?: string }> = {
   giant: { color: '#7a9a44', blush: '#8aa64a', r: 0.23, sc: [0.85, 1.45, 0.8], stalk: 0.4, cap: '#b03a4a' }, // ลูกยักษ์ บนแดง-ล่างเขียว มีจุดขาว
+  green: { color: '#6e9e3c', blush: '#7aa844', r: 0.14, sc: [0.82, 1.35, 0.8], stalk: 0.26 }, // มะม่วงบ้านทั่วไป: ลูกเขียวล้วน
   'big-green': { color: '#6a9a3a', blush: '#7aa844', r: 0.21, sc: [0.85, 1.45, 0.8], stalk: 0.3 }, // ลูกใหญ่สีเขียวเข้ม
   r2e2: { color: '#c8d098', blush: '#e8a8b0', r: 0.2, sc: [1, 1.05, 0.95], stalk: 0.22 }, // ลูกใหญ่กลม เขียวอมชมพู
   'ndm-purple': { color: '#9a5a9a', blush: '#c88ac0', r: 0.13, sc: [0.8, 1.3, 0.8], stalk: 0.38 }, // ลูกม่วงรี ห้อยก้านยาว
@@ -84,7 +86,8 @@ const FRUIT: Record<MangoVariety, { color: string; blush: string; r: number; sc:
  * ทรงพุ่มไม่กลม: ก้อนใบหลายก้อนตามปลายกิ่ง + ใบเรียวแหลมเป็นกระจุกยื่นออกนอกพุ่ม (วาดแบบ instancing ไม่หน่วง)
  * ลูกใหญ่ ห้อยพ้นพุ่มให้เห็นชัด · สีตามพันธุ์ + ลูกสุกเหลือง-ส้มปนราว 1 ใน 3
  */
-export function MangoTree({ variety, seed }: { variety: MangoVariety; seed: number }) {
+/** ripe = มีลูกสุกเหลือง-ส้มปน (บ้านฟ่าง บ้านน้าโรจน์ บ้านแม่ฉัตร) · บ้านอื่นลูกเขียวล้วน */
+export function MangoTree({ variety, seed, ripe: hasRipe = true }: { variety: MangoVariety; seed: number; ripe?: boolean }) {
   const f = FRUIT[variety]
   const rnd = useMemo(() => {
     let t = Math.floor(seed * 1000) + 7
@@ -99,16 +102,16 @@ export function MangoTree({ variety, seed }: { variety: MangoVariety; seed: numb
       [0, 1, 2].map((k) => {
         const a = k * 2.1 + seed + rnd() * 0.5
         const tilt = 0.55 + rnd() * 0.25
-        const len = 1.5 + rnd() * 0.4
-        const base: [number, number, number] = [0, 1.25, 0]
-        const tip: [number, number, number] = [Math.sin(a) * Math.sin(tilt) * len, 1.25 + Math.cos(tilt) * len, Math.cos(a) * Math.sin(tilt) * len]
+        const len = 1.8 + rnd() * 0.5
+        const base: [number, number, number] = [0, 2.1, 0]
+        const tip: [number, number, number] = [Math.sin(a) * Math.sin(tilt) * len, 2.1 + Math.cos(tilt) * len, Math.cos(a) * Math.sin(tilt) * len]
         return { a, tilt, len, base, tip }
       }),
     [seed, rnd],
   )
   // ก้อนใบ: รอบปลายกิ่งแต่ละกิ่ง 2 ก้อน + ยอดกลาง 1
   const blobs = useMemo(() => {
-    const out: [number, number, number, number][] = [[0, 3.1, 0, 0.75]]
+    const out: [number, number, number, number][] = [[0, 4.3, 0, 0.8]]
     for (const l of limbs)
       for (let j = 0; j < 2; j++) out.push([l.tip[0] * (1 + j * 0.25) + (rnd() - 0.5) * 0.5, l.tip[1] + 0.15 + j * 0.25, l.tip[2] * (1 + j * 0.25) + (rnd() - 0.5) * 0.5, 0.6 + rnd() * 0.25])
     return out
@@ -162,7 +165,7 @@ export function MangoTree({ variety, seed }: { variety: MangoVariety; seed: numb
       const x = b[0] + Math.cos(u) * r
       const z = b[2] + Math.sin(u) * r
       const top = b[1] - b[3] * 0.35
-      const ripe = i % 3 === 1
+      const ripe = hasRipe && i % 3 === 1
       // ก้าน
       o.position.set(x, top - f.stalk / 2, z)
       o.rotation.set(0, 0, 0)
@@ -189,12 +192,12 @@ export function MangoTree({ variety, seed }: { variety: MangoVariety; seed: numb
     sm.instanceMatrix.needsUpdate = true
     if (fm.instanceColor) fm.instanceColor.needsUpdate = true
     if (cm) cm.instanceMatrix.needsUpdate = true
-  }, [blobs, rnd, f])
+  }, [blobs, rnd, f, hasRipe])
   return (
     <group>
       {/* ลำต้นหนา เอียงนิด ๆ */}
-      <mesh position={[0, 0.65, 0]} rotation={[0.05, 0, 0.04]} castShadow>
-        <cylinderGeometry args={[0.2, 0.3, 1.35, 9]} />
+      <mesh position={[0, 1.08, 0]} rotation={[0.03, 0, 0.025]} castShadow>
+        <cylinderGeometry args={[0.2, 0.32, 2.2, 9]} />
         <meshStandardMaterial color="#6a5040" roughness={0.95} />
       </mesh>
       {/* รากแผ่โคนต้น */}
@@ -267,10 +270,10 @@ export function MangoOrchard({ w, d }: { w: number; d: number }) {
       </mesh>
       {ORCHARD_LAYOUT.map((t, i) => (
         <group key={i} position={[t.x, 0, t.z]} rotation={[0, i * 1.1, 0]}>
-          <Windy h={3.6} amp={0.26} flutter={1}>
+          <Windy h={5} amp={0.28} flutter={1}>
             <MangoTree variety={t.v} seed={i * 1.7 + 0.5} />
           </Windy>
-          <NearLabel text={MANGO_NAMES[t.v]} y={4.2} r={2.4} height={0.5} />
+          <NearLabel text={MANGO_NAMES[t.v]} y={5.6} r={2.4} height={0.5} />
         </group>
       ))}
     </group>

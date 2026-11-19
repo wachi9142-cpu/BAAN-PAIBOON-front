@@ -30,16 +30,17 @@ const dayRand = (day: number, k: number) => {
   return x - Math.floor(x)
 }
 
-function callSound(kind: CallKind, x: number, z: number, vol = 0.5) {
+export function callSound(kind: CallKind, x: number, z: number, vol = 0.5): number {
   const o = audio.outputs()
-  if (!o) return
+  if (!o) return 0
   const d = Math.hypot(playerPose.x - x, playerPose.z - z)
-  if (d > 30) return
+  if (d > 30) return 0
   const g = o.ctx.createGain()
   g.gain.value = vol * Math.max(0.1, 1 - d / 30)
   g.connect(o.sfx)
   const dur = playCall(o.ctx, g, kind, rnd(0.9, 1.1), 1 + Math.floor(Math.random() * 2))
   window.setTimeout(() => g.disconnect(), (dur + 0.5) * 1000)
+  return dur
 }
 
 /** สมองการเดินแบบธรรมชาติ: เดิน (ความเร็วแกว่ง) → หยุด/ดม/หันมอง → นั่งหรือนอนพัก */
@@ -421,6 +422,8 @@ function ChickenFamily({ coop, r, hens, chicks }: { coop: Vec2; r: number; hens:
     return list
   }, [coop, r, hens, chicks])
   const crow = useRef(rnd(5, 30))
+  const henCall = useRef(rnd(6, 20))
+  const peeps = useRef(rnd(3, 10))
   useFrame(({ clock }, rawDt) => {
     const dt = Math.min(rawDt, 0.1)
     const t = clock.elapsedTime
@@ -432,6 +435,24 @@ function ChickenFamily({ coop, r, hens, chicks }: { coop: Vec2; r: number; hens:
     if (crow.current <= 0) {
       crow.current = dawn ? rnd(12, 30) : rnd(90, 200)
       if (!roost || dawn) callSound('crow', birds[0].m.x, birds[0].m.z, 0.4)
+    }
+    // ลูกเจี๊ยบร้องเจี๊ยบ ๆ เบา ๆ เป็นระยะ (กลางวัน)
+    peeps.current -= dt
+    if (peeps.current <= 0) {
+      peeps.current = rnd(8, 20)
+      const chick = birds.find((b) => b.role === 'chick')
+      if (chick && !roost) callSound('chickPeep', chick.m.x, chick.m.z, 0.22)
+    }
+    // แม่ไก่ร้องเรียกลูก (กลางวัน) แล้วลูกเจี๊ยบร้องตอบ
+    henCall.current -= dt
+    if (henCall.current <= 0) {
+      henCall.current = rnd(18, 45)
+      const hen = birds.find((b) => b.role === 'hen')
+      if (hen && !roost) {
+        const d = callSound('henCall', hen.m.x, hen.m.z, 0.45)
+        const chick = birds.find((b) => b.role === 'chick')
+        if (chick) setTimeout(() => callSound('chickPeep', chick.m.x, chick.m.z, 0.3), ((d || 1.2) * 0.6) * 1000)
+      }
     }
     birds.forEach((b) => {
       const m = b.m
