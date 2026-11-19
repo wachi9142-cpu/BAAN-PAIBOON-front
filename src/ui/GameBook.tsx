@@ -11,7 +11,7 @@ import { startPlacing } from '../game/building'
 import { NPC_INFO } from '../game/content/villagers'
 import { getSpecies } from '../game/content/pets'
 import { activeKeys, MAX_ACTIVE, moodOf, MOODS, openParty, PARTY_SIZE, partySlots, petOf, toggleActive } from '../game/party'
-import { careOf } from '../game/petCare'
+import { careOf, renamePet, sexOf } from '../game/petCare'
 import { openFriends } from '../game/social'
 import { ItemIcon } from './ItemIcon'
 import { PetPortraitImg } from './PetPortrait'
@@ -552,7 +552,7 @@ function PartyPages({ close }: { close: () => void }) {
             <div className="book-portrait">
               <PetPortraitImg pet={cur.pet} size={120} />
             </div>
-            <h3>{cur.pet.name}</h3>
+            <PetNameEdit k={cur.key} pet={cur.pet} />
             <p>
               {getSpecies(cur.pet.species).label} · นิสัย{MOODS[moodOf(cur.key, cur.pet)].label}
             </p>
@@ -740,5 +740,34 @@ function QuestPages() {
         </div>
       }
     />
+  )
+}
+
+/** ชื่อสัตว์ + สัญลักษณ์เพศ · กด ✏️ เพื่อเปลี่ยนชื่อได้ทันที */
+function PetNameEdit({ k, pet }: { k: string; pet: { name: string } & Parameters<typeof sexOf>[1] }) {
+  const [edit, setEdit] = useState<string | null>(null)
+  useEffect(() => setEdit(null), [k])
+  const male = sexOf(k, pet) === 'ผู้'
+  if (edit === null)
+    return (
+      <h3 className="book-petname">
+        {pet.name} <span style={{ color: male ? '#2f5fa8' : '#c8487a', fontSize: '0.8em' }}>{male ? '♂' : '♀'}</span>
+        <button type="button" className="btn small ghost" style={{ marginLeft: 8, padding: '2px 8px' }} onClick={() => setEdit(pet.name)} title="เปลี่ยนชื่อ" aria-label="เปลี่ยนชื่อ">
+          ✏️ เปลี่ยนชื่อ
+        </button>
+      </h3>
+    )
+  return (
+    <form
+      className="book-row"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!renamePet(k, edit)) setEdit(null)
+      }}
+    >
+      <input autoFocus maxLength={20} value={edit} onChange={(e) => setEdit(e.target.value)} onKeyDown={(e) => e.stopPropagation()} style={{ fontSize: 18, padding: '4px 10px', borderRadius: 10, border: '2px solid #c8b890', width: 180 }} />
+      <button type="submit" className="btn small">ตกลง</button>
+      <button type="button" className="btn small ghost" onClick={() => setEdit(null)}>ยกเลิก</button>
+    </form>
   )
 }

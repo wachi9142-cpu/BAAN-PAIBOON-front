@@ -10,6 +10,8 @@ import type { Group } from 'three'
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { rockFx } from '../game/trees'
+import { GatherNameLabel, NearLabel } from './NearLabel'
+import { TREE_RULES } from '../game/content/trees'
 import { BananaTree } from './models/BananaTree'
 import { Treasures } from './Treasure'
 import { ChoppableTrees } from './ChoppableTrees'
@@ -22,17 +24,18 @@ import {
   PLOTS,
   ROADS,
   ROCKS,
+  TREES,
   type Place,
   type Plot,
   type TreeSpot,
 } from '../game/content/village'
 import { getHouse } from '../game/content/houses'
-import { useSettings } from '../game/settings'
 import { House, VillagerHouse, GableRoof, Bush, HouseYard, PicketFence } from './models/House'
 import { RBox } from './models/RBox'
 import { Bicycle, Pickup, Tractor } from './models/Vehicles'
 import { KoiPond, LemonGarden, ParkPad, RotWalls } from './RotHome'
 import { MulberryRow, OutdoorKitchen } from './RotBackyard'
+import { MangoOrchard } from './Orchard'
 import { ModernHouse } from './ModernHouse'
 import { Motorcycle } from './models/Motorcycle'
 import { NOEY_VEHICLES } from '../game/content/noeyYard'
@@ -54,6 +57,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
       ))}
       <Trees />
       <Rocks />
+      <GatherName />
       <Garden />
       <Structures />
       <Treasures />
@@ -101,12 +105,20 @@ export function Mountains() {
   )
 }
 
-function Label({ text, y, color = '#2e2a24' }: { text: string; y: number; color?: string }) {
-  const show = useSettings((s) => s.showLabels)
-  if (!show) return null
-  return (
-    <TextSprite text={text} color={color} position={[0, y, 0]} height={0.9} />
-  )
+/** ป้ายชื่อสถานที่: ขึ้นเฉพาะตอนเดินเข้าใกล้ (ดู NearLabel) */
+function Label({ text, y, color = '#2e2a24', r = 8 }: { text: string; y: number; color?: string; r?: number }) {
+  return <NearLabel text={text} y={y} r={r} color={color} height={0.7} />
+}
+
+/** ชื่อต้นไม้/หินที่ยืนใกล้ (เป้าหมายกด E) */
+function GatherName() {
+  const t = useGame((s) => s.gatherTarget)
+  let target: { text: string; x: number; z: number; y: number } | null = null
+  if (t?.kind === 'tree') {
+    const tr = TREES[t.index]
+    target = { text: TREE_RULES[tr.kind].name, x: tr.pos[0], z: tr.pos[1], y: 4.6 * tr.scale }
+  } else if (t?.kind === 'rock') target = { text: 'หิน', x: ROCKS[t.index][0], z: ROCKS[t.index][1], y: 1.1 }
+  return <GatherNameLabel target={target} />
 }
 
 function PlaceMesh({ place }: { place: Place }) {
@@ -224,6 +236,10 @@ function PlaceMesh({ place }: { place: Place }) {
     case 'overgrown':
       labelY = 3
       body = <OvergrownLot w={w} d={d} />
+      break
+    case 'mangoorchard':
+      labelY = 4.5
+      body = <MangoOrchard w={w} d={d} />
       break
     case 'mulberry':
       labelY = 3.2
@@ -369,7 +385,7 @@ function PlaceMesh({ place }: { place: Place }) {
   return (
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {body}
-      {labelY > 0 && <Label text={place.name} y={labelY} />}
+      {labelY > 0 && <Label text={place.name} y={labelY} r={Math.max(w, d) / 2 + 4} />}
     </group>
   )
 }

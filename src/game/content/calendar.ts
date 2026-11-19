@@ -113,7 +113,7 @@ export const FESTIVALS: Festival[] = [
   {
     id: 'loykrathong',
     name: 'วันลอยกระทง',
-    icon: '🪷',
+    icon: '🏮',
     start: [11, 20],
     end: [11, 24],
     main: [11, 24],
@@ -149,6 +149,10 @@ export const daysBetween = (a: Date, b: Date) => Math.round((b.getTime() - a.get
 /** เทศกาลที่กำลังจะมาถึง (เรียงตามวัน) */
 export function upcoming(d = today()) {
   return FESTIVALS.map((f) => ({ f, start: nextStart(f, d) }))
-    .map((x) => ({ ...x, days: daysBetween(d, x.start), active: isActive(x.f, d) }))
+    .map((x) => {
+      // วันหลักของรอบนี้ (เช่น วันลอยกระทงจริง 24 พ.ย. ไม่ใช่วันเริ่มเตรียมงาน)
+      const main = new Date(x.f.main[0] < x.f.start[0] ? x.start.getFullYear() + 1 : x.start.getFullYear(), x.f.main[0] - 1, x.f.main[1], 12)
+      return { ...x, days: daysBetween(d, x.start), mainDays: daysBetween(d, main), active: isActive(x.f, d) }
+    })
     .sort((a, b) => (a.active === b.active ? a.days - b.days : a.active ? -1 : 1))
 }

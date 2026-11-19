@@ -44,7 +44,8 @@ export const restingHand = () => performance.now() < handPain.restUntil
 export function handStatus(k: StrikeKind) {
   const n = hitsOf(k)
   if (restingHand()) return 'พักมือก่อน'
-  if (n < HURT_FROM) return `มือไหวอีก ${HURT_FROM - n} ครั้ง`
+  if (n < HURT_FROM - 1) return `ทุบได้อีก ${HURT_FROM - 1 - n} ครั้งก่อนเจ็บมือ`
+  if (n === HURT_FROM - 1) return 'ครั้งหน้าจะเริ่มเจ็บมือ'
   if (n < 25) return 'เริ่มเจ็บมือ'
   if (n < 30) return 'เจ็บมือ'
   return 'เจ็บมือมาก'

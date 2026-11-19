@@ -16,6 +16,7 @@ export type PlaceKind =
   | 'parkpad'
   | 'mulberry'
   | 'outkitchen'
+  | 'mangoorchard'
   | 'ricefield'
   | 'questboard'
   | 'shop'
@@ -294,6 +295,7 @@ export const PLACES: Place[] = [
   // หลังบ้านน้าโรจน์: ครัวนอก (มีโต๊ะกินข้าว) + ต้นมัลเบอร์รี่ 3 ต้นเรียงติดกัน
   { id: 'rot-kitchen', name: 'ครัวนอกบ้านน้าโรจน์', kind: 'outkitchen', pos: [71.8, 70.2], rotation: Math.PI, size: [4.6, 3.4], arriveText: 'ครัวนอกบ้าน มีเตาถ่านนึ่งข้าวเหนียว โอ่งน้ำ และโต๊ะกินข้าว', solidRadius: 0 },
   { id: 'rot-mulberry', name: 'ต้นมัลเบอร์รี่น้าโรจน์', kind: 'mulberry', pos: [65.2, 70.4], size: [4, 4], arriveText: 'ต้นมัลเบอร์รี่ (หม่อน) 3 ต้น ลูกสุกสีม่วงดำ กินได้', solidRadius: 0 },
+  { id: 'rot-mango', name: 'สวนมะม่วงน้าโรจน์', kind: 'mangoorchard', pos: [73, 76.8], size: [20.5, 7], arriveText: 'สวนมะม่วงหลายพันธุ์ อาร์ทูอีทู น้ำดอกไม้สีม่วง มะม่วงยักษ์ เขียวใหญ่ เขียวเสวย น้ำดอกไม้สีทอง', solidRadius: 0 },
   { id: 'rot-koi', name: 'บ่อปลาคาร์ฟน้าโรจน์', kind: 'koipond', pos: [78.5, 54.8], size: [5, 7], arriveText: 'บ่อปลาคาร์ฟหลากสี 5 ตัว มีน้ำตกจำลองเล็ก ๆ ไหลลงบ่อ เสียงน้ำเย็นชื่นใจ', solidRadius: 2.3 },
   { id: 'lot-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'fencedlot', pos: [46.5, 57.1], rotation: Math.PI / 2, size: [14, 27], solidRadius: 0 },
   { id: 'house-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'npchouse', houseStyle: 'concrete', roof: '#7a8a96', pos: [52.5, 57.1], rotation: -Math.PI / 2, size: [9, 7.5], houseScale: 1.5, color: '#ece4d4', arriveText: 'บ้านปูนชั้นเดียวหลังใหญ่ ครอบครัวห้าคนของน้องเนย น้องโน๊ต น้องนิว · ลานจอดหน้าบ้านมีรถไถ กระบะ มอเตอร์ไซค์ จักรยาน', solidRadius: 5.2 },

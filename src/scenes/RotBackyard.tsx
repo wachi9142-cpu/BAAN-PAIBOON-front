@@ -1,53 +1,5 @@
-import { useMemo } from 'react'
 import { RBox } from './models/RBox'
-
-/** ต้นมัลเบอร์รี่ (หม่อน) ต้นเตี้ย: ลำต้นสั้น แตกกิ่งแผ่ออกข้างต่ำ ๆ กิ่งอ่อนตั้งขึ้น พุ่มกว้างแบน · ลูกยาวรี สุกดำ-แดงห้อยใต้พุ่ม */
-function Mulberry({ seed, s = 1 }: { seed: number; s?: number }) {
-  const blobs = useMemo(
-    () =>
-      Array.from({ length: 8 }, (_, k) => {
-        const a = k * 2.3 + seed
-        const r = k === 0 ? 0 : 0.6 + (k % 2) * 0.25
-        return [Math.cos(a) * r, 1.0 + (k % 3) * 0.14, Math.sin(a) * r, 0.42 + (k % 2) * 0.1] as const
-      }),
-    [seed],
-  )
-  const berries = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, k) => {
-        const a = k * 3.12 + seed
-        const r = 0.45 + (k % 4) * 0.18
-        return [Math.cos(a) * r, 0.72 + (k % 4) * 0.07, Math.sin(a) * r, k % 3] as const
-      }),
-    [seed],
-  )
-  return (
-    <group scale={s}>
-      <mesh position={[0, 0.28, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.11, 0.56, 7]} />
-        <meshStandardMaterial color="#7a5a40" roughness={0.9} />
-      </mesh>
-      {[0, 1.6, 3.2, 4.7].map((a) => (
-        <mesh key={a} position={[Math.cos(a + seed) * 0.42, 0.66, Math.sin(a + seed) * 0.42]} rotation={[Math.sin(a + seed) * 1.15, 0, -Math.cos(a + seed) * 1.15]}>
-          <cylinderGeometry args={[0.025, 0.045, 0.9, 5]} />
-          <meshStandardMaterial color="#7a5a40" />
-        </mesh>
-      ))}
-      {blobs.map(([x, y, z, r], k) => (
-        <mesh key={k} position={[x, y, z]} scale={[1.15, 0.62, 1.15]} castShadow>
-          <icosahedronGeometry args={[r, 1]} />
-          <meshStandardMaterial color={k % 2 ? '#5f9a3e' : '#6eaa48'} roughness={0.9} />
-        </mesh>
-      ))}
-      {berries.map(([x, y, z, c], k) => (
-        <mesh key={'b' + k} position={[x, y, z]} scale={[0.75, 1.9, 0.75]}>
-          <sphereGeometry args={[0.04, 8, 6]} />
-          <meshStandardMaterial color={['#1e1018', '#2a1424', '#c8324a'][c]} roughness={0.4} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
+import { MulberryBush } from './Orchard'
 
 /** ต้นมัลเบอร์รี่ 3 ต้นปลูกติดกัน (หลังบ้านน้าโรจน์) */
 export function MulberryRow({ w, d }: { w: number; d: number }) {
@@ -63,7 +15,7 @@ export function MulberryRow({ w, d }: { w: number; d: number }) {
         [0, -0.75],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
-          <Mulberry seed={i * 3 + 1} s={0.95 + i * 0.08} />
+          <MulberryBush seed={i * 3 + 1} s={1 + i * 0.08} />
         </group>
       ))}
     </group>

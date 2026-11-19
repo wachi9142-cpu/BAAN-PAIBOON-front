@@ -38,7 +38,7 @@ export function festSpots(): FestSpot[] {
   const a = useFestival.getState().active
   const out: FestSpot[] = []
   const add = (fest: FestivalId, id: string, p: [number, number], label: string) => a.includes(fest) && out.push({ id, fest, x: p[0], z: p[1], label })
-  add('loykrathong', 'krathong-make', FEST_POS.krathongStall(), '🪷 ทำกระทง (ใบไม้ 2 + ดอกบัว 1 · หรือซื้อ 20 บาท)')
+  add('loykrathong', 'krathong-make', FEST_POS.krathongStall(), '🌸 ทำกระทง (ใบไม้ 2 + ดอกบัว 1 · หรือซื้อ 20 บาท)')
   add('loykrathong', 'krathong-float', FEST_POS.floatDock(), '🕯️ ลอยกระทง ขอพร')
   add('songkran', 'rodnam', outsideDoor(), '💐 รดน้ำดำหัวตายาย ขอพร')
   add('songkran', 'splash', FEST_POS.barrels(), '💦 เล่นสาดน้ำสงกรานต์')
@@ -50,6 +50,7 @@ export function festSpots(): FestSpot[] {
   return out
 }
 
+const TH_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 let lastDay = ''
 /** เรียกเป็นระยะ: อัปเดตเทศกาลที่กำลังจัด + แจ้งเตือน (วันละครั้ง) */
 export function refreshFestivals() {
@@ -60,8 +61,11 @@ export function refreshFestivals() {
   useFestival.setState({ active: activeFestivals(d).map((f) => f.id), ver: useFestival.getState().ver + 1 })
   const g = useGame.getState()
   for (const u of upcoming(d)) {
-    if (u.active) g.toast({ title: `${u.f.icon} ตอนนี้มี${u.f.name}`, body: u.f.note, tone: 'discover' })
-    else if (u.days >= 1 && u.days <= 3) g.toast({ title: `${u.f.icon} อีก ${u.days} วันจะถึง${u.f.name}`, body: u.f.note, tone: 'info' })
+    const md = `${u.f.main[1]} ${TH_MONTH[u.f.main[0] - 1]}`
+    if (u.active && u.mainDays > 0) g.toast({ title: `${u.f.icon} เริ่มช่วง${u.f.name}แล้ว · อีก ${u.mainDays} วันถึงวันจริง`, body: `วันจริง ${md} · ${u.f.note}`, tone: 'discover' })
+    else if (u.active && u.mainDays === 0) g.toast({ title: `${u.f.icon} วันนี้คือ${u.f.name}`, body: u.f.note, tone: 'discover' })
+    else if (u.active) g.toast({ title: `${u.f.icon} ตอนนี้มี${u.f.name}`, body: u.f.note, tone: 'discover' })
+    else if (u.days >= 1 && u.days <= 3) g.toast({ title: `${u.f.icon} อีก ${u.mainDays} วันจะถึง${u.f.name} (${md})`, body: `เริ่มเตรียมงานในอีก ${u.days} วัน · ${u.f.note}`, tone: 'info' })
   }
 }
 
@@ -100,9 +104,9 @@ export function doFestSpot(s: FestSpot) {
         if (!next.lotus) delete next.lotus
         useGame.setState({ save: { ...g.save, inventory: next }, dirty: true })
         addItem('krathong', 1)
-        toast('🪷 ทำกระทงเสร็จแล้ว', 'พับใบไม้ ประดับดอกบัว ปักธูปเทียน · ไปลอยที่ท่าน้ำได้เลย')
+        toast('🌸 ทำกระทงเสร็จแล้ว', 'พับใบไม้ ประดับดอกบัว ปักธูปเทียน · ไปลอยที่ท่าน้ำได้เลย')
       } else if (g.save.coins >= 20) {
-        if (addItem('krathong', 1) > 0) g.addCoins(-20, '🪷 ซื้อกระทงใบตอง')
+        if (addItem('krathong', 1) > 0) g.addCoins(-20, '🌸 ซื้อกระทงใบตอง')
       } else toast('เงินไม่พอ', 'ใช้ใบไม้ 2 + ดอกบัว 1 (เก็บบัวที่บ่อได้) หรือมีเงิน 20 บาท', 'warn')
       return
     }
