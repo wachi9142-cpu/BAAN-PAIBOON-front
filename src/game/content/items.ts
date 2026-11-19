@@ -41,8 +41,23 @@ export type ItemId =
   | 'fish_tilapia'
   | 'fish_catfish'
   | 'fish_barb'
+  // รางวัลเช็กอินรายวัน: เพชรและทอง · อาวุธ · เครื่องแต่งกาย · อาหาร
+  | 'gold_nugget'
+  | 'ruby'
+  | 'amethyst'
+  | 'sapphire'
+  | 'pearl'
+  | 'sword_wood'
+  | 'slingshot'
+  | 'spear_bamboo'
+  | 'hat_ngob'
+  | 'pakaoma'
+  | 'sarong_silk'
+  | 'egg'
+  | 'sticky_rice'
+  | 'mango_ripe'
 
-export type ItemKind = 'material' | 'tool' | 'seed' | 'food'
+export type ItemKind = 'material' | 'tool' | 'seed' | 'food' | 'treasure' | 'weapon' | 'wear'
 
 export interface ItemDef {
   id: ItemId
@@ -97,6 +112,21 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   fish_tilapia: { id: 'fish_tilapia', name: 'ปลานิล', icon: '🐟', kind: 'food', stack: 10, sell: 25, note: 'ตกได้จากบ่อ ย่างเกลือหรือทอดก็อร่อย', food: 14 },
   fish_catfish: { id: 'fish_catfish', name: 'ปลาดุก', icon: '🐟', kind: 'food', stack: 10, sell: 30, note: 'ปลาดุกบ่อลุงเขียว ย่างกินกับน้ำพริก', food: 16 },
   fish_barb: { id: 'fish_barb', name: 'ปลาตะเพียน', icon: '🐟', kind: 'food', stack: 10, sell: 18, note: 'ปลาตัวเล็กก้างเยอะ ทอดกรอบ ๆ', food: 10 },
+  // ---------- รางวัลเช็กอินรายวัน ----------
+  gold_nugget: { id: 'gold_nugget', name: 'ทองคำก้อน', icon: '🪙', kind: 'treasure', stack: 20, sell: 250, note: 'ทองคำก้อนเล็ก ๆ ได้จากเช็กอินรายวัน · ขายร้านได้ราคาดี' },
+  ruby: { id: 'ruby', name: 'ทับทิม', icon: '💎', kind: 'treasure', stack: 10, sell: 400, note: 'อัญมณีสีแดงสด ของหายาก' },
+  amethyst: { id: 'amethyst', name: 'อเมทิสต์', icon: '💎', kind: 'treasure', stack: 10, sell: 300, note: 'อัญมณีสีม่วงใส' },
+  sapphire: { id: 'sapphire', name: 'ไพลิน', icon: '💎', kind: 'treasure', stack: 10, sell: 450, note: 'อัญมณีสีน้ำเงินเข้ม ของหายากมาก' },
+  pearl: { id: 'pearl', name: 'ไข่มุก', icon: '⚪', kind: 'treasure', stack: 20, sell: 120, note: 'ไข่มุกเม็ดกลมขาวนวล' },
+  sword_wood: { id: 'sword_wood', name: 'ดาบไม้', icon: '🗡️', kind: 'weapon', stack: 1, sell: 60, note: 'ดาบไม้เนื้อแข็งด้ามพันผ้า · ของสะสมประเภทอาวุธ' },
+  slingshot: { id: 'slingshot', name: 'หนังสติ๊ก', icon: '🏹', kind: 'weapon', stack: 1, sell: 40, note: 'หนังสติ๊กง่ามไม้มะขาม · ของสะสมประเภทอาวุธ' },
+  spear_bamboo: { id: 'spear_bamboo', name: 'ทวนไม้ไผ่', icon: '🔱', kind: 'weapon', stack: 1, sell: 50, note: 'ทวนไม้ไผ่ปลายเหลา · ของสะสมประเภทอาวุธ' },
+  hat_ngob: { id: 'hat_ngob', name: 'งอบใบลาน', icon: '👒', kind: 'wear', stack: 5, sell: 45, note: 'งอบสานใบลาน กันแดดตอนทำนา · เครื่องแต่งกาย' },
+  pakaoma: { id: 'pakaoma', name: 'ผ้าขาวม้า', icon: '🧣', kind: 'wear', stack: 5, sell: 35, note: 'ผ้าขาวม้าลายตาราง ใช้ได้สารพัด · เครื่องแต่งกาย' },
+  sarong_silk: { id: 'sarong_silk', name: 'ผ้าซิ่นไหม', icon: '👘', kind: 'wear', stack: 5, sell: 150, note: 'ผ้าซิ่นไหมทอมือ ลายสวย ของหายาก · เครื่องแต่งกาย' },
+  egg: { id: 'egg', name: 'ไข่ไก่', icon: '🥚', kind: 'food', stack: 20, sell: 5, note: 'ไข่ไก่สด ทอดหรือต้มก็อร่อย', food: 8 },
+  sticky_rice: { id: 'sticky_rice', name: 'ข้าวเหนียว', icon: '🍙', kind: 'food', stack: 20, sell: 10, note: 'ข้าวเหนียวนึ่งร้อน ๆ ในกระติบ อิ่มท้อง', food: 15 },
+  mango_ripe: { id: 'mango_ripe', name: 'มะม่วงสุก', icon: '🥭', kind: 'food', stack: 20, sell: 15, note: 'มะม่วงน้ำดอกไม้สุกหอมหวาน', food: 10 },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 

@@ -77,9 +77,9 @@ export function WaterJar({ kind = 'rain', h = 1.4, r = 0.68 }: { kind?: 'rain' |
 }
 
 /** รางสังกะสีรองน้ำฝนจากชายคาลงปากโอ่ง (ลาดลงทาง +z) */
-export function RainChute({ len = 1.4, w = 0.5 }: { len?: number; w?: number }) {
+export function RainChute({ len = 1.4, w = 0.5, tilt = 0.42 }: { len?: number; w?: number; tilt?: number }) {
   return (
-    <group rotation={[0.42, 0, 0]}>
+    <group rotation={[tilt, 0, 0]}>
       <mesh position={[0, 0, len / 2]} castShadow>
         <boxGeometry args={[w, 0.015, len]} />
         <meshStandardMaterial color="#3a6ab8" metalness={0.5} roughness={0.35} />

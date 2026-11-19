@@ -1,0 +1,312 @@
+/* หน้าต่างเช็กอินรายวัน — Soft 3D Cartoon: พาสเทลอุ่น ขอบมนมาก เงาฟูหลายชั้น ปุ่มนูนมีไฮไลต์ */
+.checkin-btn {
+  position: relative;
+}
+.checkin-btn.has-gift {
+  animation: checkin-bob 1.6s ease-in-out infinite;
+}
+.checkin-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5a5a;
+  box-shadow: 0 0 0 2px #fff;
+}
+@keyframes checkin-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.checkin-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(40, 30, 20, 0.35);
+  backdrop-filter: blur(3px);
+  padding: 16px;
+}
+.checkin-panel {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border-radius: 28px;
+  padding: 22px 20px 18px;
+  background: linear-gradient(180deg, #fff8ec 0%, #fdebd2 100%);
+  box-shadow:
+    0 2px 0 #fff inset,
+    0 -6px 0 rgba(200, 150, 90, 0.18) inset,
+    0 18px 40px rgba(80, 50, 20, 0.35),
+    0 4px 0 #e2c49a;
+  color: #5a3e26;
+  font-family: inherit;
+  animation: checkin-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes checkin-pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+.checkin-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f4d8b4;
+  color: #7a5236;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #d8b488;
+}
+.checkin-head {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.checkin-title {
+  display: inline-block;
+  font-size: 1.45rem;
+  font-weight: 800;
+  padding: 6px 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, #ffb35c, #f08a2a);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55) inset,
+    0 4px 0 #c86a1a,
+    0 8px 14px rgba(200, 110, 30, 0.35);
+  text-shadow: 0 2px 0 rgba(150, 70, 10, 0.45);
+}
+.checkin-sub {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.checkin-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 10px 0 14px;
+}
+.checkin-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 0 #ecd3b0;
+  font-size: 0.78rem;
+}
+.checkin-day .dn {
+  font-weight: 800;
+  font-size: 1rem;
+}
+.checkin-day .ds {
+  font-size: 0.85rem;
+  min-height: 1.1em;
+}
+.checkin-day.checked {
+  background: linear-gradient(180deg, #e6f6d8, #c9eab0);
+  box-shadow: 0 3px 0 #9ccc7a;
+  color: #3a6a22;
+}
+.checkin-day.today {
+  outline: 3px solid #ffb35c;
+  outline-offset: 1px;
+}
+.checkin-day.future {
+  opacity: 0.55;
+}
+
+.checkin-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 16px 12px 14px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 35%, #fff 0%, #fff3e0 55%, #f6dcb8 100%);
+  box-shadow:
+    0 2px 0 #fff inset,
+    0 5px 0 #e8c79c,
+    0 10px 20px rgba(120, 80, 30, 0.18);
+  overflow: hidden;
+}
+.checkin-glow {
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 10%, rgba(255, 215, 120, 0.35) 10% 15%, transparent 15% 35%, rgba(255, 215, 120, 0.35) 35% 40%, transparent 40% 60%, rgba(255, 215, 120, 0.35) 60% 65%, transparent 65% 85%, rgba(255, 215, 120, 0.35) 85% 90%, transparent 90%);
+  opacity: 0;
+  pointer-events: none;
+}
+.checkin-stage.reveal .checkin-glow {
+  opacity: 1;
+  animation: checkin-rays 6s linear infinite;
+}
+.checkin-stage.rarity-rare .checkin-glow {
+  filter: hue-rotate(160deg);
+}
+.checkin-stage.rarity-epic .checkin-glow {
+  filter: hue-rotate(230deg) saturate(1.6);
+}
+@keyframes checkin-rays {
+  to {
+    rotate: 360deg;
+  }
+}
+.checkin-icon {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  filter: drop-shadow(0 10px 8px rgba(90, 60, 20, 0.3));
+}
+.checkin-icon.fallback {
+  font-size: 84px;
+  line-height: 128px;
+  text-align: center;
+}
+.checkin-stage.spinning .checkin-icon {
+  animation: checkin-shake 0.12s linear infinite;
+}
+.checkin-stage.reveal .checkin-icon {
+  animation: checkin-reveal 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes checkin-shake {
+  50% {
+    transform: translateY(-4px) rotate(-4deg);
+  }
+}
+@keyframes checkin-reveal {
+  from {
+    transform: scale(0.3) rotate(-20deg);
+  }
+}
+.checkin-result {
+  position: relative;
+  text-align: center;
+}
+.checkin-result.muted {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+.checkin-rarity {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+}
+.r-common {
+  background: linear-gradient(180deg, #9ac88a, #6aa85a);
+  box-shadow: 0 2px 0 #4a8a3a;
+}
+.r-rare {
+  background: linear-gradient(180deg, #7ab8f0, #4a8ad8);
+  box-shadow: 0 2px 0 #2a6ab8;
+}
+.r-epic {
+  background: linear-gradient(180deg, #d08af0, #a050d8);
+  box-shadow: 0 2px 0 #7a30b0;
+}
+.checkin-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+.checkin-qty {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #c8701a;
+}
+.checkin-cat {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.checkin-actions {
+  display: grid;
+  justify-items: center;
+  margin-top: 14px;
+}
+.checkin-cta {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 12px 30px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, #ffbe5c, #f0902a);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.6) inset,
+    0 5px 0 #c86a1a,
+    0 10px 16px rgba(200, 110, 30, 0.35);
+  text-shadow: 0 2px 0 rgba(150, 70, 10, 0.4);
+  transition: transform 0.08s;
+}
+.checkin-cta.claim {
+  background: linear-gradient(180deg, #8ad86a, #4ab03a);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.6) inset,
+    0 5px 0 #2f8a24,
+    0 10px 16px rgba(60, 140, 40, 0.35);
+}
+.checkin-cta:active {
+  transform: translateY(3px);
+}
+.checkin-cta:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.checkin-done {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #3a6a22;
+  font-weight: 700;
+}
+.checkin-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.chip-cat {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 0 #ecd3b0;
+}
+@media (max-width: 420px) {
+  .checkin-day {
+    font-size: 0.68rem;
+  }
+  .checkin-icon {
+    width: 104px;
+    height: 104px;
+  }
+}

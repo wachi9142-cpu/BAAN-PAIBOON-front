@@ -49,6 +49,7 @@ import { forceWeather, seasonLabel, useWeather, WEATHER } from '../game/weather'
 import { BookButton, GameBook, openBook } from './GameBook'
 import { StatIcon, type StatIconId } from './StatIcons'
 import { FriendsButton } from './FriendsWindow'
+import { CheckinButton, CheckinWindow } from './CheckinWindow'
 import { WaterLife } from '../scenes/WaterLife'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu, type Tab } from './GameMenu'
@@ -328,6 +329,7 @@ export function WorldScreen() {
       <SeedPicker />
       <NoticeBoardWindow />
       <WaterMenu />
+      <CheckinWindow />
       <TouchControls />
       <LayoutEditor />
       <HoldMenu />
@@ -856,6 +858,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           <span className="sep" />
           <SaveIndicator />
           <BookButton />
+          <CheckinButton />
           <FriendsButton />
           <button className="btn small" onClick={onMenu} aria-label="เปิดเมนูเกม">
             เมนู

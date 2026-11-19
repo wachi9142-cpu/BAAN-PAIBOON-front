@@ -282,10 +282,9 @@ function Sheaf({ x, z }: { x: number; z: number }) {
 }
 function Harvest() {
   const f = PLACES.find((p) => p.id === 'farm-soi2')!
-  const home = PLACES.find((p) => p.id === 'home-tarang')!
-  // เสื่อตากข้าวในบ้านฟ่างเอาออกแล้ว (ผู้สร้าง 19 พ.ย.) · กองฟ่อนข้าวยังอยู่
+  // เสื่อตากข้าว + กองฟ่อนข้าวในบ้านฟ่างเอาออกแล้ว (ผู้สร้าง 19 พ.ย.) · เหลือที่นาซอย 2
   const mats: [number, number][] = [[f.pos[0] - 6, f.pos[1] + 6]]
-  const sheafSpots: [number, number][] = [...mats, [home.pos[0] + 6, home.pos[1] + 2]]
+  const sheafSpots: [number, number][] = [...mats]
   const sheaves = useMemo(() => {
     const out: [number, number][] = []
     for (const [cx, cz] of sheafSpots) for (let i = 0; i < 6; i++) out.push([cx + 3 + (i % 3) * 0.8, cz - 1 + Math.floor(i / 3) * 0.9])

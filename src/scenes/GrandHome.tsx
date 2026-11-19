@@ -18,6 +18,11 @@ import { Windy } from './Wind'
 import { CreamFence } from './models/CreamFence'
 import { BambooClump } from './models/BambooClump'
 import { PineappleBed } from './models/Pineapple'
+import { RainChute, WaterJar } from './models/WaterJar'
+import { KaffirLimeTree } from './models/KaffirLime'
+import { JackfruitTree } from './models/Jackfruit'
+import { CookHouse } from './CookHouse'
+import { Bathhouse, YellowBulb } from './Bathhouse'
 import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
 import type { PetChoice } from '../game/content/pets'
@@ -48,13 +53,15 @@ export const HOME_GATE: [number, number] = [-6.5, -13]
 const BASE_SOLIDS: [number, number, number, number, string][] = [
   [-7.5, -6, 13, 9, 'main'], // บ้านไม้สองชั้น (ชั้นล่าง = ครัว)
   [-14.4, -3.9, 0.8, 4.1, 'bathroom'], // ห้องอาบน้ำยื่นออกจากผนังบ้านด้านตะวันตก
-  [-12, 9, 3, 3, 'ricebarn'], // ยุ้งข้าว
-  [-6.5, 9, 5, 4, 'cookhouse'], // บ้านหลังที่สอง (ครัว)
-  [-2, 10.2, 3, 2, 'toilets'], // ห้องน้ำนอกบ้าน 2 ห้อง
-  [8, 10.5, 2.5, 2, 'coop'], // เล้าไก่
-  [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
-  [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
-  [3.8, -10.2, 3.2, 2.4, 'orchid3'], // เรือนกล้วยไม้ (ย้ายไปแทนที่ต้นยอ 2 ต้น 19 พ.ย.)
+  [10.6, -2.6, 3, 3, 'ricebarn4'], // แนวเดียวกับบ้านหลังที่สอง // ยุ้งข้าว (ประตู+บันไดหันไปทางตะวันตก 19 พ.ย.)
+  [10.6, 3.6, 4, 5, 'cookhouse3'], // หมุนด้านกว้างหันไปทางตะวันตก (เรือนใหญ่) // บ้านหลังที่สอง (ครัว) (ย้ายมาลานกลาง 19 พ.ย.)
+  [10.7, 17, 3.2, 6.4, 'toilets3'], // ห้องน้ำนอกบ้าน (ส้วม + อ่างล้างหน้า + ห้องอาบน้ำ) ขนาดเท่าคอกควาย ประตูหันทางบ้านใหญ่ 19 พ.ย.
+  [18.5, 6.2, 2.5, 2, 'coop3'], // เล้าไก่ (ย้ายไปหลังยุ้งฟาง 19 พ.ย.)
+  [18.5, 9.2, 2.5, 2.5, 'pigpen3'], // คอกหมู (ย้ายไปหลังยุ้งฟาง 19 พ.ย.)
+  [14.2, 10.5, 2, 3, 'strawbarn4'], // หลังคอกควาย (19 พ.ย.) // ยุ้งฟาง
+  [6.3, -10.2, 3.2, 2.4, 'orchid4'],
+  [-0.1, -6.9, 1.3, 1.3, 'jar-rain2'], // โอ่งรองน้ำฝน
+  [-0.1, -8.55, 1.2, 1.2, 'jar-use2'], // โอ่งใช้งาน // เรือนกล้วยไม้ (ย้ายไปแทนที่ต้นยอ 2 ต้น 19 พ.ย.)
   [10.6, -11, 4.8, 3.8, 'watertower3'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
@@ -107,55 +114,61 @@ export function GrandHome() {
       <Editable id="home:filter" name="เครื่องกรองน้ำ" x={-13.4} z={-11.8} origin={O}>
         <WaterFilter x={-13.4} z={-11.8} />
       </Editable>
-      {/* โอ่งใหญ่ใส่น้ำ + โอ่งรองน้ำฝน หลังครัว */}
-      {[
-        [-2.2, -0.4, 0.55],
-        [-2.2, 0.8, 0.45],
-      ].map(([x, z, r]) => (
-        <group key={z} position={[x, 0, z]}>
-          <mesh position={[0, r, 0]} castShadow>
-            <sphereGeometry args={[r, 16, 12]} />
-            <meshStandardMaterial color="#7a4a2c" roughness={0.6} />
-          </mesh>
-          <mesh position={[0, r * 1.95, 0]}>
-            <cylinderGeometry args={[r * 0.55, r * 0.6, 0.08, 16]} />
-            <meshStandardMaterial color="#6a3f24" />
-          </mesh>
+      {/* โอ่งใหญ่ (สูงเกือบท่วมหัว) ชิดผนังบ้านด้านตะวันออก ฝั่งถนน: โอ่งรองน้ำฝน (มีรางสังกะสีจากชายคา) + โอ่งใช้งาน (โอ่งปูน มีฝาไม้กับขัน) — ผู้สร้าง 19 พ.ย. */}
+      <Editable id="home:jar-rain2" name="โอ่งรองน้ำฝน" x={-0.1} z={-6.9} r={0.8} origin={O}>
+        <group position={[-0.1, 0, -6.9]}>
+          <WaterJar kind="rain" h={1.45} r={0.68} />
         </group>
-      ))}
+        <group position={[-1.0, 2.75, -6.9]} rotation={[0, Math.PI / 2, 0]}>
+          <RainChute len={1.2} w={0.45} tilt={0.75} />
+        </group>
+      </Editable>
+      <Editable id="home:jar-use2" name="โอ่งใช้งาน" x={-0.1} z={-8.55} r={0.75} origin={O}>
+        <group position={[-0.1, 0, -8.55]}>
+          <WaterJar kind="use" h={1.3} r={0.62} />
+        </group>
+      </Editable>
       <Editable id="home:watertower3" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={10.6} z={-11} r={2.6} origin={O}>
         <group position={[10.6, 0, -11]}>
           <WaterTower />
         </group>
       </Editable>
       {/* สวนผัก + สวนดอกไม้ เอาออกแล้ว รอรูปตัวอย่างจากผู้สร้างเพื่อทำใหม่ (19 พ.ย.) */}
-      <Editable id="home:orchid3" name="เรือนกล้วยไม้" x={3.8} z={-10.2} origin={O}>
+      <Editable id="home:orchid4" name="เรือนกล้วยไม้" x={6.3} z={-10.2} origin={O}>
         {/* วางตรงแนวเดียวกับหอถังน้ำ (ขนานรั้ว) */}
-        <group position={[3.8, 0, -10.2]} scale={0.82}>
+        <group position={[6.3, 0, -10.2]} scale={0.82}>
           <OrchidHouse x={0} z={0} />
         </group>
       </Editable>
-      <Editable id="home:ricebarn" name="ยุ้งข้าว" x={-12} z={9} origin={O}>
-        <RiceBarn x={-12} z={9} />
+      {/* 1 ยุ้งข้าว · 2 ต้นมะกรูด · 3 บ้านหลังที่สอง (ครัว) — ย้ายมาเรียงที่ลานกลางบ้าน (ผู้สร้าง 19 พ.ย.) */}
+      <Editable id="home:ricebarn4" name="ยุ้งข้าว" x={10.6} z={-2.6} origin={O}>
+        <RiceBarn x={10.6} z={-2.6} rot={-Math.PI / 2} />
       </Editable>
-      <Editable id="home:cookhouse" name="บ้านหลังที่สอง (ครัว)" x={-6.5} z={9} r={3} origin={O}>
-        <CookHouse x={-6.5} z={9} />
+      <Editable id="home:cookhouse3" name="บ้านหลังที่สอง (ครัว)" x={10.6} z={3.6} r={3} origin={O}>
+        <CookHouse x={10.6} z={3.6} rot={-Math.PI / 2} />
       </Editable>
-      <Editable id="home:toilets" name="ห้องน้ำนอกบ้าน" x={-2} z={10.2} origin={O}>
-        <OutdoorToilets x={-2} z={10.2} />
+      <Editable id="home:kaffir3" name="ต้นมะกรูด" x={7.4} z={-0.4} r={1.4} origin={O}>
+        <group position={[7.4, 0, -0.4]}>
+          <Windy h={2.2} amp={0.14} flutter={1}>
+            <KaffirLimeTree seed={3} s={1} />
+          </Windy>
+        </group>
+      </Editable>
+      <Editable id="home:toilets3" name="ห้องน้ำนอกบ้าน" x={9.8} z={17} r={3.5} origin={O}>
+        <Bathhouse x={9.8} z={17} rot={-Math.PI / 2} />
       </Editable>
       {/* คอกควาย: ย้ายไปใกล้ประตูหลังใหม่ (ผู้สร้าง 19 พ.ย.) */}
-      <Editable id="home:buffalo2" name="คอกควาย" x={8.5} z={25} r={3.5} origin={O}>
-        <BuffaloPen x={8.5} z={25} />
+      <Editable id="home:buffalo5" name="คอกควาย" x={9.5} z={10.5} r={3.5} origin={O}>
+        <BuffaloPen x={9.5} z={10.5} rot={Math.PI / 2} />{/* ด้านกว้างหันไปทางตะวันตก (ผู้สร้าง 19 พ.ย.) */}
       </Editable>
-      <Editable id="home:coop" name="เล้าไก่" x={8} z={10.5} origin={O}>
-        <ChickenCoop x={8} z={10.5} />
+      <Editable id="home:coop3" name="เล้าไก่" x={18.5} z={6.2} origin={O}>
+        <ChickenCoop x={18.5} z={6.2} />
       </Editable>
-      <Editable id="home:pigpen" name="คอกหมู" x={11} z={10.5} origin={O}>
-        <PigPen x={11} z={10.5} />
+      <Editable id="home:pigpen3" name="คอกหมู" x={18.5} z={9.2} origin={O}>
+        <PigPen x={18.5} z={9.2} />
       </Editable>
-      <Editable id="home:strawbarn" name="ยุ้งฟาง" x={13.5} z={7} origin={O}>
-        <StrawBarn x={13.5} z={7} />
+      <Editable id="home:strawbarn4" name="ยุ้งฟาง" x={14.2} z={10.5} origin={O}>
+        <StrawBarn x={14.2} z={10.5} />
       </Editable>
       <Orchard />
       <Surroundings />
@@ -579,9 +592,9 @@ function OrchidHouse({ x, z }: { x: number; z: number }) {
 }
 
 /** ยุ้งข้าวโบราณ: เรือนไม้ยกพื้นเตี้ย หลังคาจั่วสูง */
-function RiceBarn({ x, z }: { x: number; z: number }) {
+function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
           <mesh key={`${sx}${sz}`} position={[sx * 1.2, 0.5, sz * 1.2]} castShadow>
@@ -598,50 +611,41 @@ function RiceBarn({ x, z }: { x: number; z: number }) {
       <group position={[0, 3.2, 1.55]}>
         <SignBoard lines={['ยุ้งข้าว']} width={1} height={0.3} />
       </group>
-    </group>
-  )
-}
-
-/** บ้านหลังที่สอง (ทำกับข้าว · ผู้สร้างชอบมานอน) ใต้ถุนเก็บเครื่องมือทำสวนและซ่อมรถ */
-function CookHouse({ x, z }: { x: number; z: number }) {
-  const floorY = 1.7
-  return (
-    <group position={[x, 0, z]}>
-      {[-1, 0, 1].flatMap((ix) =>
-        [-1, 1].map((iz) => (
-          <mesh key={`${ix}${iz}`} position={[ix * 2.2, floorY / 2, iz * 1.7]} castShadow>
-            <RBox args={[0.22, floorY, 0.22]} radius={0.08} />
-            <meshStandardMaterial color="#5a3b26" />
-          </mesh>
-        )),
-      )}
-      <mesh position={[0, floorY, 0]} castShadow receiveShadow>
-        <RBox args={[5, 0.16, 4]} radius={0.06} />
-        <meshStandardMaterial color="#6e4a30" />
-      </mesh>
-      <mesh position={[0, floorY + 1.1, -0.2]} castShadow receiveShadow>
-        <RBox args={[5, 2.2, 3.4]} radius={0.2} />
-        <meshStandardMaterial color="#9a6a42" />
-      </mesh>
-      <GableRoof width={5} depth={3.4} height={1.3} y={floorY + 2.2} color="#7a3a2a" overhang={0.5} />
-      {/* ใต้ถุน: เครื่องมือทำสวน รถมอเตอร์ไซค์ */}
-      {[-1.6, -1.2, -0.8].map((dx, i) => (
-        <mesh key={dx} position={[dx, 0.7, -1.4]} rotation={[0, 0, 0.12 * (i - 1)]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.4, 6]} />
-          <meshStandardMaterial color="#a0784a" />
+      {/* ประตูไม้บานเดียว (ด้านหน้า +z) + บันไดไม้พาดขึ้นยุ้ง */}
+      <group position={[0, 0, 1.51]}>
+        <mesh position={[0, 1.72, 0.02]}>
+          <boxGeometry args={[0.9, 1.3, 0.05]} />
+          <meshStandardMaterial color="#4a2e1a" />
         </mesh>
-      ))}
-      <group position={[1, 0, 0.2]}>
-        <mesh position={[0, 0.55, 0]}>
-          <RBox args={[1.4, 0.3, 0.3]} radius={0.1} />
-          <meshStandardMaterial color="#c2412d" />
+        <mesh position={[0, 1.7, 0.05]}>
+          <boxGeometry args={[0.76, 1.18, 0.04]} />
+          <meshStandardMaterial color="#7a4a28" roughness={0.8} />
         </mesh>
-        {[-0.6, 0.6].map((wx) => (
-          <mesh key={wx} position={[wx, 0.3, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <torusGeometry args={[0.28, 0.07, 8, 16]} />
-            <meshStandardMaterial color="#2a2a2c" />
+        {[1.4, 2.0].map((y) => (
+          <mesh key={y} position={[0, y, 0.08]}>
+            <boxGeometry args={[0.7, 0.06, 0.02]} />
+            <meshStandardMaterial color="#5a3418" />
           </mesh>
         ))}
+        <mesh position={[-0.28, 1.7, 0.09]}>
+          <boxGeometry args={[0.04, 0.12, 0.04]} />
+          <meshStandardMaterial color="#2a2a2a" metalness={0.5} />
+        </mesh>
+        {/* บันไดไม้ 4 ขั้น พาดจากพื้นถึงธรณีประตู */}
+        <group position={[0, 0, 0.55]} rotation={[-0.42, 0, 0]}>
+          {[-0.32, 0.32].map((x) => (
+            <mesh key={x} position={[x, 0.55, 0]} castShadow>
+              <boxGeometry args={[0.07, 1.25, 0.07]} />
+              <meshStandardMaterial color="#6a4428" />
+            </mesh>
+          ))}
+          {[0.2, 0.48, 0.76, 1.04].map((y) => (
+            <mesh key={y} position={[0, y, 0.02]}>
+              <boxGeometry args={[0.66, 0.05, 0.16]} />
+              <meshStandardMaterial color="#8a5a34" />
+            </mesh>
+          ))}
+        </group>
       </group>
     </group>
   )
@@ -666,20 +670,20 @@ export function OutdoorToilets({ x, z }: { x: number; z: number }) {
 }
 
 /** คอกควาย 5 ตัว: แม่ควาย 2 · ลูกผู้ตัวโต 1 · ลูกเมียตัวเล็ก 1 · ลูกเมียเพิ่งคลอด 2 เดือน 1 */
-function BuffaloPen({ x, z }: { x: number; z: number }) {
+function BuffaloPen({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
   const herd = useMemo(
     () =>
       [
         { s: 1, p: [-1.6, -0.8], r: 0.3 },
         { s: 1, p: [1.2, -1], r: -0.5 },
-        { s: 0.85, p: [-0.4, 1], r: 1.4 },
-        { s: 0.65, p: [1.6, 1.2], r: 2.2 },
+        { s: 0.85, p: [-0.6, 0.55], r: 1.4 },
+        { s: 0.65, p: [1.8, 0.6], r: 2.2 },
         { s: 0.45, p: [0.4, 0.1], r: -1.8 },
       ].map((b) => ({ ...b, pet: { species: 'buffalo', name: 'ควาย', color: '#4a4a52', pattern: 'plain', patternColor: '#6a6a72' } as PetChoice })),
     [],
   )
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {/* หลังคาเล้าควาย + รังแม่ไก่ตามมุมเสา */}
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
@@ -715,11 +719,78 @@ function BuffaloPen({ x, z }: { x: number; z: number }) {
           ))}
         </group>
       ))}
+      {/* แบ่งโซน: รางน้ำคอนกรีต (ซ้าย) · รางหญ้า/ฟาง (ขวา) เรียงชิดราวด้านหลัง (ตามภาพอ้างอิงผู้สร้าง 19 พ.ย.) */}
+      <group position={[-1.45, 0, 1.95]}>
+        <ConcreteTrough w={2.4} d={0.7} h={0.55} fill="water" />
+      </group>
+      <group position={[1.45, 0, 1.95]}>
+        <ConcreteTrough w={2.4} d={0.7} h={0.5} fill="hay" />
+      </group>
+      {/* ฟางกองมุมคอก */}
+      <mesh position={[-2.35, 0.12, -1.85]} scale={[1, 0.35, 0.8]}>
+        <sphereGeometry args={[0.55, 10, 8]} />
+        <meshStandardMaterial color="#c8a858" roughness={1} />
+      </mesh>
       {herd.map((b, i) => (
         <group key={i} position={[b.p[0], 0, b.p[1]]} rotation={[0, b.r, 0]} scale={b.s * 0.8}>
           <RestingPet pet={b.pet} pos={[0, 0, 0]} rot={0} />
         </group>
       ))}
+    </group>
+  )
+}
+
+/** รางคอนกรีตในคอกสัตว์: ผนังปูนหนา ขอบมน · fill 'water' = น้ำเต็มราง · 'hay' = หญ้า/ฟางแห้งเต็มราง */
+function ConcreteTrough({ w, d, h, fill }: { w: number; d: number; h: number; fill: 'water' | 'hay' }) {
+  const t = 0.09
+  const straws = useMemo(
+    () =>
+      Array.from({ length: 34 }, (_, i) => ({
+        x: (((i * 37) % 100) / 100 - 0.5) * (w - 0.3),
+        z: (((i * 61) % 100) / 100 - 0.5) * (d - 0.25),
+        y: h - 0.04 + ((i * 13) % 5) * 0.012,
+        r: i * 0.83,
+        tilt: ((i % 5) - 2) * 0.12,
+      })),
+    [w, d, h],
+  )
+  return (
+    <group>
+      {/* พื้นราง + ผนัง 4 ด้าน */}
+      <mesh position={[0, 0.06, 0]} receiveShadow>
+        <boxGeometry args={[w, 0.12, d]} />
+        <meshStandardMaterial color="#9c9a94" roughness={1} />
+      </mesh>
+      {[
+        [0, d / 2 - t / 2, w, t],
+        [0, -d / 2 + t / 2, w, t],
+        [w / 2 - t / 2, 0, t, d],
+        [-w / 2 + t / 2, 0, t, d],
+      ].map(([px, pz, sx, sz], i) => (
+        <mesh key={i} position={[px, h / 2, pz]} castShadow receiveShadow>
+          <RBox args={[sx, h, sz]} radius={0.03} />
+          <meshStandardMaterial color="#a8a69e" roughness={0.95} />
+        </mesh>
+      ))}
+      {fill === 'water' ? (
+        <mesh position={[0, h - 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[w - t * 2, d - t * 2]} />
+          <meshStandardMaterial color="#4a8a98" roughness={0.08} metalness={0.15} transparent opacity={0.88} />
+        </mesh>
+      ) : (
+        <>
+          <mesh position={[0, h - 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w - t * 2, d - t * 2]} />
+            <meshStandardMaterial color="#b89a50" roughness={1} />
+          </mesh>
+          {straws.map((s, i) => (
+            <mesh key={i} position={[s.x, s.y, s.z]} rotation={[Math.PI / 2 + s.tilt, 0, s.r]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.42, 4]} />
+              <meshStandardMaterial color={i % 3 ? '#c8aa5a' : '#a88a40'} roughness={1} />
+            </mesh>
+          ))}
+        </>
+      )}
     </group>
   )
 }
@@ -864,23 +935,33 @@ const Pandan = ({ x, z }: { x: number; z: number }) => (
   </group>
 )
 
+function Jackfruit({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <Windy h={5 * s} amp={0.06} flutter={1}>
+        <JackfruitTree seed={x * 0.53 + z * 0.29} s={s} />
+      </Windy>
+    </group>
+  )
+}
+
 /** สวนผลไม้ (ตายายปลูกร่วมกัน) — ฝั่งตะวันออกของบ้าน หน้ารั้วสวนผัก */
 function Orchard() {
   return (
     <group>
       {/* มะม่วงต้นใหญ่ 3 ต้น (ผูกเปล) */}
-      {/* ย้ายมาเรียงแถวริมรั้วหน้าบ้าน (ฝั่งถนน) ใกล้แนวมะพร้าว — ผู้สร้าง 19 พ.ย. */}
-      <Mango x={16.5} z={-10.3} s={1.05} v="ndm-gold" />
-      <Mango x={20.5} z={-10.3} s={1} v="khiew" />
-      <Mango x={24.5} z={-10.3} s={1} v="r2e2" />
+      {/* ย้ายจากริมรั้วหน้าบ้านมาที่โล่งข้างแปลงไม้ผลเล็ก ใกล้กอกล้วย — ผู้สร้าง 19 พ.ย. */}
+      <Mango x={26} z={2.4} s={1.05} v="ndm-gold" />
+      <Mango x={30} z={2} s={1} v="khiew" />
+      <Mango x={31.2} z={-0.6} s={1} v="r2e2" />
       {/* เปลผูกระหว่างมะม่วง */}
-      <mesh position={[18.5, 1.2, -10.3]}>
+      <mesh position={[28, 1.2, 2.2]} rotation={[0, 0.1, 0]}>
         <RBox args={[3.4, 0.06, 0.7]} radius={0.03} />
         <meshStandardMaterial color="#d0503e" />
       </mesh>
       {/* มะม่วงแคระ 2 ต้น (ปีนเล่นได้) */}
-      <Mango x={27.8} z={-10.3} s={0.6} v="ndm-gold" />
-      <Mango x={30.3} z={-10.3} s={0.55} v="khiew" />
+      <Mango x={31.6} z={-4.6} s={0.6} v="ndm-gold" />
+      <Mango x={32} z={-6.4} s={0.55} v="khiew" />
       {/* สวนไม้ผลเล็ก (ชมพู่ น้อยหน่า ขนุน ยอ ลำไย) ย้ายมารวมกันในแปลงริมรั้วตะวันออก (ผู้สร้าง 19 พ.ย.) */}
       {/* ชมพู่แคระ 4 ต้น */}
       {[
@@ -899,28 +980,22 @@ function Orchard() {
       ].map(([x, z]) => (
         <TrunkTree key={'n' + x + z} x={x} z={z} h={1} r={0.75} color="#6a9a4a" fruit={4} fruitColor="#9ab86a" fruitR={0.09} />
       ))}
-      {/* ขนุน 2 ต้น (ผลใหญ่ติดลำต้น) */}
-      {[
-        [18.5, 0.3],
-        [22.2, 0.5],
-      ].map(([x, z]) => (
-        <group key={'j' + x}>
-          <TrunkTree x={x} z={z} h={2.4} r={1.3} color="#3f6e33" />
-          {[0, 1].map((k) => (
-            <mesh key={k} position={[x + (k ? 0.22 : -0.22), 1.1 + k * 0.4, z + 0.12]} scale={[1, 1.4, 1]}>
-              <sphereGeometry args={[0.2, 10, 8]} />
-              <meshStandardMaterial color="#9ab040" flatShading />
-            </mesh>
-          ))}
-        </group>
-      ))}
+      {/* ขนุน 2 ต้น (ผลใหญ่ติดลำต้น) — ใช้โมเดลขนุนใหม่ */}
+      <Jackfruit x={18.5} z={0.3} s={0.8} />
+      <Jackfruit x={22.2} z={0.5} s={0.75} />
+      {/* แถวขนุน 4 ต้น ริมรั้วหน้าบ้าน (แทนที่แถวมะม่วงเดิม — ผู้สร้าง 19 พ.ย.) */}
+      <Jackfruit x={17} z={-10.3} s={1} />
+      <Jackfruit x={21} z={-10.2} s={0.95} />
+      <Jackfruit x={25} z={-10.4} s={1.05} />
+      <Jackfruit x={29} z={-10.3} s={0.9} />
       {/* ใบเตย 5–6 กอ */}
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <Pandan key={i} x={4.6 + i * 0.7} z={-1.6} />
       ))}
       {/* กล้วย 10 ต้น (แถวริมรั้วตะวันออก) */}
       {Array.from({ length: 6 }).map((_, i) => (
-        <group key={i} position={[14.2, 0, -11 + i * 2.2]} scale={0.75}>
+        // ย้ายไปเป็นกอริมรั้วตะวันออก ระหว่างแปลงไม้ผลกับสวนหมาก (ผู้สร้าง 19 พ.ย.)
+        <group key={i} position={[27 + (i % 2) * 2.5, 0, 4.5 + Math.floor(i / 2) * 3 + (i % 2)]} scale={0.75}>
           <BananaTree seed={i * 7 + 3} />
         </group>
       ))}
@@ -965,39 +1040,35 @@ function Surroundings() {
       {[-6, 0, 6, 12, 18, 24, 30, 35].map((z, i) => (
         <Palm key={'ce' + z} x={east} z={z} h={5.2 + (i % 2) * 0.5} />
       ))}
-      {/* สวนหมากราว 30 ต้น (6×5) หลังคอกควาย ใกล้รั้วตะวันออก — ย้ายต้นหมากเดิมทั้งหมดมารวมที่นี่ (ผู้สร้าง 19 พ.ย.) */}
+      {/* สวนหมากราว 30 ต้น (6×5) + สับปะรดแซม — ย้ายไปใกล้รั้วใต้ (x 15.5–29.5, z 26–34 ไม่ขวางทางออกประตูหลัง) 19 พ.ย. · เดิมหลังคอกควาย ใกล้รั้วตะวันออก — ย้ายต้นหมากเดิมทั้งหมดมารวมที่นี่ (ผู้สร้าง 19 พ.ย.) */}
       {Array.from({ length: 30 }).map((_, i) => {
         const c = i % 6
         const r = Math.floor(i / 6)
-        const x = 16 + c * 2.8 + Math.sin(i * 2.1) * 0.35
-        const z = 14.5 + r * 2 + Math.cos(i * 1.7) * 0.3
+        const x = AR_X0 + c * 2.8 + Math.sin(i * 2.1) * 0.35
+        const z = AR_Z0 + r * 2 + Math.cos(i * 1.7) * 0.3
         return <Palm key={'ar' + i} x={Math.round(x * 10) / 10} z={Math.round(z * 10) / 10} h={4.4 + (i % 4) * 0.25} areca />
       })}
-      {/* แปลงสับปะรด 20 ต้น ระหว่างสวนหมากกับคอกควาย (ผู้สร้าง 19 พ.ย.) */}
-      <Editable id="home:pineapple" name="แปลงสับปะรด" x={13.4} z={19.6} r={2.4} origin={homeO()}>
-        <group position={[13.4, 0, 19.6]}>
-          <Windy h={0.9} amp={0.06} flutter={0.8}>
-            <PineappleBed cols={4} rows={5} dx={0.8} dz={1.0} />
-          </Windy>
-        </group>
-      </Editable>
+      {/* สับปะรด ~30 ต้น ปลูกแซมกระจายในสวนหมาก (จำนวนพอ ๆ กับต้นหมาก ไม่เรียงแถว) — ผู้สร้าง 19 พ.ย. */}
+      <Windy h={0.9} amp={0.06} flutter={0.8}>
+        <PineappleBed points={PINEAPPLE_SPOTS} ripeEvery={4} />
+      </Windy>
       {/* ไผ่กอใหญ่ */}
       <Bamboo x={-14} z={12} />
       {/* แนวกอไผ่ริมรั้วตะวันตก ถัดจากมะม่วงหิมพานต์ (ผู้สร้าง 19 พ.ย.) */}
       <Bamboo x={-14.4} z={30.6} />
       <Bamboo x={-14.2} z={33.2} />
-      <Bamboo x={14} z={12} />
-      {/* ลำไย: กลางรั้วบ้าน 1 ต้น + หลังห้องน้ำ 2 ต้น */}
+      <Bamboo x={-14.4} z={14.8} />{/* ย้ายไปรวมกับกอไผ่ริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย.) */}
+      {/* ลำไย: กลางรั้วบ้าน 1 ต้น + หลังห้องน้ำ 2 ต้น (ย้ายตามห้องน้ำไปข้างคอกควาย 19 พ.ย.) */}
       <TrunkTree x={29} z={-3} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
-      <TrunkTree x={-3.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
-      <TrunkTree x={-0.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
-      {/* มะม่วงหิมพานต์ 3 ต้น: ย้ายไปใกล้แนวมะพร้าวริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย. 2569 · เดิมกำหนดจุด 18 พ.ย.) · ผลสีส้มแดง */}
+      <TrunkTree x={14.2} z={15.2} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
+      <TrunkTree x={14.2} z={18.6} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
+      {/* มะม่วงหิมพานต์ 3 ต้น: เรียงแถวแนวนอน (ตะวันออก–ตะวันตก) ที่ z 26 (ผู้สร้าง 19 พ.ย.) · เดิมใกล้แนวมะพร้าวริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย. 2569 · เดิมกำหนดจุด 18 พ.ย.) · ผลสีส้มแดง */}
       {[
-        [-12.5, 23.5],
-        [-9.5, 26.5],
-        [-13, 28.8],
+        [-11, 26],
+        [-7, 26],
+        [-3, 26],
       ].map(([x, z], i) => (
-        <Editable key={'cashew' + i} id={`home:cashew2:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
+        <Editable key={'cashew' + i} id={`home:cashew3:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
         <group position={[x, 0, z]}>
           <CashewTree seed={i + 3} scale={1 + (i % 2) * 0.12} />
         </group>
@@ -1432,3 +1503,23 @@ function PigSounds() {
   })
   return <group ref={g} />
 }
+
+/** จุดปลูกสับปะรดแซมระหว่างต้นหมาก (สวนหมาก x 16–30, z 14.5–22.5) · สุ่มคงที่ เลี่ยงโคนต้นหมาก */
+/** มุมสวนหมาก (ต้นแรก) — ย้ายจากหลังคอกควายไปทางรั้วใต้ฝั่งถนนหลังบ้าน (ผู้สร้าง 19 พ.ย.) */
+const AR_X0 = 15.5 // เริ่มเลยทางออกประตูหลัง (x 5–14) ไปทางตะวันออก ไม่ขวางทาง
+const AR_Z0 = 26
+const PINEAPPLE_SPOTS: [number, number][] = (() => {
+  let s = 4242
+  const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
+  const out: [number, number][] = []
+  const palms: [number, number][] = Array.from({ length: 30 }, (_, i) => [AR_X0 + (i % 6) * 2.8 + Math.sin(i * 2.1) * 0.35, AR_Z0 + Math.floor(i / 6) * 2 + Math.cos(i * 1.7) * 0.3])
+  let guard = 0
+  while (out.length < 30 && guard++ < 2000) {
+    const x = AR_X0 - 1.4 + r() * 16.6
+    const z = AR_Z0 - 1.1 + r() * 10.4
+    if (palms.some(([px, pz]) => Math.hypot(px - x, pz - z) < 0.75)) continue
+    if (out.some(([px, pz]) => Math.hypot(px - x, pz - z) < 1.0)) continue
+    out.push([Math.round(x * 100) / 100, Math.round(z * 100) / 100])
+  }
+  return out
+})()

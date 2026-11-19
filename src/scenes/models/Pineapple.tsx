@@ -7,7 +7,7 @@ import { CanvasTexture, Color, ConeGeometry, DoubleSide, Object3D, RepeatWrappin
  * ส่วนใหญ่ยังเขียว (ยังไม่สุก) · บางลูกสุกสีเหลือง-ส้ม
  * ใบและจุกวาดแบบ instancing ทั้งแปลง (ไม่หน่วง)
  */
-const LEAVES = 16
+const LEAVES = 20
 const CROWN = 10
 
 function useSkin(ripe: boolean) {
@@ -41,29 +41,30 @@ function useSkin(ripe: boolean) {
   }, [ripe])
 }
 
-export function PineappleBed({ cols = 4, rows = 5, dx = 0.85, dz = 1.0, ripeEvery = 4 }: { cols?: number; rows?: number; dx?: number; dz?: number; ripeEvery?: number }) {
+/** points = ปลูกกระจายตามจุดที่กำหนด (ไม่มีแปลงดิน) · ไม่ระบุ = แปลงเรียงแถว cols×rows */
+export function PineappleBed({ cols = 4, rows = 5, dx = 0.85, dz = 1.0, ripeEvery = 4, points }: { cols?: number; rows?: number; dx?: number; dz?: number; ripeEvery?: number; points?: [number, number][] }) {
   const leaves = useRef<InstancedMesh>(null)
   const crowns = useRef<InstancedMesh>(null)
-  const n = cols * rows
+  const n = points ? points.length : cols * rows
   const plants = useMemo(
     () =>
       Array.from({ length: n }, (_, i) => {
         const c = i % cols
         const r = Math.floor(i / cols)
         return {
-          x: (c - (cols - 1) / 2) * dx + Math.sin(i * 2.7) * 0.08,
-          z: (r - (rows - 1) / 2) * dz + Math.cos(i * 1.9) * 0.08,
+          x: points ? points[i][0] : (c - (cols - 1) / 2) * dx + Math.sin(i * 2.7) * 0.08,
+          z: points ? points[i][1] : (r - (rows - 1) / 2) * dz + Math.cos(i * 1.9) * 0.08,
           ripe: i % ripeEvery === 1,
           s: 0.85 + ((i * 7) % 4) * 0.07,
           yaw: i * 1.37,
         }
       }),
-    [n, cols, rows, dx, dz, ripeEvery],
+    [n, cols, rows, dx, dz, ripeEvery, points],
   )
   const leafGeo = useMemo(() => {
-    const g = new ConeGeometry(0.035, 0.75, 4)
-    g.scale(1.6, 1, 0.35)
-    g.translate(0, 0.375, 0)
+    const g = new ConeGeometry(0.03, 0.95, 4)
+    g.scale(1.5, 1, 0.3)
+    g.translate(0, 0.475, 0)
     return g
   }, [])
   useLayoutEffect(() => {
@@ -74,7 +75,7 @@ export function PineappleBed({ cols = 4, rows = 5, dx = 0.85, dz = 1.0, ripeEver
     plants.forEach((p) => {
       for (let k = 0; k < LEAVES; k++) {
         const a = p.yaw + (k / LEAVES) * Math.PI * 2
-        const tilt = k % 2 ? 0.95 : 0.6 // ใบนอกแผ่ต่ำ ใบในตั้งชัน
+        const tilt = k % 3 === 0 ? 0.35 : k % 3 === 1 ? 0.7 : 1.05 // ใบในตั้งชัน · ใบกลาง · ใบนอกแผ่
         o.position.set(p.x, 0.02, p.z)
         o.rotation.set(0, a, 0)
         o.rotateX(tilt + ((k * 13) % 5) * 0.05)
@@ -107,11 +108,11 @@ export function PineappleBed({ cols = 4, rows = 5, dx = 0.85, dz = 1.0, ripeEver
   const ripe = useSkin(true)
   return (
     <group>
-      {/* แปลงดินร่วน */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* แปลงดินร่วน (เฉพาะแบบแปลง) */}
+      {!points && <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[cols * dx + 0.6, rows * dz + 0.6]} />
         <meshStandardMaterial color="#6a4e34" roughness={1} />
-      </mesh>
+      </mesh>}
       <instancedMesh ref={leaves} args={[leafGeo, undefined, n * LEAVES]} castShadow>
         <meshStandardMaterial side={DoubleSide} roughness={0.7} />
       </instancedMesh>

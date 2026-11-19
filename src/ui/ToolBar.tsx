@@ -15,7 +15,7 @@ export const useHotbar = create<{ sel: number }>(() => ({ sel: 0 }))
 
 const SLOTS = 9
 /** ลำดับชนิดของในแถบ: ของกิน → เมล็ดพันธุ์ → วัตถุดิบ (เครื่องมืออยู่หน้าสุดเสมอ) */
-const KIND_ORDER = { food: 0, seed: 1, material: 2, tool: 3 } as const
+const KIND_ORDER = { food: 0, seed: 1, material: 2, tool: 3, treasure: 4, weapon: 5, wear: 6 } as const
 
 export type HotSlot = { kind: 'tool'; tool: HeldTool } | { kind: 'item'; id: ItemId; qty: number }
 
