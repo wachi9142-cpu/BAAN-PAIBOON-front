@@ -13,8 +13,10 @@ export const INTERIOR_ORIGIN: [number, number] = [0, 400]
 export const IW = 16
 export const ID = 10
 export const FLOOR2 = 3
-/** บันได 30 ขั้นชิดผนังตะวันออก: ล่าง (z = 3.5) → บน (z = −3.5) */
-export const STAIRS = { x0: 6.4, x1: 8, zBottom: 3.5, zTop: -3.5 }
+/** บันไดหักฉาก (ผู้สร้าง 19 พ.ย.): ช่วงแรกสั้น ทางขึ้นหันไปทางประตู (−x) → ชานพักมุม → ช่วงสองชิดผนังตะวันออกขึ้นไปทาง −z
+ *  STAIRS = ช่วงที่สอง (ใช้เว้นช่องพื้นชั้นบน) */
+export const STAIRS = { x0: 6.4, x1: 8, zBottom: 0.2, zTop: -3.5 }
+export const STAIR_L = { f1x0: 4.2, landY: 1.0, z0: 0.2, z1: 1.8 }
 
 export const isInterior = (x: number, z: number) => Math.abs(x - INTERIOR_ORIGIN[0]) < 20 && Math.abs(z - INTERIOR_ORIGIN[1]) < 20
 
@@ -54,10 +56,10 @@ export function outsideDoor(): [number, number] {
   const hp = PLACES.find((p) => p.id === 'home-tarang')!
   // บ้านไม้สองชั้นอยู่ที่ (−8, −5) ภายในบริเวณบ้าน · ประตูสีน้ำเงินที่ x +1.4 ด้านเหนือ (+z) หันเข้าลานในบ้าน
   const m = LIVE.map['home:main'] ?? { x: -7.5, z: -6, rot: 0 }
-  // ประตูอยู่ที่ (+1.4, +5.6) จากกลางบ้าน (บ้านลึก 9 ม.) หมุนตามที่ย้าย
+  // ประตูอยู่ที่ (0, +5.6) กลางผนัง (ผู้สร้างย้ายมากลาง 19 พ.ย.) (บ้านลึก 9 ม.) หมุนตามที่ย้าย
   const c = Math.cos(m.rot)
   const s = Math.sin(m.rot)
-  return [hp.pos[0] + m.x + 1.4 * c + 5.6 * s, hp.pos[1] + m.z - 1.4 * s + 5.6 * c]
+  return [hp.pos[0] + m.x + 5.6 * s, hp.pos[1] + m.z + 5.6 * c]
 }
 /** ประตูหน้าบ้าน (ด้านใน) พิกัดภายใน */
 export const INSIDE_DOOR: [number, number] = [-3, -4.3]
@@ -68,9 +70,15 @@ export const toWorld = (lx: number, lz: number): [number, number] => [INTERIOR_O
 export function interiorGround(lx: number, lz: number, curY: number) {
   if (isNpcInterior()) return 0
   const { x0, x1, zBottom, zTop } = STAIRS
-  if (lx > x0 - 0.1 && lx < x1 && lz < zBottom + 0.4 && lz > zTop - 0.6) {
+  const L = STAIR_L
+  // ช่วงแรก (ขึ้นไปทาง +x)
+  if (lx > L.f1x0 - 0.1 && lx < x0 && lz > L.z0 - 0.1 && lz < L.z1 + 0.1 && curY < L.landY + 0.5) return Math.max(0, Math.min(1, (lx - L.f1x0) / (x0 - L.f1x0))) * L.landY
+  // ชานพักมุม
+  if (lx >= x0 && lx < x1 && lz >= zBottom && lz < L.z1 + 0.1) return L.landY
+  // ช่วงสอง (ขึ้นไปทาง −z)
+  if (lx > x0 - 0.1 && lx < x1 && lz < zBottom && lz > zTop - 0.6) {
     const k = Math.min(1, Math.max(0, (zBottom - lz) / (zBottom - zTop)))
-    return k * FLOOR2
+    return L.landY + k * (FLOOR2 - L.landY)
   }
   return curY > FLOOR2 * 0.5 ? FLOOR2 : 0
 }
@@ -130,7 +138,7 @@ export function interiorColliders(upper: boolean, npc = false): Rect[] {
         R(-5.8, -4.6, 3.2, 4.8), // เตียงน้ารง
       ]
   // ชั้นล่าง: ผนังข้างบันได (ไม่ให้เดินลอดใต้บันได)
-  const stairSide = upper ? [] : [R(STAIRS.x0 - 0.2, STAIRS.x0 - 0.05, STAIRS.zTop, STAIRS.zBottom - 1.2)]
+  const stairSide = upper ? [] : [R(STAIRS.x0 - 0.2, STAIRS.x0 - 0.05, STAIRS.zTop, STAIRS.zBottom - 0.6)]
   return [...outer, ...walls, ...furniture, ...stairSide]
 }
 

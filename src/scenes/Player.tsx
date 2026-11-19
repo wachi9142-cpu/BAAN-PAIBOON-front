@@ -276,6 +276,12 @@ export function Player() {
       baseY.current = w.y
       state.camera.position.set(w.x, 2, w.z + 3)
     }
+    // กันจอขาวโพลน: ตัวอยู่ในพื้นที่ฉากในบ้าน แต่สถานะ "อยู่ในบ้าน" หลุด (โหลดเซฟ/โค้ดอัปเดต) → พาออกมาหน้าประตูบ้าน
+    if (!warp.pending && isInterior(pos.current[0], pos.current[1]) && !useInterior.getState().inside) {
+      useInterior.setState({ house: 'home', upper: false })
+      const [ox, oz] = outsideDoor()
+      warp.pending = { x: ox, z: oz + 0.6, heading: 0, y: 0 }
+    }
     const prevP: [number, number] = [pos.current[0], pos.current[1]]
     // กระโดด: เฉพาะบนบก/น้ำตื้น ไม่ได้ขี่สัตว์ ไม่ได้อยู่ในบ้าน ไม่ได้เล่นเครื่องเล่น
     // ใช้คำขอในเฟรมถัดไปเสมอ (ไม่หมดอายุตามเวลา เผื่อเฟรมกระตุก)

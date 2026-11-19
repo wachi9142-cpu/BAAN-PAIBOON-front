@@ -127,16 +127,11 @@ function Hills() {
     for (let ring = 0; ring < 2; ring++)
       for (let i = 0; i < 30; i++) {
         const a = (i / 30) * Math.PI * 2 + ring * 0.1 + Math.sin(i * 5.3) * 0.04
-        const d = (ring ? 250 : 175) + ((i * 37) % 30)
-        out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, sx: 40 + ((i * 53) % 30) + ring * 25, sy: (ring ? 38 : 22) + ((i * 71) % 18), c: cols[(i + ring * 2) % cols.length] })
+        // ภูเขามีจริงแต่อยู่ไกลมาก (ผู้สร้าง 20 พ.ย.): ไกลเลยทุ่งนา/ป่าออกไปมาก ตัวใหญ่ขึ้นให้ยังเห็นเป็นทิวเขาจาง ๆ
+        const d = (ring ? 420 : 350) + ((i * 37) % 40)
+        out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, sx: 75 + ((i * 53) % 40) + ring * 35, sy: (ring ? 70 : 48) + ((i * 71) % 22), c: cols[(i + ring * 2) % cols.length] })
       }
-    // เว้นช่องให้ป่าดงลึก (ฝั่งตะวันตก นอกหมู่บ้าน) — ย้ายเนินที่ทับป่าไปไว้ด้านหลังป่า
-    const keep = out.filter((h) => {
-      const dx = Math.max(-215 - h.x, 0, h.x - -110)
-      const dz = Math.max(-70 - h.z, 0, h.z - 70)
-      return Math.hypot(dx, dz) > h.sx * 0.95
-    })
-    for (let i = 0; i < 5; i++) keep.push({ x: -275 - (i % 2) * 20, z: -80 + i * 40, sx: 55 + (i % 3) * 10, sy: 30 + (i % 2) * 10, c: cols[i % cols.length] })
+    const keep = out
     return keep
   }, [])
   return (

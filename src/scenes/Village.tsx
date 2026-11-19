@@ -70,7 +70,7 @@ export function Village({ playerHouseId, playerName }: { playerHouseId?: string;
 function Ground() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[700, 700]} />
+      <planeGeometry args={[1400, 1400]} />
       <meshStandardMaterial color="#8fa860" />
     </mesh>
   )
@@ -209,6 +209,7 @@ function PlaceMesh({ place }: { place: Place }) {
     case 'shop':
       labelY = place.style === 'stall' ? 4.6 : 6
       body = place.style === 'stall' ? <Stall w={w} d={d} color={place.color ?? '#3f7a8c'} name={place.name.replace(/ \(ซอย \d\)/, '')} /> : <BigStore w={w} d={d} />
+      if (place.fence) body = <group>{body}<group rotation={[0, Math.PI, 0]}><FencedLot w={w} d={d} /></group></group>
       break
     case 'garage':
       labelY = 5
@@ -365,6 +366,12 @@ function PlaceMesh({ place }: { place: Place }) {
           </group>
           )}
           {place.frontYard && <KidsYard depth={place.frontYard} />}
+          {/* รั้วรอบที่ดิน: ประตูรั้วอยู่ด้านหน้าบ้าน (หันเข้าถนน) */}
+          {place.fence && (
+            <group rotation={[0, Math.PI, 0]}>
+              <FencedLot w={w} d={d} />
+            </group>
+          )}
         </group>
       )
       break

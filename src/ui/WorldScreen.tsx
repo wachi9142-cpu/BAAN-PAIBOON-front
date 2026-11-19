@@ -57,6 +57,7 @@ import { MOUNTS, toggleMount, useMount } from '../game/mounts'
 import { CaveMouth, CaveWatcher, WaterCaveScene } from '../scenes/WaterCave'
 import { CAVE_DOOR, outsideMouth } from '../game/cave'
 import { DeepForest } from '../scenes/DeepForest'
+import { NorthFields } from '../scenes/NorthFields'
 import { SilkCenter } from '../scenes/SilkCenter'
 import { activateSilk, silkHint, useSilk } from '../game/silk'
 import { activateForest, forestHint, useForest } from '../game/forest'
@@ -347,6 +348,7 @@ export function WorldScreen() {
         <CaveWatcher />
         <WaterCaveScene />
         <DeepForest />
+        <NorthFields />
         <SilkCenter />
         <WaterLife />
         <LayoutDragger />

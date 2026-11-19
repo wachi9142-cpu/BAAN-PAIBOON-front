@@ -229,11 +229,12 @@ export function GrandHome() {
 /** บ้านหลัก: ใหญ่ขึ้น (ผู้สร้าง 18 พ.ย. 2569) · ชั้นล่างทั้งชั้นเป็นห้องครัว ประตูน้ำเงินด้าน +z */
 export const MAIN_HOUSE = { x: -7.5, z: -6, W: 13, D: 9 }
 /** ประตูน้ำเงิน: กลางประตู (x ภายในบ้าน) · ความกว้าง */
-const DOOR_X = 1.4
+const DOOR_X = 0
 const DOOR_W = 3
 /** ประตูไม้บานเดียว ด้าน −z (หันออกถนนหน้าบ้าน) */
 const FRONT_DOOR_X = 1.4
 function MainHouse() {
+  const DW = DOOR_W + 0.3
   const W = MAIN_HOUSE.W
   const D = MAIN_HOUSE.D
   const low = 2.8
@@ -248,21 +249,59 @@ function MainHouse() {
       {/* ชั้น 1 ผนังปูนสีครีม: เว้นช่องมุ้งลวดรอบบ้าน มองทะลุเห็นครัวข้างใน */}
       <HouseShell W={W} D={D} y0={0.2} y1={0.2 + low} t={0.16} color="#eadfc8" inner="#f2ead8" holes={groundHoles(W, D)} />
       <KitchenInside W={W} D={D} y={0.2} h={low} />
-      {/* ประตูบ้านสีน้ำเงินบานกว้าง (บานคู่) ด้าน +z หันเข้าลานในบ้าน */}
-      <mesh position={[DOOR_X, 1.3, D / 2 + 0.03]}>
-        <RBox args={[DOOR_W, 2.2, 0.08]} radius={0.04} />
-        <meshStandardMaterial color="#2f5f9a" />
-      </mesh>
-      <mesh position={[DOOR_X, 1.3, D / 2 + 0.08]}>
-        <boxGeometry args={[0.04, 2.1, 0.02]} />
-        <meshStandardMaterial color="#1f3f6a" />
-      </mesh>
-      {[-0.25, 0.25].map((dx) => (
-        <mesh key={dx} position={[DOOR_X + dx, 1.25, D / 2 + 0.1]}>
-          <boxGeometry args={[0.05, 0.3, 0.04]} />
-          <meshStandardMaterial color="#c8c8c8" metalness={0.7} roughness={0.3} />
+      {/* ประตูบ้านสีน้ำเงิน กลางผนัง ด้าน +z (แบบประตูรั้วบานเลื่อน: ครึ่งบนซี่ตั้งเว้นช่อง · ครึ่งล่างแผ่นทึบลายเส้นตั้ง · มือจับขอสับ) — ผู้สร้าง 19 พ.ย. */}
+      <group position={[DOOR_X, 0, D / 2 + 0.05]}>
+        {/* เต็มช่องระหว่างมุ้งลวด · ครึ่งบนซี่ห่างมองทะลุเห็นในบ้าน */}
+        {/* กรอบ */}
+        {[-1, 1].map((sx) => (
+          <mesh key={sx} position={[(sx * DW) / 2, 1.47, 0]}>
+            <boxGeometry args={[0.1, 2.55, 0.1]} />
+            <meshStandardMaterial color="#1f4a80" />
+          </mesh>
+        ))}
+        <mesh position={[0, 2.72, 0]}>
+          <boxGeometry args={[DW + 0.1, 0.08, 0.1]} />
+          <meshStandardMaterial color="#1f4a80" />
         </mesh>
-      ))}
+        <mesh position={[0, 0.24, 0]}>
+          <boxGeometry args={[DW + 0.1, 0.08, 0.12]} />
+          <meshStandardMaterial color="#1f4a80" />
+        </mesh>
+        {/* ครึ่งล่าง: แผ่นทึบ + ร่องเส้นตั้ง */}
+        <mesh position={[0, 0.7, 0]}>
+          <boxGeometry args={[DW, 0.9, 0.05]} />
+          <meshStandardMaterial color="#2f5f9a" />
+        </mesh>
+        {Array.from({ length: 22 }, (_, i) => (
+          <mesh key={i} position={[-DW / 2 + 0.07 + i * ((DW - 0.14) / 21), 0.7, 0.03]}>
+            <boxGeometry args={[0.012, 0.84, 0.01]} />
+            <meshStandardMaterial color="#244e84" />
+          </mesh>
+        ))}
+        {/* คานกลาง */}
+        <mesh position={[0, 1.18, 0.01]}>
+          <boxGeometry args={[DW + 0.06, 0.08, 0.09]} />
+          <meshStandardMaterial color="#1f4a80" />
+        </mesh>
+        {/* ครึ่งบน: ซี่ตั้งเว้นช่อง */}
+        {Array.from({ length: 18 }, (_, i) => (
+          <mesh key={'b' + i} position={[-DW / 2 + 0.12 + i * ((DW - 0.24) / 17), 1.95, 0]}>
+            <boxGeometry args={[0.07, 1.48, 0.05]} />
+            <meshStandardMaterial color="#2f5f9a" />
+          </mesh>
+        ))}
+        {/* มือจับขอสับ + กลอน */}
+        <mesh position={[-DW / 2 + 0.3, 1.05, 0.06]} rotation={[0, 0, 0.3]}>
+          <torusGeometry args={[0.06, 0.012, 6, 12, Math.PI * 1.3]} />
+          <meshStandardMaterial color="#d0d4d8" metalness={0.8} roughness={0.25} />
+        </mesh>
+        <mesh position={[-DW / 2 - 0.08, 1.18, 0.04]}>
+          <boxGeometry args={[0.16, 0.12, 0.06]} />
+          <meshStandardMaterial color="#1f4a80" />
+        </mesh>
+      </group>
+      {/* กันสาดเพอร์โกลาไม้ หลังคาโปร่งแสง ยื่นจากคานชั้น 2 ด้านประตูน้ำเงิน คลุมลานปูนหน้าบ้าน (ผู้สร้าง 19 พ.ย.) */}
+      <Pergola W={W} D={D} y={0.2 + low} />
       {/* มุ้งลวดสแตนเลสรอบบ้าน เฉพาะชั้น 1 (ครึ่งบนของผนัง) — ไม่ใช่หน้าต่างบานเดียว เป็นแนวยาวรอบบ้าน เว้นช่องประตู */}
       <MeshBand W={W} D={D} y0={1.25} y1={2.75} doors={[{ side: 'S', at: DOOR_X, w: DOOR_W + 0.3 }, { side: 'E', at: 1.6, w: 1.3 }, { side: 'N', at: FRONT_DOOR_X, w: 1.4 }, { side: 'W', at: 0, w: D }]} />
       {/* หน้าต่างผนังตะวันตกชั้นล่าง (หันออก −x): ห้องน้ารงณ์ · ตรงเตียงตายาย */}
@@ -1543,6 +1582,53 @@ function Surroundings() {
 }
 
 /** แนวมุ้งลวดสแตนเลสรอบผนัง: กรอบสแตนเลสเงา เสาแบ่งช่องทุก ~1 ม. ตาข่ายสีเทาโปร่ง · เว้นช่องประตู */
+function Pergola({ W, D, y }: { W: number; D: number; y: number }) {
+  const out = 3.6
+  const wood = '#b8743a'
+  const zf = D / 2 + out
+  const yf = y - 0.25
+  const posts = [-W / 2 + 0.3, -W / 6, W / 6, W / 2 - 0.3]
+  const slope = Math.atan2(y - yf, out)
+  return (
+    <group>
+      {/* คานติดผนัง + คานหน้า */}
+      <mesh position={[0, y, D / 2 + 0.1]} castShadow>
+        <boxGeometry args={[W + 0.2, 0.18, 0.16]} />
+        <meshStandardMaterial color={wood} />
+      </mesh>
+      <mesh position={[0, yf, zf]} castShadow>
+        <boxGeometry args={[W + 0.2, 0.2, 0.16]} />
+        <meshStandardMaterial color={wood} />
+      </mesh>
+      {/* เสา */}
+      {posts.map((x) => (
+        <group key={x}>
+          <mesh position={[x, yf / 2, zf]} castShadow>
+            <boxGeometry args={[0.16, yf, 0.16]} />
+            <meshStandardMaterial color={wood} />
+          </mesh>
+          <mesh position={[x, 0.08, zf]}>
+            <boxGeometry args={[0.28, 0.16, 0.28]} />
+            <meshStandardMaterial color="#c8c2b4" />
+          </mesh>
+        </group>
+      ))}
+      {/* จันทันไม้ */}
+      {Array.from({ length: 9 }, (_, i) => -W / 2 + 0.1 + (i * (W - 0.2)) / 8).map((x) => (
+        <mesh key={x} position={[x, (y + yf) / 2 + 0.1, D / 2 + out / 2]} rotation={[slope, 0, 0]} castShadow>
+          <boxGeometry args={[0.08, 0.14, out + 0.3]} />
+          <meshStandardMaterial color={wood} />
+        </mesh>
+      ))}
+      {/* แผ่นหลังคาโปร่งแสง */}
+      <mesh position={[0, (y + yf) / 2 + 0.2, D / 2 + out / 2]} rotation={[slope, 0, 0]}>
+        <boxGeometry args={[W + 0.2, 0.02, out + 0.35]} />
+        <meshStandardMaterial color="#e8f2f6" transparent opacity={0.28} roughness={0.1} metalness={0.1} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
 function MeshBand({ W, D, y0, y1, doors }: { W: number; D: number; y0: number; y1: number; doors: { side: 'N' | 'S' | 'E' | 'W'; at: number; w: number }[] }) {
   const h = y1 - y0
   const yc = (y0 + y1) / 2
@@ -1666,6 +1752,8 @@ function groundHoles(W: number, D: number): Hole[] {
     }
     for (const [u0, u1] of segs) out.push({ side, u0, u1, v0: 1.25, v1: 2.75 })
   }
+  // ช่องประตูหน้า (+z) เต็มบาน มองทะลุซี่ประตูเห็นในบ้าน
+  out.push({ side: 'S', u0: DOOR_X - (DOOR_W + 0.3) / 2, u1: DOOR_X + (DOOR_W + 0.3) / 2, v0: 0.2, v1: 2.75 })
   return out
 }
 

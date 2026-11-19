@@ -3,6 +3,7 @@ import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
 import { FOREST, forestSolidsNear } from './content/forest'
+import { NORTH } from './content/northFields'
 import { getHouse } from './content/houses'
 import { NOEY_VEHICLES } from './content/noeyYard'
 import { ROT_WALLS, WALL_T } from './content/rotWalls'
@@ -122,6 +123,11 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = tru
   if (x < -lim) {
     if (x < -lim - 0.6) return [Math.max(FOREST.minX + 1, x), Math.max(-FOREST.maxZ + 1, Math.min(FOREST.maxZ - 1, z))]
     if (Math.abs(z) < FOREST.maxZ - 1) return [Math.max(FOREST.minX + 1, x), z]
+  }
+  // ทุ่งนาเหนือหมู่บ้าน: เดินออกไปได้
+  if (z > lim) {
+    if (z > lim + 0.6) return [Math.max(NORTH.minX + 1, Math.min(NORTH.maxX - 1, x)), Math.min(NORTH.maxZ - 1, z)]
+    if (x > NORTH.minX + 1 && x < NORTH.maxX - 1) return [Math.max(-lim, x), Math.min(NORTH.maxZ - 1, z)]
   }
   return [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, z))]
 }

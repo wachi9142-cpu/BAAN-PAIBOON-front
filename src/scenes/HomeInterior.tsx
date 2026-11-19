@@ -5,7 +5,7 @@ import { SignBoard } from './SignBoard'
 import { HomeDoors } from './AutoDoors'
 import { onBedClick } from '../ui/bedWheel'
 import { BarberInterior, BathInterior, CookInterior } from './SmallInteriors'
-import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
+import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIR_L, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
 import { useHomeTv } from '../game/homeActions'
 import { NpcInterior } from './NpcInterior'
 
@@ -177,25 +177,77 @@ function OuterWalls({ upper }: { upper: boolean }) {
   )
 }
 
-/** บันไดไม้ 30 ขั้น ชิดผนังตะวันออก */
+/** บันไดไม้หักฉาก ขั้นโปร่ง (ตามภาพผู้สร้าง): ช่วงแรก 4 ขั้นหันหน้าไปทางประตู → ชานพักมุม + เสาหลัก → ช่วงสองชิดผนังขึ้นชั้นบน · ราวลูกกรงไม้ */
 function Stairs() {
   const { x0, x1, zBottom, zTop } = STAIRS
-  const n = 30
+  const L = STAIR_L
+  const W1 = L.z1 - L.z0
+  const n1 = 4
+  const n2 = 12
+  const tread = '#9a6a3c'
+  const str = '#6e4a2c'
+  const run1 = x0 - L.f1x0
+  const run2 = zBottom - zTop
+  const rise2 = FLOOR2 - L.landY
   return (
     <group>
-      {Array.from({ length: n }).map((_, i) => {
-        const k = (i + 0.5) / n
+      {/* ช่วงแรก */}
+      {Array.from({ length: n1 }, (_, i) => (
+        <mesh key={'a' + i} position={[L.f1x0 + ((i + 0.5) / n1) * run1, ((i + 1) / (n1 + 1)) * L.landY, (L.z0 + L.z1) / 2]} castShadow receiveShadow>
+          <boxGeometry args={[run1 / n1 + 0.06, 0.07, W1 - 0.1]} />
+          <meshStandardMaterial color={tread} />
+        </mesh>
+      ))}
+      {[L.z0 + 0.04, L.z1 - 0.04].map((z) => (
+        <mesh key={z} position={[L.f1x0 + run1 / 2, L.landY / 2 - 0.05, z]} rotation={[0, 0, Math.atan2(L.landY, run1)]}>
+          <boxGeometry args={[Math.hypot(run1, L.landY) + 0.2, 0.22, 0.06]} />
+          <meshStandardMaterial color={str} />
+        </mesh>
+      ))}
+      {/* ชานพักมุม */}
+      <mesh position={[(x0 + x1) / 2, L.landY - 0.06, (zBottom + L.z1) / 2]} castShadow receiveShadow>
+        <boxGeometry args={[x1 - x0, 0.12, L.z1 - zBottom]} />
+        <meshStandardMaterial color={tread} />
+      </mesh>
+      <mesh position={[(x0 + x1) / 2, (L.landY - 0.12) / 2, (zBottom + L.z1) / 2]}>
+        <boxGeometry args={[x1 - x0 - 0.1, L.landY - 0.12, L.z1 - zBottom - 0.1]} />
+        <meshStandardMaterial color="#7a5234" />
+      </mesh>
+      {/* เสาหลักไม้ใหญ่ที่มุมบันได */}
+      <mesh position={[x0 - 0.05, 1.2, zBottom + 0.05]} castShadow>
+        <boxGeometry args={[0.18, 2.4, 0.18]} />
+        <meshStandardMaterial color="#8a7a66" roughness={1} />
+      </mesh>
+      {/* ช่วงสอง */}
+      {Array.from({ length: n2 }, (_, i) => (
+        <mesh key={'b' + i} position={[(x0 + x1) / 2, L.landY + ((i + 1) / (n2 + 1)) * rise2, zBottom - ((i + 0.5) / n2) * run2]} castShadow receiveShadow>
+          <boxGeometry args={[x1 - x0 - 0.1, 0.07, run2 / n2 + 0.06]} />
+          <meshStandardMaterial color={tread} />
+        </mesh>
+      ))}
+      <mesh position={[x0 + 0.04, L.landY + rise2 / 2 - 0.05, (zBottom + zTop) / 2]} rotation={[Math.atan2(rise2, run2), 0, 0]}>
+        <boxGeometry args={[0.06, 0.24, Math.hypot(run2, rise2) + 0.2]} />
+        <meshStandardMaterial color={str} />
+      </mesh>
+      {/* ราวจับ + ลูกกรงไม้ ด้านเปิดของช่วงสอง */}
+      <mesh position={[x0 - 0.02, L.landY + rise2 / 2 + 0.9, (zBottom + zTop) / 2]} rotation={[Math.atan2(rise2, run2), 0, 0]}>
+        <boxGeometry args={[0.07, 0.07, Math.hypot(run2, rise2)]} />
+        <meshStandardMaterial color={str} />
+      </mesh>
+      {Array.from({ length: 10 }, (_, i) => {
+        const k = (i + 0.5) / 10
+        const yb = L.landY + k * rise2
         return (
-          <mesh key={i} position={[(x0 + x1) / 2, k * FLOOR2 - 0.05, zBottom + (zTop - zBottom) * k]} castShadow receiveShadow>
-            <boxGeometry args={[x1 - x0, 0.1, (zBottom - zTop) / n + 0.02]} />
-            <meshStandardMaterial color={i % 2 ? '#7a5234' : '#8a5e3a'} />
+          <mesh key={'r' + i} position={[x0 - 0.02, yb + 0.45, zBottom - k * run2]}>
+            <boxGeometry args={[0.04, 0.9, 0.04]} />
+            <meshStandardMaterial color="#a88a68" />
           </mesh>
         )
       })}
-      {/* ราวบันได */}
-      <mesh position={[x0 + 0.05, FLOOR2 / 2 + 0.9, (zBottom + zTop) / 2]} rotation={[-Math.atan2(FLOOR2, zBottom - zTop), 0, 0]}>
-        <boxGeometry args={[0.06, 0.06, Math.hypot(FLOOR2, zBottom - zTop)]} />
-        <meshStandardMaterial color="#5a3a24" />
+      {/* ราวช่วงแรก (ด้านเหนือ) */}
+      <mesh position={[L.f1x0 + run1 / 2, L.landY / 2 + 0.9, L.z1 - 0.02]} rotation={[0, 0, Math.atan2(L.landY, run1)]}>
+        <boxGeometry args={[Math.hypot(run1, L.landY), 0.07, 0.07]} />
+        <meshStandardMaterial color={str} />
       </mesh>
     </group>
   )
