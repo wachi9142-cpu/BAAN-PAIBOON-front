@@ -112,8 +112,8 @@ export const SHOPS: Record<string, ShopDef> = {
     name: 'ร้านอาหารสัตว์พี่แดง',
     owner: 'พี่แดง',
     icon: '🐾',
-    note: 'ซอย 5 · อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์',
-    goods: pick(['feed', 'treat3', 'wand']),
+    note: 'ซอย 5 · อาหารสัตว์ ผลไม้ล่อสัตว์ สวิงและกรงดักสัตว์',
+    goods: pick(['feed', 'treat3', 'net', 'trap_cage']),
     buys: ['feed', 'treat'],
   },
 }

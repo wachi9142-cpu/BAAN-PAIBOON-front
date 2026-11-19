@@ -65,7 +65,7 @@ const ENTRIES: Record<SideTab, Entry[]> = {
   light: [{ t: 'soon', icon: '🏮', name: 'โคมไม้ไผ่', note: 'แขวนหน้าบ้าน สว่างตอนกลางคืน (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🕯️', name: 'ตะเกียงน้ำมัน', note: 'ถือเดินตอนกลางคืน (เร็ว ๆ นี้)' }],
   build: [{ t: 'structure', id: 'pen' }, { t: 'structure', id: 'shed' }, { t: 'structure', id: 'greenhouse' }, { t: 'structure', id: 'fence' }, { t: 'soon', icon: '⛺', name: 'เถียงนา', note: 'เพิงพักกลางทุ่ง (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🏠', name: 'บ้านหลังใหม่', note: 'ปลูกบ้านในที่ดินของตัวเอง (เร็ว ๆ นี้)' }],
   defend: [{ t: 'structure', id: 'scarecrow' }, { t: 'soon', icon: '🪤', name: 'กับดักหนู', note: 'กันหนูกินข้าวในยุ้ง (เร็ว ๆ นี้)' }],
-  tools: ['axe', 'hammer', 'machete', 'saw', 'rod', 'wand', 'bubble_helmet'].map(rec),
+  tools: ['axe', 'hammer', 'machete', 'saw', 'rod', 'net', 'trap_cage', 'bubble_helmet'].map(rec),
 }
 
 export const useBook = create<{ open: boolean; page: Page }>(() => ({ open: false, page: { kind: 'top', id: 'party' } }))
@@ -665,7 +665,7 @@ const TECH: { icon: string; name: string; note: string; done: () => boolean }[] 
   { icon: '🪚', name: 'งานไม้', note: 'เลื่อย → ไม้กระดาน', done: () => hasTool('saw') },
   { icon: '🛠️', name: 'โต๊ะประดิษฐ์', note: 'ตั้งโต๊ะไว้ที่บ้าน', done: () => (useGame.getState().save?.structures ?? []).some((s) => s.id === 'workbench') },
   { icon: '🎒', name: 'กระเป๋าใหญ่', note: 'อัปเกรดกระเป๋าระดับ 2 ขึ้นไป', done: () => (useGame.getState().save?.bagLevel ?? 0) >= 2 },
-  { icon: '🪄', name: 'คฑาจับสัตว์', note: 'ใช้ค้อน + ไม้กระดาน', done: () => hasTool('wand') },
+  { icon: '🥅', name: 'อุปกรณ์จับสัตว์', note: 'สวิง (เพชรเหลือง) · กรงดัก (เพชรแดง)', done: () => hasTool('net') || hasTool('trap_cage') },
   { icon: '🏮', name: 'แสงสว่างยามค่ำ', note: 'โคม ตะเกียง (เร็ว ๆ นี้)', done: () => false },
 ]
 function TechPages() {

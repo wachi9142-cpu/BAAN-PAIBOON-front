@@ -333,3 +333,17 @@ export function startHaircut(): Stopper {
   })
   return () => s.stop()
 }
+
+/** ทอผ้า: เหยียบไม้เหยียบ (ตึ้ก) · กระทบฟืม (ปึก) · กระสวยพุ่งผ่าน (ฟึ่บ) เป็นจังหวะ */
+export function startLoom(): Stopper {
+  const o = out()
+  if (!o) return noop
+  const s = session(o)
+  s.every(700, 950, () => {
+    const t = o.ctx.currentTime
+    burst(o, t, 0.08, 160, 1.4, 0.32, 'lowpass')
+    clink(o, t + 0.03, 0.04, 300)
+    burst(o, t + 0.34, 0.14, 2600, 1.1, 0.07)
+  })
+  return () => s.stop()
+}

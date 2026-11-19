@@ -24,6 +24,15 @@ export type ItemId =
   | 'herb_wild'
   | 'herb_rare'
   | 'amulet_forest'
+  | 'mulberry_leaf'
+  | 'silk_eggs'
+  | 'cocoon'
+  | 'silk_thread'
+  | 'silk_cloth'
+  | 'pupa'
+  | 'shirt_silk'
+  | 'net'
+  | 'trap_cage'
   | 'seed_morningglory'
   | 'morningglory'
   | 'seed_scallion'
@@ -111,6 +120,13 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   leaf: { id: 'leaf', name: 'ใบไม้', icon: '🍂', kind: 'material', stack: 40, sell: 1, note: 'ใบไม้ ใบตอง ทางมะพร้าว — ทำปุ๋ยหมัก อาหารสัตว์บางชนิด (เร็ว ๆ นี้)' },
   hardwood: { id: 'hardwood', name: 'ไม้เนื้อแข็ง', icon: '🪵', kind: 'material', stack: 20, sell: 30, note: 'ได้จากการโค่นต้นไม้ใหญ่ด้วยขวาน ใช้ทำเครื่องเรือนระดับสูง' },
   sapling: { id: 'sapling', name: 'ต้นกล้าไม้', icon: '🌱', kind: 'material', stack: 20, sell: 3, note: 'ปลูกแทนที่ตอไม้ (เดินไปที่ตอไม้แล้วกด E) โตเป็นต้นไม้ใน 1 วัน' },
+  mulberry_leaf: { id: 'mulberry_leaf', name: 'ใบหม่อน', icon: '🍃', kind: 'material', stack: 40, sell: 2, note: 'เก็บจากสวนหม่อนหลังศูนย์ฝึกอาชีพ (ต้นละครั้งต่อวัน) · อาหารของหนอนไหม มื้อละ 2 ใบต่อกระด้ง' },
+  silk_eggs: { id: 'silk_eggs', name: 'ไข่ไหม', icon: '🥚', kind: 'material', stack: 5, sell: 5, note: 'แผ่นไข่ไหมพันธุ์พื้นบ้าน รับฟรีวันละแผ่นที่ชั้นกระด้งเลี้ยงไหม · วางลงกระด้งแล้วรอฟัก' },
+  cocoon: { id: 'cocoon', name: 'รังไหม', icon: '🟡', kind: 'material', stack: 40, sell: 8, note: 'รังไหมสีเหลืองทอง · ต้มที่เตาสาวไหม 5 รัง ได้เส้นไหม 2 ไจ' },
+  silk_thread: { id: 'silk_thread', name: 'เส้นไหม', icon: '🧶', kind: 'material', stack: 30, sell: 25, note: 'เส้นไหมสาวมือ เงาสวย · ทอที่กี่ทอผ้า 3 ไจ ได้ผ้าไหม 1 ผืน' },
+  silk_cloth: { id: 'silk_cloth', name: 'ผ้าไหม', icon: '🎀', kind: 'material', stack: 10, sell: 90, note: 'ผ้าไหมทอมือ ลายตามที่เลือกตอนทอ · ตัดเย็บเป็นผ้าถุง (1 ผืน) หรือเสื้อ (2 ผืน)' },
+  pupa: { id: 'pupa', name: 'ดักแด้ไหม', icon: '🐛', kind: 'food', stack: 30, sell: 4, note: 'ได้จากการสาวไหม · ทอดกรอบ ๆ โปรตีนสูง อาหารพื้นบ้านอีสาน', food: 7 },
+  shirt_silk: { id: 'shirt_silk', name: 'เสื้อไหม', icon: '👚', kind: 'wear', stack: 5, sell: 220, note: 'เสื้อผ้าไหมสีทองที่ตัดเย็บเอง · สวมได้ที่โต๊ะตัดเย็บ · เครื่องแต่งกาย' },
   mushroom_wild: { id: 'mushroom_wild', name: 'เห็ดป่า', icon: '🍄', kind: 'food', stack: 20, sell: 12, note: 'เห็ดโคนป่าดอกใหญ่ เก็บได้ที่ป่าดงลึก (มีใหม่ทุกวัน) · ต้มหรือย่างกินอร่อย', food: 9 },
   herb_wild: { id: 'herb_wild', name: 'สมุนไพรป่า', icon: '🌿', kind: 'material', stack: 30, sell: 15, note: 'ใบไม้ยาจากป่าดงลึก · ตำพอกแผล ต้มดื่มแก้เหนื่อย (ใช้ประดิษฐ์ยาในอนาคต)' },
   herb_rare: { id: 'herb_rare', name: 'ว่านเรืองแสง', icon: '🌱', kind: 'treasure', stack: 10, sell: 180, note: 'ว่านหายากที่ขึ้นเฉพาะลานหิ่งห้อยหลังศาลเก่า ใบเรืองแสงจาง ๆ ตอนกลางคืน' },
@@ -138,7 +154,9 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   sticky_rice: { id: 'sticky_rice', name: 'ข้าวเหนียว', icon: '🍙', kind: 'food', stack: 20, sell: 10, note: 'ข้าวเหนียวนึ่งร้อน ๆ ในกระติบ อิ่มท้อง', food: 15 },
   mango_ripe: { id: 'mango_ripe', name: 'มะม่วงสุก', icon: '🥭', kind: 'food', stack: 20, sell: 15, note: 'มะม่วงน้ำดอกไม้สุกหอมหวาน', food: 10 },
   bubble_helmet: { id: 'bubble_helmet', name: 'หมวกฟองอากาศ', icon: '🥽', kind: 'tool', stack: 1, sell: 90, note: 'สวมครอบศีรษะเป็นฟองอากาศใส หายใจใต้น้ำได้ ~2 นาที (ไม่มี = กลั้นได้ ~12 วิ) · ขึ้นผิวน้ำแล้วอากาศเติมเอง · ดำน้ำ: กด C ค้าง · ขึ้น: Space' },
-  wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
+  wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ของเก่าหายาก: ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา (ตอนนี้ชาวบ้านใช้สวิงกับกรงดักแทนแล้ว)' },
+  net: { id: 'net', name: 'สวิงจับสัตว์', icon: '🥅', kind: 'tool', stack: 1, sell: 40, note: 'ด้ามไม้ไผ่ ตาข่ายเชือกกล้วย · ใช้กับสัตว์เพชรเหลือง (ตัวเล็ก/วิ่งเร็ว) เดินเข้าไปใกล้ ๆ แล้วกด E ตวัดสวิง' },
+  trap_cage: { id: 'trap_cage', name: 'กรงดักสัตว์', icon: '🪤', kind: 'tool', stack: 1, sell: 90, note: 'กรงไม้ไผ่ประตูตก ใช้ซ้ำได้ · สัตว์เพชรแดง: ป้อนกล้วยให้เชื่องก่อน แล้วกด E วางกรงใส่กล้วยเป็นเหยื่อ รอสัตว์เดินเข้ากรง' },
 }
 
 // ---------- กระเป๋า (ยิ่งระดับสูง ยิ่งมีช่องมาก) ----------
@@ -179,6 +197,8 @@ export const RECIPES: Recipe[] = [
   { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', needs: { branch: 1, vine: 1 }, gives: { item: 'feed', qty: 4 } },
   { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', needs: { branch: 2, vine: 2 }, gives: { item: 'rod', qty: 1 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', needs: { plank: 2, stone: 5, vine: 3 }, tool: 'hammer', gives: { item: 'wand', qty: 1 } },
+  { id: 'net', name: 'สวิงจับสัตว์', icon: '🥅', needs: { branch: 2, vine: 4 }, gives: { item: 'net', qty: 1 } },
+  { id: 'trap_cage', name: 'กรงดักสัตว์', icon: '🪤', needs: { plank: 2, branch: 4, vine: 3 }, tool: 'hammer', gives: { item: 'trap_cage', qty: 1 } },
   { id: 'bag1', name: 'ย่ามผ้าฝ้าย (20 ช่อง)', icon: '🎒', needs: { vine: 6, branch: 2 }, gives: { bagLevel: 1 } },
   { id: 'bag2', name: 'กระเป๋าสานไม้ไผ่ (28 ช่อง)', icon: '🧺', needs: { vine: 10, plank: 4 }, tool: 'machete', gives: { bagLevel: 2 } },
   { id: 'bag3', name: 'เป้ใบใหญ่ (40 ช่อง)', icon: '🎒', needs: { vine: 15, plank: 6, log: 4 }, tool: 'hammer', gives: { bagLevel: 3 } },
@@ -203,6 +223,8 @@ export const SHOP: ShopEntry[] = [
   { id: 'sapling', name: 'ต้นกล้าไม้ ×2', icon: '🌱', price: 20, gives: { item: 'sapling', qty: 2 } },
   { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', price: 60, gives: { item: 'rod', qty: 1 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', price: 500, gives: { item: 'wand', qty: 1 } },
+  { id: 'net', name: 'สวิงจับสัตว์', icon: '🥅', price: 60, gives: { item: 'net', qty: 1 } },
+  { id: 'trap_cage', name: 'กรงดักสัตว์', icon: '🪤', price: 150, gives: { item: 'trap_cage', qty: 1 } },
   { id: 'seed_morningglory', name: 'เมล็ดผักบุ้ง ×3', icon: '🌱', price: 10, gives: { item: 'seed_morningglory', qty: 3 } },
   { id: 'seed_scallion', name: 'เมล็ดต้นหอม ×3', icon: '🌱', price: 12, gives: { item: 'seed_scallion', qty: 3 } },
   { id: 'seed_basil', name: 'เมล็ดกะเพรา ×3', icon: '🌱', price: 15, gives: { item: 'seed_basil', qty: 3 } },

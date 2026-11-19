@@ -244,8 +244,7 @@ export const PLACES: Place[] = [
     kind: 'training',
     pos: [-48, -18],
     size: [12, 8],
-    arriveText: 'เรียนเลี้ยงหนอนไหม ทอผ้า และอาชีพอื่น ๆ',
-    comingSoon: 'ฝึกอาชีพ (Part 4)',
+    arriveText: 'นครแห่งไหม: เก็บใบหม่อนหลังศูนย์ → เลี้ยงไหมในกระด้ง → สาวไหม → ทอผ้า → ตัดเย็บแล้วสวมใส่',
     solidRadius: 6,
   },
   {

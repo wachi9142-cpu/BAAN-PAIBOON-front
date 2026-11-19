@@ -55,7 +55,7 @@ export const CHEST_KINDS: Record<ChestKind, ChestKindDef> = {
       { coins: [80, 150] },
       { item: 'treat', qty: [2, 4] },
       { item: 'sapling', qty: [2, 3] },
-      { item: 'wand', qty: [1, 1], chance: 0.35 },
+      { item: 'trap_cage', qty: [1, 1], chance: 0.35 },
       { item: 'hardwood', qty: [1, 2], chance: 0.5 },
     ],
   },

@@ -159,7 +159,7 @@ function rollReward(): string {
     g.addCoins(80)
     return '💰 เงิน 80 บาท'
   }
-  if (addItem('wand', 1) > 0) return '🌟 ของหายาก: ไม้คฑา!'
+  if (addItem('trap_cage', 1) > 0) return '🌟 ของดี: กรงดักสัตว์!'
   g.addCoins(150)
   return '💰 เงิน 150 บาท'
 }

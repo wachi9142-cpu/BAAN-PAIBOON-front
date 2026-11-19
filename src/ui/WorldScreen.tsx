@@ -57,6 +57,8 @@ import { MOUNTS, toggleMount, useMount } from '../game/mounts'
 import { CaveMouth, CaveWatcher, WaterCaveScene } from '../scenes/WaterCave'
 import { CAVE_DOOR, outsideMouth } from '../game/cave'
 import { DeepForest } from '../scenes/DeepForest'
+import { SilkCenter } from '../scenes/SilkCenter'
+import { activateSilk, silkHint, useSilk } from '../game/silk'
 import { activateForest, forestHint, useForest } from '../game/forest'
 import { warp } from '../game/homeActions'
 
@@ -270,6 +272,7 @@ export function WorldScreen() {
           else activateWater(useWater.getState().near!, playerPose.x, playerPose.z)
         }
         else if (useForest.getState().near) activateForest(useForest.getState().near!)
+        else if (useSilk.getState().near) activateSilk(useSilk.getState().near!)
         else if (useChests.getState().near) openChest(useChests.getState().near!)
         else if (useBuild.getState().near) {
           const uid = useBuild.getState().near!
@@ -344,6 +347,7 @@ export function WorldScreen() {
         <CaveWatcher />
         <WaterCaveScene />
         <DeepForest />
+        <SilkCenter />
         <WaterLife />
         <LayoutDragger />
         <HoldInteract />
@@ -368,6 +372,7 @@ export function WorldScreen() {
       <DiveHud />
       <MountHint />
       <ForestHint />
+      <SilkHint />
       <CarryHint />
       <TouchControls />
       <LayoutEditor />
@@ -1158,6 +1163,20 @@ function DiveHud() {
 }
 
 /** ปุ่มช่วยขี่มังกรน้ำ/พญานาค */
+function SilkHint() {
+  const near = useSilk((s) => s.near)
+  useSilk((s) => s.busy)
+  useGame((s) => s.save?.silk)
+  useGame((s) => s.save?.inventory)
+  useClock((s) => s.minute)
+  if (!near) return null
+  return (
+    <div className="gather-hint" style={{ bottom: 150, maxWidth: 'min(92vw, 720px)' }}>
+      <kbd>E</kbd> {silkHint(near)}
+    </div>
+  )
+}
+
 function ForestHint() {
   const near = useForest((s) => s.near)
   useGame((s) => s.save?.forest)

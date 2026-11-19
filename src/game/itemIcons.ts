@@ -256,6 +256,46 @@ function build(id: string): Group {
       add(part(new SphereGeometry(0.2, 10, 8), '#e88a20', [0.12, -0.35, 0.18], [0, 0, 0], [1, 1, 0.6]))
       add(part(new ConeGeometry(0.1, 0.3, 5), '#4a8a2a', [-0.28, 0.5, 0], [0, 0, 0.9], [1, 1, 0.3]))
       break
+    case 'mulberry_leaf':
+      add(part(new SphereGeometry(0.6, 12, 8), '#5aa040', [0, 0, 0], [0, 0, 0.5], [1, 0.8, 0.08]))
+      add(part(new CylinderGeometry(0.025, 0.025, 1, 4), '#3a7a2a', [0, 0, 0.06], [0, 0, 0.5]))
+      break
+    case 'silk_eggs':
+      add(part(new BoxGeometry(1.2, 0.85, 0.05), '#f2ece0', [0, 0, 0], [0.2, 0.3, 0]))
+      for (let i = 0; i < 24; i++) add(part(new SphereGeometry(0.045, 5, 4), '#5a5048', [-0.45 + (i % 6) * 0.18, -0.28 + Math.floor(i / 6) * 0.18, 0.06], [0.2, 0.3, 0]))
+      break
+    case 'cocoon':
+      add(part(new SphereGeometry(0.42, 14, 10), '#f0c030', [-0.25, -0.1, 0], [0, 0, 0.5], [1, 0.72, 0.72], { rough: 0.9 }))
+      add(part(new SphereGeometry(0.36, 14, 10), '#f4d050', [0.3, 0.2, 0.1], [0, 0, -0.4], [1, 0.72, 0.72], { rough: 0.9 }))
+      break
+    case 'silk_thread':
+      for (let i = 0; i < 4; i++) add(part(new TorusGeometry(0.45 - i * 0.03, 0.07, 8, 22), i % 2 ? '#f0c848' : '#e8b830', [0, 0, i * 0.05], [0.4, 0.2, i * 0.5], [1, 1, 1], { metal: 0.3, rough: 0.35 }))
+      break
+    case 'silk_cloth':
+      add(part(new BoxGeometry(1.3, 0.22, 0.9), '#7a2a8a', [0, -0.15, 0], [0.4, 0.5, 0], [1, 1, 1], { metal: 0.2, rough: 0.4 }))
+      add(part(new BoxGeometry(1.25, 0.06, 0.86), '#e8c050', [0, 0.0, 0], [0.4, 0.5, 0], [1, 1, 1], { metal: 0.3, rough: 0.35 }))
+      add(part(new BoxGeometry(1.3, 0.2, 0.9), '#8a3a9a', [0, 0.14, 0], [0.4, 0.5, 0], [1, 1, 1], { metal: 0.2, rough: 0.4 }))
+      break
+    case 'pupa':
+      for (let i = 0; i < 3; i++) add(part(new CapsuleGeometry(0.16, 0.35, 4, 10), '#8a5a2a', [-0.35 + i * 0.35, (i % 2) * 0.15, 0], [0, 0, 0.4 + i * 0.3]))
+      break
+    case 'shirt_silk':
+      add(part(new BoxGeometry(0.9, 1.1, 0.2), '#d8b04a', [0, -0.1, 0], [0, 0, 0], [1, 1, 1], { metal: 0.3, rough: 0.4 }))
+      add(part(new BoxGeometry(0.4, 0.7, 0.18), '#d8b04a', [-0.62, 0.15, 0], [0, 0, -0.6], [1, 1, 1], { metal: 0.3, rough: 0.4 }), part(new BoxGeometry(0.4, 0.7, 0.18), '#d8b04a', [0.62, 0.15, 0], [0, 0, 0.6], [1, 1, 1], { metal: 0.3, rough: 0.4 }))
+      break
+    case 'mushroom_wild':
+      add(part(new CylinderGeometry(0.16, 0.2, 0.7, 10), '#f0e8d8', [0, -0.35, 0]))
+      add(part(new SphereGeometry(0.6, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), '#c89a68', [0, 0, 0], [0, 0, 0], [1, 0.55, 1]))
+      break
+    case 'herb_wild':
+    case 'herb_rare':
+      for (let i = 0; i < 5; i++) add(part(new ConeGeometry(0.12, 1, 4), id === 'herb_rare' ? '#7ae8b0' : '#3e8a3a', [-0.3 + i * 0.15, 0, 0], [0, 0, -0.4 + i * 0.2]))
+      break
+    case 'amulet_forest':
+      add(part(new TorusGeometry(0.42, 0.04, 6, 24), '#c03030', [0, 0.45, 0], [0, 0, 0], [1, 0.7, 1]))
+      add(part(new BoxGeometry(0.6, 0.8, 0.06), '#e8e0c8', [0, -0.2, 0], [0, 0, 0.1]))
+      add(part(new BoxGeometry(0.3, 0.05, 0.07), '#2a2a2a', [0, -0.05, 0.01], [0, 0, 0.1]), part(new BoxGeometry(0.05, 0.4, 0.07), '#2a2a2a', [0, -0.25, 0.01], [0, 0, 0.1]))
+      break
     default:
       if (id.startsWith('seed_')) {
         // ซองเมล็ดพันธุ์ + เมล็ดหกออกมา

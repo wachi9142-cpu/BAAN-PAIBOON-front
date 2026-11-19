@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Quaternion, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three'
 import { useGame } from '../game/store'
-import { PULL_DURATION, refreshWild, tierOf, wild, wildPos } from '../game/catching'
+import { cancelTrap, PULL_DURATION, refreshWild, springTrap, tierOf, useTraps, wild, wildPos } from '../game/catching'
 import { GEMS, wandGem } from '../game/wand'
 import { TIERS, WILD_SPAWNS, type WildSpawn } from '../game/content/wildlife'
 import { playerPose } from '../game/playerPose'
@@ -209,7 +209,26 @@ function WildAnimal({ spawn, seed }: { spawn: WildSpawn; seed: number }) {
     // สัตว์ระดับปานกลางขึ้นไปตกใจถ้าวิ่งเข้าใส่ (หรือเพิ่งจับพลาด)
     const scared = (tier !== 'easy' && dPlayer < SCARE_RANGE && playerPose.motion === 2) || performance.now() < 0 || Date.now() < r.scaredUntil
     let speed = tier === 'hard' ? 0.9 : 0.7
-    if (scared && dPlayer < SCARE_RANGE * 1.6) {
+    if (r.trap) {
+      // กรงดัก: เดินเข้าไปกินกล้วยในกรง · ประตูตกแล้วอยู่ในกรง
+      const tp = r.trap
+      if (tp.shut) {
+        s.x += (tp.x - s.x) * Math.min(1, dt * 6)
+        s.z += (tp.z - s.z) * Math.min(1, dt * 6)
+        s.tx = s.x
+        s.tz = s.z
+        s.wait = 0.5
+      } else {
+        const dTrap = Math.hypot(tp.x - s.x, tp.z - s.z)
+        s.tx = tp.x
+        s.tz = tp.z
+        s.wait = 0
+        speed = 0.9
+        if (dTrap < 0.3) springTrap(spawn.id)
+        else if (dPlayer < 2.2 && playerPose.motion === 2) cancelTrap(spawn.id, 'วิ่งเข้าใส่ สัตว์ตกใจไม่ยอมเข้ากรง · ลองใหม่แล้วอยู่นิ่ง ๆ')
+        else if (now - tp.at > 25000) cancelTrap(spawn.id, 'สัตว์ไม่ยอมเข้ากรง ลองวางใหม่อีกครั้ง')
+      }
+    } else if (scared && dPlayer < SCARE_RANGE * 1.6) {
       // วิ่งหนีออกจากผู้เล่น แต่ไม่ออกนอกบริเวณบ้านของมันไกลเกินไป
       const ax = s.x - px
       const az = s.z - pz
@@ -285,10 +304,17 @@ function WildAnimal({ spawn, seed }: { spawn: WildSpawn; seed: number }) {
       <group ref={body} scale={scale}>
         <Pet pet={spawn.pet} motion={motion} pose={pose} />
       </group>
-      <mesh ref={marker} position={[0, markerY, 0]}>
-        <octahedronGeometry args={[0.12, 0]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.6} />
-      </mesh>
+      <group ref={marker} position={[0, markerY, 0]}>
+        {/* เพชรสีบอกระดับ: เขียว ง่าย · เหลือง ปานกลาง · แดง ยาก · ม่วง พิเศษ */}
+        <mesh scale={[1, 1.35, 1]}>
+          <octahedronGeometry args={[0.15, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.85} roughness={0.15} metalness={0.3} flatShading />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[0.3, 12, 10]} />
+          <meshBasicMaterial color={color} transparent opacity={0.22} depthWrite={false} blending={AdditiveBlending} />
+        </mesh>
+      </group>
       {/* ลำแสงจากปลายคฑา + วงแสงพันตัว + ประกาย + แสงวาบ */}
       <group ref={beamG} visible={false}>
         <mesh ref={core}>

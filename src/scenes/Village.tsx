@@ -308,25 +308,7 @@ function PlaceMesh({ place }: { place: Place }) {
           ))}
           <Bush x={w / 2 - 0.4} z={d / 2 + 1} s={1} flowers="#c99af0" />
           <Bush x={-w / 2 + 0.4} z={-d / 2 - 0.6} s={0.9} flowers="#ffffff" />
-          {/* กี่ทอผ้าหน้าอาคาร */}
-          <group position={[-3, 0, d / 2 + 2]}>
-            <mesh position={[0, 0.9, 0]} castShadow>
-              <RBox args={[1.6, 0.1, 1.2]} />
-              <meshStandardMaterial color="#7a5236" />
-            </mesh>
-            <mesh position={[0, 0.96, 0]}>
-              <RBox args={[1.2, 0.02, 0.9]} />
-              <meshStandardMaterial color="#b0304a" />
-            </mesh>
-            {[-1, 1].flatMap((sx) =>
-              [-1, 1].map((sz) => (
-                <mesh key={`${sx}${sz}`} position={[sx * 0.75, 0.6, sz * 0.55]}>
-                  <RBox args={[0.08, 1.2, 0.08]} />
-                  <meshStandardMaterial color="#5a3b26" />
-                </mesh>
-              )),
-            )}
-          </group>
+          {/* กี่ทอผ้า/ชั้นเลี้ยงไหม/เตาสาว/โต๊ะตัดเย็บ: scenes/SilkCenter.tsx (ใช้งานได้จริง) */}
         </group>
       )
       break

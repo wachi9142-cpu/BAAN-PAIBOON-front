@@ -90,6 +90,8 @@ export interface SaveData {
   lotusPicked?: Record<string, number>
   /** อ่านประกาศบนบอร์ดแต่ละจุดล่าสุดวันที่ */
   boardSeen?: Record<string, number>
+  /** เส้นทางไหม (สวนหม่อน กระด้ง สาว ทอ ตัดเย็บ) — ดู game/silk.ts */
+  silk?: import('./silk').SilkSave
   /** ป่าดงลึก + ศาลเก่า + ตำนานที่ฟังแล้ว — ดู game/forest.ts */
   forest?: import('./forest').ForestSave
   /** อานสัตว์ที่สร้างแล้ว (id) — ดู game/saddles.ts */
