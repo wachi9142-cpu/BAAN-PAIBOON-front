@@ -597,14 +597,14 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
     <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
-          <mesh key={`${sx}${sz}`} position={[sx * 1.85, 1.1, sz * 1.2]} castShadow>
-            <cylinderGeometry args={[0.13, 0.15, 2.2, 8]} />
+          <mesh key={`${sx}${sz}`} position={[sx * 1.85, 0.85, sz * 1.2]} castShadow>
+            <cylinderGeometry args={[0.13, 0.15, 1.7, 8]} />
             <meshStandardMaterial color="#5a3b26" />
           </mesh>
         )),
       )}
-      {/* ยกตัวยุ้งสูงขึ้น 1.2 ม. ให้สูงเท่าบ้านหลังที่สอง (ผู้สร้าง 19 พ.ย.) */}
-      <group position={[0, 1.2, 0]}>
+      {/* ยกตัวยุ้งสูงขึ้น 0.7 ม. (เตี้ยลงจากเดิม 1.2 ตามผู้สร้าง) ให้สูงเท่าบ้านหลังที่สอง (ผู้สร้าง 19 พ.ย.) */}
+      <group position={[0, 0.7, 0]}>
       <mesh position={[0, 1.8, 0]} castShadow receiveShadow>
         <RBox args={[4.2, 1.8, 3]} radius={0.12} />
         <meshStandardMaterial color="#8a5a34" />
@@ -648,21 +648,21 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
       </group>
       {/* เสาค้ำระเบียง */}
       {[-1, 1].map((sx) => (
-        <mesh key={sx} position={[sx * 2.05, 1.05, 2.4]} castShadow>
-          <cylinderGeometry args={[0.1, 0.12, 2.1, 8]} />
+        <mesh key={sx} position={[sx * 2.05, 0.8, 2.4]} castShadow>
+          <cylinderGeometry args={[0.1, 0.12, 1.6, 8]} />
           <meshStandardMaterial color="#5a3b26" />
         </mesh>
       ))}
       {/* บันไดไม้ 8 ขั้น พาดจากพื้นถึงขอบระเบียง */}
       <group position={[0, 0, 2.46]}>
-        <group position={[0, 0, 0.95]} rotation={[-0.38, 0, 0]}>
+        <group position={[0, 0, 0.75]} rotation={[-0.38, 0, 0]}>
           {[-0.32, 0.32].map((x) => (
-            <mesh key={x} position={[x, 1.2, 0]} castShadow>
-              <boxGeometry args={[0.07, 2.45, 0.07]} />
+            <mesh key={x} position={[x, 0.95, 0]} castShadow>
+              <boxGeometry args={[0.07, 1.9, 0.07]} />
               <meshStandardMaterial color="#6a4428" />
             </mesh>
           ))}
-          {[0.2, 0.48, 0.76, 1.04, 1.32, 1.6, 1.88, 2.16].map((y) => (
+          {[0.2, 0.48, 0.76, 1.04, 1.32, 1.6].map((y) => (
             <mesh key={y} position={[0, y, 0.02]}>
               <boxGeometry args={[0.66, 0.05, 0.16]} />
               <meshStandardMaterial color="#8a5a34" />
