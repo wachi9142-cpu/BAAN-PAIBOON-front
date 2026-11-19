@@ -8,7 +8,7 @@ import { WaterTower } from './models/WaterTower'
 import { Editable } from './Editable'
 import { LIVE } from '../game/layoutEdit'
 import { PLACES } from '../game/content/village'
-import { Bush, GableRoof, OpenWindow, PicketFence } from './models/House'
+import { Bush, GableRoof, OpenWindow } from './models/House'
 import { BananaTree } from './models/BananaTree'
 import { Pet } from './models/Pet'
 import { SignBoard } from './SignBoard'
@@ -17,6 +17,7 @@ import { MangoTree, type MangoVariety } from './Orchard'
 import { Windy } from './Wind'
 import { CreamFence } from './models/CreamFence'
 import { BambooClump } from './models/BambooClump'
+import { PineappleBed } from './models/Pineapple'
 import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
 import type { PetChoice } from '../game/content/pets'
@@ -53,8 +54,8 @@ const BASE_SOLIDS: [number, number, number, number, string][] = [
   [8, 10.5, 2.5, 2, 'coop'], // เล้าไก่
   [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
   [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
-  [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
-  [6.8, -11, 4.8, 3.8, 'watertower2'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
+  [3.8, -10.2, 3.2, 2.4, 'orchid3'], // เรือนกล้วยไม้ (ย้ายไปแทนที่ต้นยอ 2 ต้น 19 พ.ย.)
+  [10.6, -11, 4.8, 3.8, 'watertower3'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
 export function homeSolids(): [number, number, number, number][] {
@@ -122,16 +123,17 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
-      <Editable id="home:watertower2" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={6.8} z={-11} r={2.6} origin={O}>
-        <group position={[6.8, 0, -11]}>
+      <Editable id="home:watertower3" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={10.6} z={-11} r={2.6} origin={O}>
+        <group position={[10.6, 0, -11]}>
           <WaterTower />
         </group>
       </Editable>
-      <Editable id="home:veggarden" name="สวนผักสวนดอกไม้" x={2.2} z={2.5} r={3} origin={O}>
-        <VegFlowerGarden x={2.2} z={2.5} />
-      </Editable>
-      <Editable id="home:orchid" name="เรือนกล้วยไม้" x={2.5} z={-9} origin={O}>
-        <OrchidHouse x={2.5} z={-9} />
+      {/* สวนผัก + สวนดอกไม้ เอาออกแล้ว รอรูปตัวอย่างจากผู้สร้างเพื่อทำใหม่ (19 พ.ย.) */}
+      <Editable id="home:orchid3" name="เรือนกล้วยไม้" x={3.8} z={-10.2} origin={O}>
+        {/* วางตรงแนวเดียวกับหอถังน้ำ (ขนานรั้ว) */}
+        <group position={[3.8, 0, -10.2]} scale={0.82}>
+          <OrchidHouse x={0} z={0} />
+        </group>
       </Editable>
       <Editable id="home:ricebarn" name="ยุ้งข้าว" x={-12} z={9} origin={O}>
         <RiceBarn x={-12} z={9} />
@@ -142,8 +144,9 @@ export function GrandHome() {
       <Editable id="home:toilets" name="ห้องน้ำนอกบ้าน" x={-2} z={10.2} origin={O}>
         <OutdoorToilets x={-2} z={10.2} />
       </Editable>
-      <Editable id="home:buffalo" name="คอกควาย" x={3} z={8.8} r={3.5} origin={O}>
-        <BuffaloPen x={3} z={8.8} />
+      {/* คอกควาย: ย้ายไปใกล้ประตูหลังใหม่ (ผู้สร้าง 19 พ.ย.) */}
+      <Editable id="home:buffalo2" name="คอกควาย" x={8.5} z={25} r={3.5} origin={O}>
+        <BuffaloPen x={8.5} z={25} />
       </Editable>
       <Editable id="home:coop" name="เล้าไก่" x={8} z={10.5} origin={O}>
         <ChickenCoop x={8} z={10.5} />
@@ -485,7 +488,8 @@ function WaterFilter({ x, z }: { x: number; z: number }) {
 }
 
 /** สวนผักสวนครัว + สวนดอกไม้ของยายเลียน (มีรั้วไม้เตี้ย) */
-function VegFlowerGarden({ x, z }: { x: number; z: number }) {
+// เก็บไว้เผื่อใช้ (ตอนนี้ไม่ได้วางในบ้าน)
+export function VegFlowerGarden({ x, z }: { x: number; z: number }) {
   const flowers = ['#f29ab8', '#f6c445', '#e86a5a', '#ffffff', '#c99af0']
   return (
     <group position={[x, 0, z]}>
@@ -507,8 +511,7 @@ function VegFlowerGarden({ x, z }: { x: number; z: number }) {
       {[0, 1, 2, 3].map((i) => (
         <Bush key={i} x={2.6} z={-1.6 + i * 1.1} s={0.6} flowers={flowers[i % flowers.length]} />
       ))}
-      <PicketFence x={0} z={2.3} len={6} />
-      <PicketFence x={0} z={-2.3} len={6} />
+      {/* รั้วไม้เตี้ยรอบแปลงผักเอาออกแล้ว (ผู้สร้าง 19 พ.ย.) */}
     </group>
   )
 }
@@ -866,38 +869,40 @@ function Orchard() {
   return (
     <group>
       {/* มะม่วงต้นใหญ่ 3 ต้น (ผูกเปล) */}
-      <Mango x={9.6} z={-7.6} s={1.05} v="ndm-gold" />
-      <Mango x={12.5} z={-9.5} s={1} v="khiew" />
-      <Mango x={12.5} z={-3} s={1} v="r2e2" />
+      {/* ย้ายมาเรียงแถวริมรั้วหน้าบ้าน (ฝั่งถนน) ใกล้แนวมะพร้าว — ผู้สร้าง 19 พ.ย. */}
+      <Mango x={16.5} z={-10.3} s={1.05} v="ndm-gold" />
+      <Mango x={20.5} z={-10.3} s={1} v="khiew" />
+      <Mango x={24.5} z={-10.3} s={1} v="r2e2" />
       {/* เปลผูกระหว่างมะม่วง */}
-      <mesh position={[11.05, 1.2, -8.55]} rotation={[0, 0.58, 0]}>
-        <RBox args={[3.2, 0.06, 0.7]} radius={0.03} />
+      <mesh position={[18.5, 1.2, -10.3]}>
+        <RBox args={[3.4, 0.06, 0.7]} radius={0.03} />
         <meshStandardMaterial color="#d0503e" />
       </mesh>
       {/* มะม่วงแคระ 2 ต้น (ปีนเล่นได้) */}
-      <Mango x={8.5} z={-3.5} s={0.6} v="ndm-gold" />
-      <Mango x={6} z={-6} s={0.55} v="khiew" />
+      <Mango x={27.8} z={-10.3} s={0.6} v="ndm-gold" />
+      <Mango x={30.3} z={-10.3} s={0.55} v="khiew" />
+      {/* สวนไม้ผลเล็ก (ชมพู่ น้อยหน่า ขนุน ยอ ลำไย) ย้ายมารวมกันในแปลงริมรั้วตะวันออก (ผู้สร้าง 19 พ.ย.) */}
       {/* ชมพู่แคระ 4 ต้น */}
       {[
-        [6, 0.5],
-        [8.5, 0.8],
-        [11, 0.5],
-        [13.5, 1],
+        [18.5, -6],
+        [22, -6],
+        [25.5, -6],
+        [29, -6],
       ].map(([x, z]) => (
         <TrunkTree key={x} x={x} z={z} h={1} r={0.8} color="#5a9a48" fruit={6} fruitColor="#ef6a7a" fruitR={0.07} />
       ))}
       {/* น้อยหน่า 3 ต้น */}
       {[
-        [5.5, 4],
-        [7.5, 4.6],
-        [1.2, -12.2],
+        [18.5, -3],
+        [22, -3],
+        [25.5, -3],
       ].map(([x, z]) => (
         <TrunkTree key={'n' + x + z} x={x} z={z} h={1} r={0.75} color="#6a9a4a" fruit={4} fruitColor="#9ab86a" fruitR={0.09} />
       ))}
       {/* ขนุน 2 ต้น (ผลใหญ่ติดลำต้น) */}
       {[
-        [13.5, 4],
-        [10.5, 4.5],
+        [18.5, 0.3],
+        [22.2, 0.5],
       ].map(([x, z]) => (
         <group key={'j' + x}>
           <TrunkTree x={x} z={z} h={2.4} r={1.3} color="#3f6e33" />
@@ -921,8 +926,8 @@ function Orchard() {
       ))}
       {/* ยอ 4 ต้น */}
       {[
-        [3.5, -5],
-        [4.5, -3.2],
+        [25.5, 0.2],
+        [28.8, 0.5],
         [-13.5, 3],
         [-13.5, 0.5],
       ].map(([x, z]) => (
@@ -960,13 +965,22 @@ function Surroundings() {
       {[-6, 0, 6, 12, 18, 24, 30, 35].map((z, i) => (
         <Palm key={'ce' + z} x={east} z={z} h={5.2 + (i % 2) * 0.5} />
       ))}
-      {/* หมาก: พื้นที่หญ้าฝั่งตะวันตก-เหนือ */}
-      {Array.from({ length: 14 }).map((_, i) => (
-        <Palm key={'ar' + i} x={24 + (i % 2) * 1.1} z={-9 + Math.floor(i / 2) * 1.6} h={4.2 + (i % 3) * 0.4} areca />
-      ))}
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Palm key={'ar2' + i} x={0.5 + i * 1.6} z={12} h={4 + (i % 2) * 0.5} areca />
-      ))}
+      {/* สวนหมากราว 30 ต้น (6×5) หลังคอกควาย ใกล้รั้วตะวันออก — ย้ายต้นหมากเดิมทั้งหมดมารวมที่นี่ (ผู้สร้าง 19 พ.ย.) */}
+      {Array.from({ length: 30 }).map((_, i) => {
+        const c = i % 6
+        const r = Math.floor(i / 6)
+        const x = 16 + c * 2.8 + Math.sin(i * 2.1) * 0.35
+        const z = 14.5 + r * 2 + Math.cos(i * 1.7) * 0.3
+        return <Palm key={'ar' + i} x={Math.round(x * 10) / 10} z={Math.round(z * 10) / 10} h={4.4 + (i % 4) * 0.25} areca />
+      })}
+      {/* แปลงสับปะรด 20 ต้น ระหว่างสวนหมากกับคอกควาย (ผู้สร้าง 19 พ.ย.) */}
+      <Editable id="home:pineapple" name="แปลงสับปะรด" x={13.4} z={19.6} r={2.4} origin={homeO()}>
+        <group position={[13.4, 0, 19.6]}>
+          <Windy h={0.9} amp={0.06} flutter={0.8}>
+            <PineappleBed cols={4} rows={5} dx={0.8} dz={1.0} />
+          </Windy>
+        </group>
+      </Editable>
       {/* ไผ่กอใหญ่ */}
       <Bamboo x={-14} z={12} />
       {/* แนวกอไผ่ริมรั้วตะวันตก ถัดจากมะม่วงหิมพานต์ (ผู้สร้าง 19 พ.ย.) */}
@@ -974,7 +988,7 @@ function Surroundings() {
       <Bamboo x={-14.2} z={33.2} />
       <Bamboo x={14} z={12} />
       {/* ลำไย: กลางรั้วบ้าน 1 ต้น + หลังห้องน้ำ 2 ต้น */}
-      <TrunkTree x={0} z={-11.8} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
+      <TrunkTree x={29} z={-3} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-3.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={-0.5} z={11.8} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
       {/* มะม่วงหิมพานต์ 3 ต้น: ย้ายไปใกล้แนวมะพร้าวริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย. 2569 · เดิมกำหนดจุด 18 พ.ย.) · ผลสีส้มแดง */}
