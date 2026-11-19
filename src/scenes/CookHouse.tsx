@@ -23,7 +23,7 @@ function useCanvasTex(draw: (x: CanvasRenderingContext2D) => void, rx: number, r
   }, [rx, ry, size])
 }
 
-const FLOOR = 2.1 // ความสูงพื้นชั้นบน
+const FLOOR = 1.65 // ความสูงพื้นชั้นบน (เตี้ยลงจาก 2.1 ตามผู้สร้าง 19 พ.ย.)
 const W = 5
 const BACK = -2 // ผนังหลัง
 const FRONT_WALL = 0.5 // ผนังหน้าห้อง (ชานอยู่หน้าผนังนี้)
@@ -106,8 +106,8 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
     balusters.push([2.45, bz])
   }
   // บันได: จากพื้น (z = EDGE + RUN) ขึ้นถึงชาน (z = EDGE)
-  const STEPS = 8
-  const RUN = 2.3
+  const STEPS = 6
+  const RUN = 1.85
   const slope = Math.atan2(FLOOR, RUN)
   const stairLen = Math.hypot(FLOOR, RUN)
 
@@ -308,15 +308,15 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
         </group>
       ))}
       {/* งอบ + หมวกแขวนเสา และเสื้อผ้าแขวนราวใต้ถุน */}
-      <mesh position={[2.35, 1.55, FRONT_WALL + 0.14]} rotation={[Math.PI / 2 - 0.2, 0, 0]}>
+      <mesh position={[2.35, 1.2, FRONT_WALL + 0.14]} rotation={[Math.PI / 2 - 0.2, 0, 0]}>
         <coneGeometry args={[0.24, 0.12, 14]} />
         <meshStandardMaterial color="#c8b080" roughness={1} />
       </mesh>
-      <mesh position={[0, 1.65, FRONT_WALL + 0.14]} rotation={[Math.PI / 2 - 0.2, 0, 0]}>
+      <mesh position={[0, 1.3, FRONT_WALL + 0.14]} rotation={[Math.PI / 2 - 0.2, 0, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.08, 12]} />
         <meshStandardMaterial color="#2a2a2a" roughness={1} />
       </mesh>
-      <mesh position={[1.2, 1.85, FRONT_WALL]}>
+      <mesh position={[1.2, 1.45, FRONT_WALL]}>
         <boxGeometry args={[2.3, 0.02, 0.02]} />
         <meshStandardMaterial color="#444" />
       </mesh>
@@ -325,7 +325,7 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
         [1.15, '#2a2a30', 0.7],
         [1.6, '#a83040', 0.55],
       ].map(([cx, col, h]) => (
-        <mesh key={cx as number} position={[cx as number, 1.85 - (h as number) / 2, FRONT_WALL]}>
+        <mesh key={cx as number} position={[cx as number, 1.45 - (h as number) / 2, FRONT_WALL]}>
           <boxGeometry args={[0.38, h as number, 0.04]} />
           <meshStandardMaterial color={col as string} roughness={1} />
         </mesh>

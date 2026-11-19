@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { CanvasTexture, RepeatWrapping, Vector3, type Group } from 'three'
+import { CanvasTexture, DoubleSide, RepeatWrapping, Vector3, type Group } from 'three'
 import { useFrame } from '@react-three/fiber'
 import { exactMinute } from '../game/clock'
 import { RBox } from './models/RBox'
@@ -22,6 +22,7 @@ import { RainChute, WaterJar } from './models/WaterJar'
 import { KaffirLimeTree } from './models/KaffirLime'
 import { JackfruitTree } from './models/Jackfruit'
 import { CookHouse } from './CookHouse'
+import { ClothesRack } from './models/ClothesRack'
 import { Bathhouse, YellowBulb } from './Bathhouse'
 import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
@@ -146,6 +147,20 @@ export function GrandHome() {
       </Editable>
       <Editable id="home:cookhouse3" name="บ้านหลังที่สอง (ครัว)" x={10.6} z={3.6} r={3} origin={O}>
         <CookHouse x={10.6} z={3.6} rot={-Math.PI / 2} />
+      </Editable>
+      {/* สุ่มไก่ไม้ไผ่สาน 3 ใบ เรียงหน้าคอกควาย มีไก่ชนอยู่ข้างใน (ผู้สร้าง 19 พ.ย.) */}
+      {[7.2, 9.0, 10.8].map((bz, i) => (
+        <Editable key={"basket" + i} id={"home:basket:" + i} name="สุ่มไก่" x={5.3} z={bz} r={0.9} origin={O}>
+          <group position={[5.3, 0, bz]} rotation={[0, i * 0.7, 0]}>
+            <ChickenBasket seed={i} />
+          </group>
+        </Editable>
+      ))}
+      {/* ราวตากผ้าไม้ไผ่ทรง A ข้างยุ้งข้าว (ผู้สร้าง 19 พ.ย.) */}
+      <Editable id="home:clothesrack" name="ราวตากผ้า" x={11.2} z={-6.9} r={1.8} origin={O}>
+        <group position={[11.2, 0, -6.9]}>
+          <ClothesRack />
+        </group>
       </Editable>
       <Editable id="home:kaffir4" name="ต้นมะกรูด" x={6.6} z={21} r={1.4} origin={O}>
         <group position={[6.6, 0, 21]}>
@@ -610,6 +625,23 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
         <meshStandardMaterial color="#8a5a34" />
       </mesh>
       <GableRoof width={4.2} depth={3} height={1.6} y={2.7} color="#6a4a2e" overhang={0.5} />
+      {/* ระเบียงข้าง (ฝั่งซ้าย −x) ยื่นออกต่อจากระเบียงหน้า ไม่มีราว (ผู้สร้าง 19 พ.ย.) */}
+      <mesh position={[-2.65, 0.9, 0.5]} castShadow receiveShadow>
+        <boxGeometry args={[1.1, 0.1, 4.0]} />
+        <meshStandardMaterial color="#7a5234" roughness={0.85} />
+      </mesh>
+      {[-1.2, -0.2, 0.8, 1.8].map((pz) => (
+        <mesh key={pz} position={[-2.65, 0.83, pz]}>
+          <boxGeometry args={[1.1, 0.06, 0.08]} />
+          <meshStandardMaterial color="#5a3b26" />
+        </mesh>
+      ))}
+      {[-1.3, 2.3].map((pz) => (
+        <mesh key={pz} position={[-3.05, 0.1, pz]} castShadow>
+          <cylinderGeometry args={[0.1, 0.12, 1.6, 8]} />
+          <meshStandardMaterial color="#5a3b26" />
+        </mesh>
+      ))}
       {/* ระเบียงไม้ยื่นออกหน้ายุ้ง (ไม่มีราว) ไว้ตากข้าว/วางกระบุง */}
       <mesh position={[0, 0.9, 2.0]} castShadow receiveShadow>
         <boxGeometry args={[4.4, 0.1, 1.0]} />
@@ -653,22 +685,44 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
           <meshStandardMaterial color="#5a3b26" />
         </mesh>
       ))}
-      {/* บันไดไม้ 8 ขั้น พาดจากพื้นถึงขอบระเบียง */}
-      <group position={[0, 0, 2.46]}>
-        <group position={[0, 0, 0.75]} rotation={[-0.38, 0, 0]}>
-          {[-0.32, 0.32].map((x) => (
-            <mesh key={x} position={[x, 0.95, 0]} castShadow>
-              <boxGeometry args={[0.07, 1.9, 0.07]} />
+      {/* ทางลาดกระดานไม้กว้าง (แทนบันไดลิง) ลากกระสอบข้าวขึ้นยุ้งได้ — มีไม้ขวางกันลื่น + ขอบกันกระสอบตก (ผู้สร้าง 19 พ.ย.) */}
+      <group position={[0, 0, 2.5]}>
+        <group position={[0, 0.825, 1.6]} rotation={[0.476, 0, 0]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[1.2, 0.08, 3.62]} />
+            <meshStandardMaterial color="#8a6040" roughness={0.9} />
+          </mesh>
+          {Array.from({ length: 9 }, (_, k) => -1.6 + k * 0.4).map((cz) => (
+            <mesh key={cz} position={[0, 0.06, cz]}>
+              <boxGeometry args={[1.1, 0.04, 0.06]} />
+              <meshStandardMaterial color="#5a3b26" />
+            </mesh>
+          ))}
+          {[-1, 1].map((sx) => (
+            <mesh key={sx} position={[sx * 0.62, 0.07, 0]}>
+              <boxGeometry args={[0.06, 0.16, 3.62]} />
               <meshStandardMaterial color="#6a4428" />
             </mesh>
           ))}
-          {[0.2, 0.48, 0.76, 1.04, 1.32, 1.6].map((y) => (
-            <mesh key={y} position={[0, y, 0.02]}>
-              <boxGeometry args={[0.66, 0.05, 0.16]} />
-              <meshStandardMaterial color="#8a5a34" />
-            </mesh>
-          ))}
         </group>
+        {/* ขาค้ำกลางทางลาด + แผ่นหินรองปลายทาง */}
+        {[-0.5, 0.5].map((sx) => (
+          <mesh key={sx} position={[sx, 0.42, 1.4]}>
+            <boxGeometry args={[0.08, 0.84, 0.08]} />
+            <meshStandardMaterial color="#5a3b26" />
+          </mesh>
+        ))}
+        <mesh position={[0, 0.03, 3.35]} receiveShadow>
+          <boxGeometry args={[1.4, 0.06, 0.5]} />
+          <meshStandardMaterial color="#9a978e" roughness={1} />
+        </mesh>
+        {/* กระสอบข้าว 2 ใบวางรอขึ้นยุ้ง */}
+        {[[-0.95, 3.6, 0.3], [-1.35, 3.2, -0.4]].map(([sx, sz, r], k) => (
+          <mesh key={k} position={[sx, 0.22, sz]} rotation={[0, r, 0]} scale={[1, 0.75, 0.7]} castShadow>
+            <sphereGeometry args={[0.32, 12, 10]} />
+            <meshStandardMaterial color="#e4d8b8" roughness={1} />
+          </mesh>
+        ))}
       </group>
     </group>
   )
@@ -1851,3 +1905,51 @@ const PINEAPPLE_SPOTS: [number, number][] = (() => {
   }
   return out
 })()
+
+/** สุ่มไก่: ไม้ไผ่สานตาห่างทรงโดม ปากล่างกว้าง ด้านบนมีรูมือจับ · ไก่ชนอยู่ข้างใน */
+let basketTex: CanvasTexture | null = null
+function basketWeave() {
+  if (basketTex) return basketTex
+  const c = document.createElement('canvas')
+  c.width = c.height = 128
+  const g = c.getContext('2d')!
+  g.fillStyle = '#000'
+  g.fillRect(0, 0, 128, 128)
+  g.fillStyle = '#fff'
+  for (let i = 0; i < 128; i += 16) {
+    g.fillRect(i, 0, 4, 128)
+    g.fillRect(0, i, 128, 4)
+  }
+  basketTex = new CanvasTexture(c)
+  basketTex.wrapS = basketTex.wrapT = RepeatWrapping
+  basketTex.repeat.set(10, 4)
+  return basketTex
+}
+const ROOSTERS: PetChoice[] = [
+  { species: 'chicken', name: 'ไก่ชน', color: '#8a3a1e', pattern: 'plain', patternColor: '#1e3a2a', size: 'large' } as PetChoice,
+  { species: 'chicken', name: 'ไก่ชน', color: '#2a2a2e', pattern: 'plain', patternColor: '#a8582a', size: 'large' } as PetChoice,
+  { species: 'chicken', name: 'ไก่ชน', color: '#c8935a', pattern: 'plain', patternColor: '#6a3a1a', size: 'large' } as PetChoice,
+]
+function ChickenBasket({ seed }: { seed: number }) {
+  const tex = basketWeave()
+  return (
+    <group>
+      <mesh position={[0, 0, 0]} scale={[1, 0.85, 1]} castShadow>
+        <sphereGeometry args={[0.62, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#d8c08a" alphaMap={tex} alphaTest={0.5} transparent side={DoubleSide} roughness={0.9} />
+      </mesh>
+      {/* ขอบปากสุ่ม + ห่วงรูมือจับด้านบน */}
+      <mesh position={[0, 0.03, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.62, 0.025, 6, 32]} />
+        <meshStandardMaterial color="#c8a868" />
+      </mesh>
+      <mesh position={[0, 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.12, 0.022, 6, 16]} />
+        <meshStandardMaterial color="#c8a868" />
+      </mesh>
+      <group scale={0.55} rotation={[0, seed * 1.3, 0]}>
+        <RestingPet pet={ROOSTERS[seed % 3]} pos={[0, 0, 0]} rot={0} />
+      </group>
+    </group>
+  )
+}
