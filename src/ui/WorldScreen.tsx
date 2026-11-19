@@ -39,8 +39,11 @@ import { FriendsWindow, InvitePopup } from './FriendsWindow'
 import { PetCard } from './PetCard'
 import { FloatingHistory } from './EditHistoryBar'
 import { Weather } from '../scenes/Weather'
+import { Festivals } from '../scenes/Festivals'
+import { doFestSpot, useFestival } from '../game/festival'
+import { FESTIVALS, setDateOverride, thaiShort, today } from '../game/content/calendar'
 import { forceWeather, seasonLabel, useWeather, WEATHER } from '../game/weather'
-import { BookButton, GameBook } from './GameBook'
+import { BookButton, GameBook, openBook } from './GameBook'
 import { StatIcon, type StatIconId } from './StatIcons'
 import { FriendsButton } from './FriendsWindow'
 import { WaterLife } from '../scenes/WaterLife'
@@ -190,7 +193,9 @@ export function WorldScreen() {
         const g = useGame.getState()
         if (g.paused) return
         const hn = useInterior.getState().near
-        if (hn) {
+        const fs = useFestival.getState().near
+        if (fs && !hn) doFestSpot(fs)
+        else if (hn) {
           if (hn === 'enter') enterHome()
           else if (hn.startsWith('enter:')) enterHome(hn.slice(6))
           else activateHomeSpot(hn)
@@ -277,6 +282,7 @@ export function WorldScreen() {
         {/* แสง ท้องฟ้า หมอก ไฟตะเกียง เปลี่ยนตามเวลาในเกม */}
         <DayLight />
         <Weather />
+        <Festivals />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
         <Wildlife />
@@ -455,7 +461,7 @@ function HudClock() {
   const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]
   return (
     <>
-      <span>วันที่ {day}</span>
+      <DateChip day={day} />
       <span className="sep" />
       <WeatherBadge day={day} />
       <span className="sep" />
@@ -471,6 +477,20 @@ function HudClock() {
     </>
   )
 }
+
+/** วันที่ในปฏิทิน + เทศกาลที่กำลังจัด (คลิก = เปิดปฏิทินในหนังสือ) */
+function DateChip({ day }: { day: number }) {
+  const active = useFestival((s) => s.active)
+  useFestival((s) => s.ver)
+  const f = FESTIVALS.find((x) => active.includes(x.id))
+  return (
+    <button type="button" className="date-chip" onClick={() => openBook({ kind: 'top', id: 'calendar' })} title={'ปฏิทิน · วันที่ ' + day + ' ที่ใช้ชีวิตในหมู่บ้าน' + (f ? ' · ' + f.name : '')}>
+      {thaiShort(today())}
+      {f && <span className="date-fest">{f.icon}</span>}
+    </button>
+  )
+}
+if (import.meta.env.DEV) (window as unknown as { __date: unknown }).__date = (s: string | null) => setDateOverride(s)
 
 /** ฤดู + สภาพอากาศตอนนี้ (ชี้เพื่อดูรายละเอียด) */
 function WeatherBadge({ day }: { day: number }) {
@@ -762,6 +782,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const chestNear = useChests((s) => s.near)
   const toyNear = usePlay((s) => s.near)
   const homeNear = useInterior((s) => s.near)
+  const festNear = useFestival((s) => s.near)
   const waterNear = useWater((s) => s.near)
   const playing = usePlay((s) => s.playing)
   useGame((s) => s.save?.chestsOpened)
@@ -871,6 +892,11 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
                     ? '👟 ใส่รองเท้า'
                     : '👣 ถอดรองเท้า'
                   : '🔔 ตีระฆัง'}
+        </div>
+      )}
+      {festNear && !homeNear && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {festNear.label}
         </div>
       )}
       {homeNear && (
