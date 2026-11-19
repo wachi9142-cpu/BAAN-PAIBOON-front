@@ -296,3 +296,40 @@ export function playDoor(open: boolean) {
     burst(o, t + 0.08, 0.04, 2500, 3, 0.08)
   }
 }
+
+/** ตัดผม: กรรไกรตัด (แกร๊บ ๆ เป็นชุด) สลับปัตตาเลี่ยนหึ่ง ๆ เป็นช่วง ๆ */
+export function startHaircut(): Stopper {
+  const o = out()
+  if (!o) return noop
+  const s = session(o)
+  s.every(500, 1100, () => {
+    const t = o.ctx.currentTime
+    const n = 2 + Math.floor(Math.random() * 4)
+    for (let i = 0; i < n; i++) {
+      const tt = t + i * rnd(0.12, 0.2)
+      burst(o, tt, 0.035, rnd(5000, 7000), 4, 0.09)
+      burst(o, tt + 0.03, 0.03, rnd(3000, 4500), 4, 0.05)
+    }
+  })
+  s.at(5200, () => {
+    // ปัตตาเลี่ยนเล็มรอบหู ~2.5 วิ
+    const t = o.ctx.currentTime
+    const osc = o.ctx.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.value = 118
+    const f = o.ctx.createBiquadFilter()
+    f.type = 'bandpass'
+    f.frequency.value = 900
+    f.Q.value = 1.5
+    const g = o.ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.035, t + 0.1)
+    g.gain.setValueAtTime(0.035, t + 2.3)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5)
+    osc.connect(f).connect(g).connect(o.sfx)
+    osc.start(t)
+    osc.stop(t + 2.6)
+    s.bed({ stop: (at) => { try { osc.stop(at + 0.05) } catch { /* หยุดไปแล้ว */ } } })
+  })
+  return () => s.stop()
+}

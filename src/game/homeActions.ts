@@ -5,6 +5,7 @@ import { create } from 'zustand'
 import { useGame } from './store'
 import { INSIDE_DOOR, INTERIOR_ORIGIN, FLOOR2, NPC_INSIDE_DOOR, outsideDoor, toWorld, useInterior } from './interior'
 import { PLACES } from './content/village'
+import { isSmallHouse, SMALL, smallExitHeading } from './smallHouses'
 import { actSpotById, findActSpot, startActivity, stopActivity, useActivity } from './houseLife'
 
 export const useHomeTv = create<{ on: boolean; on2: boolean }>(() => ({ on: false, on2: false }))
@@ -32,6 +33,14 @@ export const HOME_SPOTS: HomeSpot[] = [
 ]
 
 export function enterHome(house = 'home') {
+  if (isSmallHouse(house)) {
+    const [ix, iz] = SMALL[house].inside
+    const [x, z] = toWorld(ix, iz - 0.5)
+    warp.pending = { x: house === 'barber' ? x + 0.4 : x, z: house === 'barber' ? z + 0.5 : z, heading: house === 'barber' ? Math.PI / 2 : Math.PI, y: 0 }
+    useInterior.setState({ inside: true, house, upper: false })
+    useGame.getState().toast({ title: '🚪 เข้า' + SMALL[house].name, body: house === 'barber' ? 'นั่งเก้าอี้ตัดผมหันเข้ากระจก ให้ช่างโรจน์ตัดผมให้ · กลับมาที่ประตูกระจกกด E เพื่อออก' : house === 'cookhouse' ? 'ทำอาหารที่เตาแก๊ส · นอนเล่นบนเสื่อ · กลับมาที่ประตูกด E เพื่อออก' : 'ห้องส้วม · อ่างล้างหน้า · ห้องอาบน้ำ · กลับมาที่ชานหน้ากด E เพื่อออก', tone: 'info' })
+    return
+  }
   if (house !== 'home') {
     // บ้านชาวบ้าน: ห้องโถงใหญ่ชั้นเดียว (ห้องนอน มุ้ง หิ้งพระ ทีวี ครัว โอ่งน้ำ)
     const [x, z] = toWorld(NPC_INSIDE_DOOR[0], NPC_INSIDE_DOOR[1] + 0.6)
@@ -53,7 +62,7 @@ export function exitHome() {
   // ออกมาแล้วหันหลังให้ประตู
   const h = useInterior.getState().house
   const p = PLACES.find((q) => q.id === h)
-  warp.pending = { x, z, heading: h === 'home' ? 0 : p?.rotation ?? 0, y: 0 }
+  warp.pending = { x, z, heading: isSmallHouse(h) ? smallExitHeading(h) : h === 'home' ? 0 : p?.rotation ?? 0, y: 0 }
   useInterior.setState({ inside: false, house: 'home' })
 }
 
@@ -64,7 +73,9 @@ export function findHomeSpot(wx: number, wz: number, wy: number): string | null 
   // กิจกรรมในบ้าน (ห้องน้ำ เตียง ครัว โอ่ง) — ใช้ได้ทุกบ้านที่เข้าไป
   const act = findActSpot(lx, lz, upper)
   if (act) return 'act:' + act.id
-  if (useInterior.getState().house !== 'home') return Math.hypot(NPC_INSIDE_DOOR[0] - lx, NPC_INSIDE_DOOR[1] - lz) < 1.4 ? 'exit' : null
+  const hs = useInterior.getState().house
+  if (isSmallHouse(hs)) return Math.hypot(SMALL[hs].inside[0] - lx, SMALL[hs].inside[1] - lz) < 0.9 ? 'exit' : null
+  if (hs !== 'home') return Math.hypot(NPC_INSIDE_DOOR[0] - lx, NPC_INSIDE_DOOR[1] - lz) < 1.4 ? 'exit' : null
   let best: string | null = null
   let bd = 1.4
   for (const s of HOME_SPOTS) {

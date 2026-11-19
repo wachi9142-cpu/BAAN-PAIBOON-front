@@ -35,7 +35,7 @@ function useTex(draw: (g: CanvasRenderingContext2D) => void, rx: number, ry: num
   }, [rx, ry])
 }
 
-export function Bathhouse({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
+export function Bathhouse({ x, z, rot = 0, inside = false }: { x: number; z: number; rot?: number; inside?: boolean }) {
   // อิฐบล็อกเปลือย (ก้อนใหญ่ เหลื่อมแถว)
   const block = useTex((g) => {
     g.fillStyle = '#a8a59c'
@@ -77,11 +77,11 @@ export function Bathhouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
       {/* ผนังหน้าแต่ละห้อง: สังกะสีในกรอบไม้ + ช่องประตู */}
       {ROOM.map(([a, b], i) => (
         <group key={i}>
-          <FrontWall zinc={zinc} a={a} b={b} hingeLeft={i === 0} />
+          <FrontWall zinc={zinc} a={a} b={b} hingeLeft={i === 0} leaf={!inside} />
         </group>
       ))}
-      {/* หลังคาสังกะสีลาดไปด้านหลัง + คานไม้ */}
-      <mesh position={[0, H + 0.28, (BACK + PORCH) / 2]} rotation={[-0.07, 0, 0]} castShadow receiveShadow>
+      {/* หลังคาสังกะสีลาดไปด้านหลัง + คานไม้ (ฉากภายในซ่อนหลังคา ให้กล้องมองลงมาได้) */}
+      <mesh visible={!inside} position={[0, H + 0.28, (BACK + PORCH) / 2]} rotation={[-0.07, 0, 0]} castShadow receiveShadow>
         <boxGeometry args={[W + 0.6, 0.04, PORCH - BACK + 0.5]} />
         <meshStandardMaterial map={zinc} metalness={0.4} roughness={0.45} side={2} />
       </mesh>
@@ -132,7 +132,7 @@ function BlockWall({ tex, pos, size }: { tex: Texture; pos: [number, number, num
 }
 
 /** ผนังหน้าห้อง: สังกะสีลอนในกรอบไม้ + ประตูไม้กรุสังกะสี เปิดอ้าออกด้านนอก (+z) */
-function FrontWall({ zinc, a, b, hingeLeft }: { zinc: Texture; a: number; b: number; hingeLeft: boolean }) {
+function FrontWall({ zinc, a, b, hingeLeft, leaf = true }: { zinc: Texture; a: number; b: number; hingeLeft: boolean; leaf?: boolean }) {
   const doorW = 0.85
   // ช่องประตูชิดผนังกั้นกลาง (ฝั่งอ่างล้างหน้า)
   const d0 = hingeLeft ? b - 0.15 - doorW : a + 0.15
@@ -172,8 +172,8 @@ function FrontWall({ zinc, a, b, hingeLeft }: { zinc: Texture; a: number; b: num
         <boxGeometry args={[b - a, 0.07, 0.06]} />
         <meshStandardMaterial color={wood} />
       </mesh>
-      {/* บานประตู: เปิดอ้าออกด้านนอก ~70° */}
-      <group position={[hinge, 0, 0.05]} rotation={[0, sign * 1.2, 0]}>
+      {/* บานประตู: เปิดอ้าออกด้านนอก ~70° (ฉากภายใน: ใช้ประตูเปิด–ปิดได้แทน) */}
+      <group visible={leaf} position={[hinge, 0, 0.05]} rotation={[0, sign * 1.2, 0]}>
         <group position={[(sign * doorW) / 2, 0, 0]}>
           <mesh position={[0, 1.0, 0]} castShadow>
             <boxGeometry args={[doorW - 0.04, 1.96, 0.035]} />

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
-import { ID, INTERIOR_ORIGIN, IW } from '../game/interior'
+import { ID, INTERIOR_ORIGIN, IW, NPC_WALLS, useInterior } from '../game/interior'
+import { HomeDoors } from './AutoDoors'
 import { RBox } from './models/RBox'
 
 /**
@@ -13,14 +14,42 @@ export function NpcInterior() {
   const wood = useMemo(() => planks(), [])
   const h = IW / 2
   const d = ID / 2
-  const WALL = '#c8a77e'
+  // บ้านน้าโรจน์ (บ้านโมเดิร์น): ผนังขาวนวล พื้นกระเบื้องลายไม้ โซฟาผ้า ห้องน้ำมีฝักบัว
+  const modern = useInterior((st) => st.house) === 'house-rot'
+  const WALL = modern ? '#ece8e0' : '#c8a77e'
   return (
     <group position={[ox, 0, oz]}>
       {/* พื้นไม้กระดาน */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[IW, ID]} />
-        <meshStandardMaterial map={wood} />
+        <meshStandardMaterial map={wood} color={modern ? '#e8d8c0' : '#ffffff'} />
       </mesh>
+      {modern && (
+        <group>
+          {/* ฝักบัว + ถาดอาบน้ำ (ห้องน้ำ) */}
+          <mesh position={[6.75, 0.03, -2.9]}>
+            <boxGeometry args={[1.1, 0.04, 0.9]} />
+            <meshStandardMaterial color="#e8eef0" roughness={0.3} />
+          </mesh>
+          <mesh position={[6.75, 1.25, -2.15 + 0.08]}>
+            <cylinderGeometry args={[0.018, 0.018, 1.6, 8]} />
+            <meshStandardMaterial color="#1e1e1e" metalness={0.5} />
+          </mesh>
+          <mesh position={[6.75, 2.05, -2.35]}>
+            <cylinderGeometry args={[0.13, 0.1, 0.04, 16]} />
+            <meshStandardMaterial color="#1e1e1e" metalness={0.5} />
+          </mesh>
+          {/* โซฟาผ้าสีเทา กลางบ้าน */}
+          <mesh position={[0, 0.25, -1.8]} castShadow>
+            <boxGeometry args={[2.2, 0.45, 0.8]} />
+            <meshStandardMaterial color="#8a9098" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.6, -2.12]}>
+            <boxGeometry args={[2.2, 0.5, 0.18]} />
+            <meshStandardMaterial color="#7a8088" roughness={0.9} />
+          </mesh>
+        </group>
+      )}
       {/* ผนังไม้ 3 ด้าน (ด้านหน้าเตี้ย ให้มองเห็นในบ้านจากกล้องด้านบน) */}
       <mesh position={[0, 1.4, d + 0.1]} receiveShadow>
         <boxGeometry args={[IW + 0.4, 2.8, 0.2]} />
@@ -183,6 +212,44 @@ export function NpcInterior() {
           </mesh>
         ))}
       </group>
+      {/* ผนังกั้นห้อง: ห้องนอน (หลังซ้าย) · ห้องน้ำ (หน้าขวา) — สูง 2.4 ม. กล้องมองข้ามได้ */}
+      {NPC_WALLS.slice(0, 6).map(([x0, x1, z0, z1], i) => (
+        <mesh key={'iw' + i} position={[(x0 + x1) / 2, 1.2, (z0 + z1) / 2]} castShadow receiveShadow>
+          <boxGeometry args={[x1 - x0, 2.4, z1 - z0]} />
+          <meshStandardMaterial color={i >= 3 ? '#b8c8d0' : '#d4b892'} />
+        </mesh>
+      ))}
+      {/* ประตูห้องนอน + ห้องน้ำ เปิด–ปิดได้ */}
+      <group position={[-ox, 0, -oz]}>
+        <group position={[ox, 0, oz]}>
+          <HomeDoors npc />
+        </group>
+      </group>
+      {/* พื้นห้องน้ำปูกระเบื้อง + ชักโครก + ขันน้ำ */}
+      <mesh position={[6.3, 0.015, -3.5]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.4, 3]} />
+        <meshStandardMaterial color="#c8d4d8" roughness={0.6} />
+      </mesh>
+      <group position={[5.05, 0, -4.65]}>
+        <mesh position={[0, 0.65, -0.18]}>
+          <boxGeometry args={[0.42, 0.38, 0.16]} />
+          <meshStandardMaterial color="#f4f4f2" roughness={0.25} />
+        </mesh>
+        <mesh position={[0, 0.25, 0.08]}>
+          <cylinderGeometry args={[0.14, 0.12, 0.3, 14]} />
+          <meshStandardMaterial color="#f4f4f2" roughness={0.25} />
+        </mesh>
+        <mesh position={[0, 0.42, 0.1]} scale={[1, 1, 1.25]}>
+          <cylinderGeometry args={[0.19, 0.16, 0.1, 18]} />
+          <meshStandardMaterial color="#f4f4f2" roughness={0.25} />
+        </mesh>
+      </group>
+      <mesh position={[6.75, 0.95, -4.15]}>
+        <sphereGeometry args={[0.12, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+        <meshStandardMaterial color="#c8a040" metalness={0.5} roughness={0.3} side={2} />
+      </mesh>
+      {/* หลอดไฟห้องน้ำ (สีเหลือง) */}
+      <pointLight position={[6.3, 2.3, -3.5]} intensity={3} distance={5} color="#ffc860" />
       {/* หลอดไฟกลางบ้าน */}
       <pointLight position={[0, 2.6, 0]} intensity={8} distance={12} color="#fff1d0" />
       <mesh position={[0, 2.65, 0]}>

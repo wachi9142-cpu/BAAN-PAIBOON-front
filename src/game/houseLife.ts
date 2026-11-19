@@ -11,9 +11,9 @@ import { INTERIOR_ORIGIN, useInterior } from './interior'
 import { useClock, setClockTo } from './clock'
 import { countOf } from './inventory'
 import { ITEMS, type ItemId } from './content/items'
-import { playFlush, startBucketBath, startCooking, startShower, startSleepBreath, type Stopper } from './audio/houseSfx'
+import { playFlush, startBucketBath, startCooking, startHaircut, startShower, startSleepBreath, type Stopper } from './audio/houseSfx'
 
-export type ActKind = 'toilet' | 'shower' | 'bathe' | 'sleep' | 'nap' | 'cook'
+export type ActKind = 'toilet' | 'shower' | 'bathe' | 'sleep' | 'nap' | 'cook' | 'haircut'
 
 export interface ActSpot {
   id: string
@@ -50,10 +50,32 @@ export const HOME_ACTS: ActSpot[] = [
 export const NPC_ACTS: ActSpot[] = [
   ...bed('n:bed', -6.2, 2.6, false, [-5.05, 4.05], Math.PI / 2, 0.15),
   { id: 'n:cook', kind: 'cook', label: '🍳 ทำอาหาร (เตาถ่าน)', x: 6.4, z: 1.8, upper: false, at: { x: 6.5, z: 2.15, y: 0, heading: 0 } },
-  { id: 'n:bathe', kind: 'bathe', label: '🪣 ตักน้ำอาบจากโอ่ง', x: 6.6, z: -2.6, upper: false, at: { x: 6.7, z: -2.95, y: 0, heading: Math.PI } },
+  { id: 'n:toilet', kind: 'toilet', label: '🚽 เข้าห้องน้ำ (ปิดประตู)', x: 5.3, z: -2.6, upper: false, at: { x: 5.05, z: -3.95, y: 0.3, heading: 0 }, room: 'bath' },
+  { id: 'n:bathe', kind: 'bathe', label: '🪣 ตักน้ำอาบจากโอ่ง', x: 6.7, z: -2.7, upper: false, at: { x: 6.75, z: -3.05, y: 0, heading: Math.PI }, room: 'bath' },
 ]
 
-const spotsNow = () => (useInterior.getState().house === 'home' ? HOME_ACTS : NPC_ACTS)
+/** บ้านหลังที่สอง (ครัว): เตาแก๊ส + เสื่อนอนเล่น (ผู้สร้างชอบมานอน) — พิกัดตัวอาคาร */
+export const COOK_ACTS: ActSpot[] = [
+  { id: 'c:cook', kind: 'cook', label: '🍳 ทำอาหาร (เตาแก๊สกับกระทะ)', x: 1.85, z: -0.7, upper: false, at: { x: 1.85, z: -1.0, y: 0, heading: Math.PI } },
+  ...bed('c:mat', -1.3, 0.1, false, [-0.45, -0.45], Math.PI / 2, 0.06),
+]
+/** ห้องน้ำนอกบ้าน: ส้วม · ห้องอาบน้ำ (ฝักบัว + โอ่ง) */
+export const BATH_ACTS: ActSpot[] = [
+  { id: 'b:toilet', kind: 'toilet', label: '🚽 เข้าห้องส้วม (ปิดประตู)', x: -1.2, z: 1.3, upper: false, at: { x: -1.9, z: -1.55, y: 0.3, heading: 0 }, room: 'bath1' },
+  { id: 'b:shower', kind: 'shower', label: '🚿 อาบน้ำฝักบัว', x: 1.6, z: 1.3, upper: false, at: { x: 2.15, z: -1.85, y: 0, heading: Math.PI }, room: 'bath2' },
+  { id: 'b:bathe', kind: 'bathe', label: '🪣 ตักน้ำอาบจากโอ่ง', x: 0.9, z: 1.3, upper: false, at: { x: 1.15, z: -1.2, y: 0, heading: Math.PI }, room: 'bath2' },
+]
+/** ร้านตัดผม: นั่งเก้าอี้ให้ช่างโรจน์ตัด (หันเข้ากระจกเงา) */
+export const BARBER_ACTS: ActSpot[] = [
+  { id: 'r:cut1', kind: 'haircut', label: '💈 นั่งตัดผม (ช่างโรจน์)', x: -0.2, z: -1.5, upper: false, at: { x: 0.55, z: -1.5, y: 0.22, heading: Math.PI / 2 } },
+  { id: 'r:cut2', kind: 'haircut', label: '💈 นั่งตัดผม (ช่างโรจน์)', x: -0.2, z: 1.2, upper: false, at: { x: 0.55, z: 1.2, y: 0.22, heading: Math.PI / 2 } },
+]
+/** บ้านน้าโรจน์ (บ้านโมเดิร์น): ห้องน้ำมีฝักบัวแทนโอ่ง */
+const ROT_ACTS: ActSpot[] = NPC_ACTS.map((s) => (s.id === 'n:bathe' ? { ...s, kind: 'shower' as const, label: '🚿 อาบน้ำฝักบัว' } : s))
+const spotsNow = () => {
+  const h = useInterior.getState().house
+  return h === 'home' ? HOME_ACTS : h === 'cookhouse' ? COOK_ACTS : h === 'bathhouse' ? BATH_ACTS : h === 'barber' ? BARBER_ACTS : h === 'house-rot' ? ROT_ACTS : NPC_ACTS
+}
 
 export function findActSpot(lx: number, lz: number, upper: boolean): ActSpot | null {
   let best: ActSpot | null = null
@@ -71,8 +93,8 @@ export function findActSpot(lx: number, lz: number, upper: boolean): ActSpot | n
 export const actSpotById = (id: string) => spotsNow().find((s) => s.id === id) ?? null
 
 /** ระยะเวลา (วินาที) */
-const DUR: Record<ActKind, number> = { toilet: 7, shower: 11, bathe: 10, sleep: 8, nap: 7, cook: 13 }
-const POSE: Record<ActKind, Gesture> = { toilet: 'sit', shower: 'shower', bathe: 'bathe', sleep: 'lie', nap: 'lie', cook: 'cook' }
+const DUR: Record<ActKind, number> = { toilet: 7, shower: 11, bathe: 10, sleep: 8, nap: 7, cook: 13, haircut: 12 }
+const POSE: Record<ActKind, Gesture> = { toilet: 'sit', shower: 'shower', bathe: 'bathe', sleep: 'lie', nap: 'lie', cook: 'cook', haircut: 'sit' }
 export const ACT_LABEL: Record<ActKind, string> = {
   toilet: 'เข้าห้องน้ำ',
   shower: 'อาบน้ำ',
@@ -80,6 +102,7 @@ export const ACT_LABEL: Record<ActKind, string> = {
   sleep: 'นอนหลับ',
   nap: 'งีบหลับ',
   cook: 'ทำอาหาร',
+  haircut: 'ตัดผม',
 }
 
 interface ActState {
@@ -150,6 +173,14 @@ export function startActivity(id: string) {
       step(k === 'sleep' ? 'อรุณสวัสดิ์ — เช้าวันใหม่แล้ว ☀️' : 'ตื่นแล้ว สดชื่นขึ้น')
       fade(0, 1400)
     })
+  } else if (k === 'haircut') {
+    step('ช่างโรจน์คลุมผ้าให้…')
+    later(700, () => {
+      stops.push(startHaircut())
+      step('ฉับ ๆ ตัดผม เล็มปลาย…')
+    })
+    later(5200, () => step('ไถปัตตาเลี่ยนรอบหู…'))
+    later(9000, () => step('ปัดเศษผม ส่องกระจก'))
   } else if (k === 'cook') {
     const r = RECIPES.find((x) => countOf(x.need) > 0)
     const cook = startCooking()
@@ -207,6 +238,9 @@ export function stopActivity(finished = false) {
   } else if (k === 'nap') {
     g.changeStats({ health: 8, fun: 3, hunger: -3, thirst: -3 })
     g.toast({ title: '😴 งีบหลับสบาย', body: 'ผ่านไป 1 ชั่วโมงครึ่ง · สุขภาพ +8', tone: 'success' })
+  } else if (k === 'haircut') {
+    g.changeStats({ fun: 8, health: 2 })
+    g.toast({ title: '💈 ตัดผมเสร็จแล้ว ทรงใหม่ดูดี!', body: 'ช่างโรจน์ตัดให้ · สนุก +8', tone: 'success' })
   } else if (k === 'cook') {
     const r = (c as { recipe?: (typeof RECIPES)[number] }).recipe
     if (r && countOf(r.need) > 0) {

@@ -1,9 +1,10 @@
 import { playerPose } from '../game/playerPose'
 import { useLayoutEdit } from '../game/layoutEdit'
-import { GAIT_MOTION, GAIT_SPEED, jumpReq, stepTick, stick, surfaceAt, useMove, type Gait } from '../game/movement'
+import { GAIT_MOTION, GAIT_SPEED, jumpReq, stepRt, stepTick, stick, surfaceAt, useMove, type Gait } from '../game/movement'
 import { useWater, waterRt } from '../game/water'
 import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
-import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
+import { collidersFor, FLOOR2, interiorCameraBox, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
+import { nearSmallDoor } from '../game/smallHouses'
 import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { bindPlayerNow, useActivity } from '../game/houseLife'
@@ -66,10 +67,16 @@ function useKeys() {
     }
     const up = (e: KeyboardEvent) => keys.current.delete(e.code)
     const clear = () => keys.current.clear()
+    // สลับแท็บ/ย่อหน้าต่าง/คลิกขวา = ปล่อยปุ่มทั้งหมด (กันปุ่มค้างแล้วเดิน-เสียงเดินไม่หยุด)
+    const vis = () => document.hidden && clear()
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
     window.addEventListener('blur', clear)
+    window.addEventListener('contextmenu', clear)
+    document.addEventListener('visibilitychange', vis)
     return () => {
+      window.removeEventListener('contextmenu', clear)
+      document.removeEventListener('visibilitychange', vis)
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
       window.removeEventListener('blur', clear)
@@ -188,7 +195,6 @@ export function Player() {
   const layoutVer = useLayoutEdit((s) => s.ver)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures, layoutVer])
-  const homeCol = useMemo(() => ({ low: interiorColliders(false), up: interiorColliders(true), npc: interiorColliders(false, true) }), [])
   // โหลดเซฟตอนอยู่ในบ้าน → อยู่ในบ้านต่อ
   useEffect(() => {
     useInterior.setState({ inside: isInterior(save.position[0], save.position[1]) })
@@ -204,6 +210,8 @@ export function Player() {
       useWater,
       jumpReq,
       game: useGame,
+      move: useMove,
+      steps: stepRt,
     }
   }, [])
 
@@ -366,10 +374,13 @@ export function Player() {
       const insideNow = useInterior.getState().inside
       const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
       const before = pos.current
-      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? (useInterior.getState().house !== 'home' ? homeCol.npc : upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
+      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? collidersFor(useInterior.getState().house, upperNow) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
       // ท่าตามความเร็วจริง (ตอนชะลอจะเปลี่ยนจากวิ่ง → เดินเร็ว → เดินช้า → หยุด)
       const ageK = AGE_RULES[save.player.appearance.age ?? 'adult'].walkSpeed
-      const g: Gait = sp < 0.35 ? 'stand' : sp > 6 * ageK ? 'run' : sp > 3.9 * ageK ? 'fast' : 'slow'
+      // ความเร็วจริงหลังชนสิ่งกีดขวาง: เดินชนกำแพง/ติดมุม = ยืนนิ่ง (ไม่ย่ำเท้า ไม่มีเสียงเดินค้าง)
+      const realSp = dt > 0 ? Math.hypot(pos.current[0] - before[0], pos.current[1] - before[1]) / dt : sp
+      const effSp = Math.min(sp, realSp)
+      const g: Gait = effSp < 0.35 || realSp < sp * 0.25 ? 'stand' : effSp > 6 * ageK ? 'run' : effSp > 3.9 * ageK ? 'fast' : 'slow'
       gaitRef.current = g
       motion.current = GAIT_MOTION[g]
       // เสียงฝีเท้าตามจังหวะก้าวและพื้น (ไม่ดังตอนลอยตัว ขี่สัตว์ หรืออยู่ในน้ำ)
@@ -491,7 +502,9 @@ export function Player() {
       if (ins.inside) hn = findHomeSpot(x, z, root.current?.position.y ?? 0)
       else {
         const [dx, dz] = outsideDoor()
+        const sm = nearSmallDoor(x, z)
         if (Math.hypot(dx - x, dz - z) < 1.8) hn = 'enter'
+        else if (sm) hn = 'enter:' + sm
         else {
           // ประตูบ้านชาวบ้านทุกหลัง: เข้าไปดูในบ้านได้
           for (const p of PLACES) {

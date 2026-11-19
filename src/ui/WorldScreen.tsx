@@ -941,7 +941,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
       {homeNear && (
         <div className="gather-hint">
-          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeNear.startsWith('enter:') ? '🚪 เปิดประตูเข้า' + (PLACES.find((p) => 'enter:' + p.id === homeNear)?.name ?? 'บ้าน') : homeSpotLabel(homeNear)}
+          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeNear.startsWith('enter:') ? '🚪 เปิดประตูเข้า' + (PLACES.find((p) => 'enter:' + p.id === homeNear)?.name ?? (homeNear === 'enter:cookhouse' ? 'บ้านหลังที่สอง (ครัว)' : homeNear === 'enter:bathhouse' ? 'ห้องน้ำนอกบ้าน' : homeNear === 'enter:barber' ? 'ร้านตัดผม ช่างโรจน์' : 'บ้าน')) : homeSpotLabel(homeNear)}
         </div>
       )}
       {!building && toyNear && (

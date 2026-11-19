@@ -223,7 +223,7 @@ function Monstera({ s = 1 }: { s?: number }) {
  * ผนังด้านในทาสีเทา: กระจกเงา 2 บาน ชั้นวางน้ำยา โปสเตอร์ทรงผม ไฟผนัง · เก้าอี้ตัดผมหันเข้ากระจก มีผ้าคลุมลายทาง
  * พื้นปาร์เกต์ไม้ · ต้นมอนสเตอร่า · ชั้นวางสินค้า
  */
-function ShopInterior({ H, side }: { H: number; side: number }) {
+export function ShopInterior({ H, side }: { H: number; side: number }) {
   const stripe = useStripeTexture()
   const wx = -side * 1.5 // ผนังเทาด้านใน (ฝั่งตรงข้ามประตูกระจก)
   const face = (side * Math.PI) / 2 // ให้ระนาบหันไปทางประตูกระจก

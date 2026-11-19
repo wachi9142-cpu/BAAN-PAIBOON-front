@@ -1917,12 +1917,12 @@ function basketWeave() {
   g.fillRect(0, 0, 128, 128)
   g.fillStyle = '#fff'
   for (let i = 0; i < 128; i += 16) {
-    g.fillRect(i, 0, 4, 128)
-    g.fillRect(0, i, 128, 4)
+    g.fillRect(i, 0, 7, 128)
+    g.fillRect(0, i, 128, 7)
   }
   basketTex = new CanvasTexture(c)
   basketTex.wrapS = basketTex.wrapT = RepeatWrapping
-  basketTex.repeat.set(10, 4)
+  basketTex.repeat.set(9, 3.5)
   return basketTex
 }
 const ROOSTERS: PetChoice[] = [
@@ -1935,12 +1935,12 @@ function ChickenBasket({ seed }: { seed: number }) {
   return (
     <group>
       <mesh position={[0, 0, 0]} scale={[1, 0.85, 1]} castShadow>
-        <sphereGeometry args={[0.62, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#d8c08a" alphaMap={tex} alphaTest={0.5} transparent side={DoubleSide} roughness={0.9} />
+        <sphereGeometry args={[0.7, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#e8d29a" alphaMap={tex} alphaTest={0.5} transparent side={DoubleSide} roughness={0.9} />
       </mesh>
       {/* ขอบปากสุ่ม + ห่วงรูมือจับด้านบน */}
       <mesh position={[0, 0.03, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.62, 0.025, 6, 32]} />
+        <torusGeometry args={[0.7, 0.03, 6, 32]} />
         <meshStandardMaterial color="#c8a868" />
       </mesh>
       <mesh position={[0, 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>

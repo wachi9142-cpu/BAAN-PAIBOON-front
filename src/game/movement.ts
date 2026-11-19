@@ -117,7 +117,7 @@ export function playFootstep(surface: Surface, gait: Gait) {
 }
 
 /** ตัวนับจังหวะก้าว (เรียกทุกเฟรมตอนเดิน) */
-export const stepRt = { dist: 0 }
+export const stepRt = { dist: 0, count: 0 }
 export function stepTick(moved: number, gait: Gait, surface: Surface) {
   if (gait === 'stand') {
     stepRt.dist = 0
@@ -127,6 +127,7 @@ export function stepTick(moved: number, gait: Gait, surface: Surface) {
   const stride = STRIDE[gait]
   if (stepRt.dist >= stride) {
     stepRt.dist -= stride
+    stepRt.count++
     playFootstep(surface, gait)
   }
 }

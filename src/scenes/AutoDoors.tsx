@@ -27,6 +27,18 @@ export const HOME_DOORS: DoorDef[] = [
   { id: 'bed1', hinge: [4.2, 0.075], w: 1.4, upper: true, color: '#8a5a34' },
 ]
 
+/** บ้านชาวบ้าน: ประตูห้องนอน + ประตูห้องน้ำ (เปิดออกนอกห้อง) */
+export const NPC_DOORS: DoorDef[] = [
+  { id: 'n-bed', hinge: [-5.8, 1.675], w: 1, upper: false, color: '#8a5a34' },
+  { id: 'n-bath', hinge: [5.0, -2.075], w: 1, upper: false, room: 'bath', color: '#6a8aa0' },
+]
+
+/** ห้องน้ำนอกบ้าน: ประตูไม้กรุสังกะสี 2 บาน เปิดออกด้านนอก */
+export const BATH_DOORS: DoorDef[] = [
+  { id: 'b-wc', hinge: [-1.6, 0.76], w: 0.85, upper: false, room: 'bath1', color: '#b8bcc0' },
+  { id: 'b-shower', hinge: [0.75, 0.76], w: 0.85, upper: false, room: 'bath2', color: '#b8bcc0' },
+]
+
 function Door({ d }: { d: DoorDef }) {
   const leaf = useRef<Group>(null)
   const open = useRef(false)
@@ -42,7 +54,7 @@ function Door({ d }: { d: DoorDef }) {
     const want = !inUse && sameFloor && Math.hypot(lx - cx, lz - cz) < 1.7
     if (want !== open.current) {
       open.current = want
-      if (useInterior.getState().inside && useInterior.getState().house === 'home') playDoor(want)
+      if (useInterior.getState().inside) playDoor(want)
     }
     const target = want ? -Math.PI / 2 + 0.08 : 0
     ang.current += (target - ang.current) * Math.min(1, dt * 7)
@@ -74,10 +86,10 @@ function Door({ d }: { d: DoorDef }) {
   )
 }
 
-export function HomeDoors() {
+export function HomeDoors({ npc = false, set }: { npc?: boolean; set?: DoorDef[] }) {
   return (
     <>
-      {HOME_DOORS.map((d) => (
+      {(set ?? (npc ? NPC_DOORS : HOME_DOORS)).map((d) => (
         <Door key={d.id} d={d} />
       ))}
     </>

@@ -7,6 +7,7 @@ import { LIVE } from './layoutEdit'
 import { create } from 'zustand'
 import type { Rect } from './content/temple'
 import { PLACES } from './content/village'
+import { isSmallHouse, smallColliders, smallToWorld, SMALL } from './smallHouses'
 
 export const INTERIOR_ORIGIN: [number, number] = [0, 400]
 export const IW = 16
@@ -45,6 +46,7 @@ export const isNpcInterior = () => useInterior.getState().house !== 'home'
 /** ประตูหน้าบ้าน (ด้านนอก) ในพิกัดโลก */
 export function outsideDoor(): [number, number] {
   const h = useInterior.getState().house
+  if (isSmallHouse(h)) return smallToWorld(h, ...SMALL[h].outside)
   if (h !== 'home') {
     const d = npcDoorOf(h)
     if (d) return d
@@ -111,7 +113,7 @@ export function interiorColliders(upper: boolean, npc = false): Rect[] {
   const d = ID / 2
   const t = 0.2
   const outer = [R(-h - t, h + t, -d - t, -d), R(-h - t, h + t, d, d + t), R(-h - t, -h, -d, d), R(h, h + t, -d, d)]
-  if (npc) return [...outer, ...NPC_FURNITURE.map(([x0, x1, z0, z1]) => R(x0, x1, z0, z1))]
+  if (npc) return [...outer, ...[...NPC_FURNITURE, ...NPC_WALLS].map(([x0, x1, z0, z1]) => R(x0, x1, z0, z1))]
   const walls = (upper ? WALLS_UPPER : WALLS_GROUND).map(([x0, x1, z0, z1]) => R(x0, x1, z0, z1))
   const furniture = upper
     ? [R(3.9, 6.1, 2.85, 4.55), R(-0.4, 2.3, 2.6, 4.8), R(-7.8, -5.2, 2.6, 4.8)] // เตียง 3 ห้อง
@@ -149,3 +151,34 @@ export const NPC_FURNITURE: [number, number, number, number][] = [
   [5.6, 7.9, -4.9, -3.4], // โอ่งน้ำ
   [-7.8, -6, -4.9, -3.6], // ชั้นวางของ
 ]
+
+/** บ้านชาวบ้าน: ผนังกั้นห้อง (ห้องนอน · ห้องน้ำ) + ชักโครก [x0, x1, z0, z1] — ใช้ทั้งชนและวาดโมเดล (ผู้สร้าง 19 พ.ย.)
+ *  ห้องนอน: มุมหลังซ้าย (x −8..−3.75 · z 1.6..5) ประตูที่ x −5.8..−4.8
+ *  ห้องน้ำ: มุมหน้าขวา (x 4.6..8 · z −5..−2) ประตูที่ x 5..6 (เปิดออก) · ชักโครก + โอ่งน้ำ 2 ใบ
+ *  ครัว: มุมหลังขวา (เปิดโล่ง) · ห้องนั่งเล่น: กลางบ้าน (ทีวี หิ้งพระ เสื่อ) */
+export const NPC_WALLS: [number, number, number, number][] = [
+  [-8, -5.8, 1.6, 1.75],
+  [-4.8, -3.7, 1.6, 1.75],
+  [-3.85, -3.7, 1.6, 5],
+  [4.6, 4.75, -5, -2],
+  [4.6, 5.0, -2.15, -2],
+  [6.0, 8, -2.15, -2],
+  [4.8, 5.3, -4.95, -4.35], // ชักโครก
+]
+
+/** กล่องชนภายในตามบ้านที่เข้าอยู่ (บ้านตารัง–ยายเลียน / บ้านชาวบ้าน / ครัว / ห้องน้ำนอกบ้าน) */
+const colCache = new Map<string, Rect[]>()
+export function collidersFor(house: string, upper: boolean): Rect[] {
+  const key = isSmallHouse(house) ? house : house === 'home' ? (upper ? 'home-up' : 'home-low') : 'npc'
+  let c = colCache.get(key)
+  if (!c) {
+    c = isSmallHouse(house) ? smallColliders(house, R) : house === 'home' ? interiorColliders(upper) : interiorColliders(false, true)
+    colCache.set(key, c)
+  }
+  return c
+}
+/** ประตูด้านในของบ้านที่เข้าอยู่ (พิกัดภายใน) */
+export function insideDoorOf(house: string): [number, number] {
+  if (isSmallHouse(house)) return SMALL[house].inside
+  return house === 'home' ? INSIDE_DOOR : NPC_INSIDE_DOOR
+}

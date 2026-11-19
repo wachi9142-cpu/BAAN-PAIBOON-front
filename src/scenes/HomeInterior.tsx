@@ -3,6 +3,7 @@ import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
 import { RBox } from './models/RBox'
 import { SignBoard } from './SignBoard'
 import { HomeDoors } from './AutoDoors'
+import { BarberInterior, BathInterior, CookInterior } from './SmallInteriors'
 import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
 import { useHomeTv } from '../game/homeActions'
 import { NpcInterior } from './NpcInterior'
@@ -17,6 +18,9 @@ import { NpcInterior } from './NpcInterior'
  */
 export function HomeInterior() {
   const house = useInterior((s) => s.house)
+  if (house === 'cookhouse') return <CookInterior />
+  if (house === 'bathhouse') return <BathInterior />
+  if (house === 'barber') return <BarberInterior />
   return house === 'home' ? <GrandInterior /> : <NpcInterior />
 }
 

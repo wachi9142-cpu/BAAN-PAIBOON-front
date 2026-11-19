@@ -30,6 +30,21 @@ const FRONT_WALL = 0.5 // ผนังหน้าห้อง (ชานอย�
 const EDGE = 2 // ขอบชาน
 const WALL_H = 2.2
 
+/** ใช้ทำฉากภายใน (เดินเข้าครัวได้) */
+export function useCookTextures() {
+  const plank = useCanvasTex((g) => {
+    g.fillStyle = '#5e4630'
+    g.fillRect(0, 0, 128, 128)
+    for (let i = 0; i < 8; i++) {
+      g.fillStyle = i % 3 === 0 ? '#664c34' : i % 3 === 1 ? '#56402c' : '#5e4630'
+      g.fillRect(i * 16 + 1, 0, 14, 128)
+      g.fillStyle = '#3a2a1c'
+      g.fillRect(i * 16, 0, 1.5, 128)
+    }
+  }, 3, 1)
+  return plank
+}
+
 export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
   // ผนังไม้กระดานแนวตั้ง
   const plank = useCanvasTex((g) => {
@@ -354,12 +369,12 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
   )
 }
 
-const F = FLOOR + 0.12 // ระดับพื้นห้อง
+export const F = FLOOR + 0.12 // ระดับพื้นห้อง
 const DOOR: [number, number] = [0.02, 0.98] // ช่องประตูหน้า (x)
 const WIN: [number, number] = [1.3, 2.3] // ช่องหน้าต่างหน้า (x) สูง 0.9–1.9
 
 /** ผนังห้องครัวแบบกลวง: ผนังหน้ามีประตูเปิด + หน้าต่างบานเปิด · ผนังข้างครึ่งล่างทึบ ครึ่งบนเป็นระแนงไม้ (ลมผ่าน ควันออก) */
-function KitchenRoom({ plank }: { plank: Texture }) {
+export function KitchenRoom({ plank }: { plank: Texture }) {
   const cz = (BACK + FRONT_WALL) / 2
   const D = FRONT_WALL - BACK
   const T = 0.06
@@ -424,7 +439,7 @@ function KitchenRoom({ plank }: { plank: Texture }) {
 
 /** ของในครัว (ตามภาพอ้างอิง): โต๊ะไม้ยาวริมผนังหลัง ครกหิน เขียง ตะกร้าพริก กระเทียม ตะไคร้ ใบโหระพา มะกรูด
  *  กระติบข้าวเหนียว ชามดินเผาซ้อน ขวดเครื่องเทศ · ชั้นไม้วางหม้อดินกับตะกร้าสาน · เตาแก๊สกับกระทะ · พวงสมุนไพรแห้งห้อย */
-function KitchenInterior() {
+export function KitchenInterior() {
   const top = F + 0.82
   const cz = BACK + 0.4 // แนวโต๊ะชิดผนังหลัง
   const clay = '#b0643a'
