@@ -71,6 +71,7 @@ import { NPC_INFO } from '../game/content/villagers'
 import { FortuneCard } from './FortuneCard'
 import { CUPS, STICKS_PER_CUP } from '../game/content/siamsi'
 import { ShopWindow } from './ShopWindow'
+import { FamilyLife } from '../scenes/FamilyLife'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
@@ -290,6 +291,7 @@ export function WorldScreen() {
         <Weather />
         <Festivals />
         <VillageLife />
+        <FamilyLife />
         <StreetLights />
         <SoftWorld />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />

@@ -169,7 +169,7 @@ export function Villagers() {
 }
 
 /** ป้ายชื่อ + ลูกศรลอยเหนือหัวชาวบ้านที่อยู่ใกล้พอจะคุย (จะได้รู้ว่ากด E แล้วคุยกับใคร) */
-function TalkMark({ id }: { id: string }) {
+export function TalkMark({ id }: { id: string }) {
   const near = useTalk((s) => s.near === id)
   const ref = useRef<Group>(null)
   useFrame(({ clock }) => {

@@ -3,6 +3,8 @@ import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
 import { getHouse } from './content/houses'
+import { NOEY_VEHICLES } from './content/noeyYard'
+import { ROT_WALLS, WALL_T } from './content/rotWalls'
 import { templeWalls, type Rect } from './content/temple'
 
 export interface Circle {
@@ -27,6 +29,24 @@ export function buildColliders(playerHouseId?: string, structures: PlacedStructu
     // บ้านแม่ฉัตร: รถที่จอด (2 วง) + ห้องน้ำนอกบ้าน
     out.push({ x: plot.center[0] - 0.5, z: plot.center[1] + 4.4, r: 1 }, { x: plot.center[0] - 0.5, z: plot.center[1] + 6.6, r: 1 }, { x: plot.center[0] - 7, z: plot.center[1] - 1.5, r: 1.5 }, { x: plot.center[0] + 3.4, z: plot.center[1] + 4.9, r: 0.9 }, { x: plot.center[0] + 3.4, z: plot.center[1] + 5.9, r: 0.9 })
   }
+  // ลานจอดรถหน้าบ้านน้องเนย: ที่ดินหมุน → แปลงพิกัดภายในเป็นพิกัดโลก
+  const lot = PLACES.find((p) => p.id === 'lot-noey')
+  if (lot) {
+    const r = lot.rotation ?? 0
+    const c = Math.cos(r)
+    const s = Math.sin(r)
+    for (const v of NOEY_VEHICLES)
+      for (const k of v.solid ?? []) {
+        const lx = v.x
+        const lz = v.z + k.dz
+        out.push({ x: lot.pos[0] + lx * c + lz * s, z: lot.pos[1] - lx * s + lz * c, r: k.r })
+      }
+  }
+  // ลานจอดบ้านน้าโรจน์: รถเก๋ง 2 คัน (คันละ 2 วง)
+  const rp = PLACES.find((p) => p.id === 'rot-park')
+  if (rp) for (const x of [-1.75, 0.35]) for (const dz of [-2.2, 0.6]) out.push({ x: rp.pos[0] + x, z: rp.pos[1] + dz, r: 0.95 })
+  // กำแพงขาวบ้านน้าโรจน์
+  for (const w of ROT_WALLS) out.push({ minX: Math.min(w.x0, w.x1) - WALL_T, maxX: Math.max(w.x0, w.x1) + WALL_T, minZ: Math.min(w.z0, w.z1) - WALL_T, maxZ: Math.max(w.z0, w.z1) + WALL_T })
   out.push(...templeWalls())
   out.push(...campusWalls())
   out.push(...homeWalls())

@@ -11,6 +11,11 @@ export type PlaceKind =
   | 'barnyard'
   | 'fencedlot'
   | 'woodyard'
+  | 'koipond'
+  | 'lemongarden'
+  | 'parkpad'
+  | 'mulberry'
+  | 'outkitchen'
   | 'ricefield'
   | 'questboard'
   | 'shop'
@@ -36,7 +41,7 @@ export interface Place {
   /** ร้านค้า: big = ร้านใหญ่ริมถนน · stall = ร้านประจำซอย */
   style?: 'big' | 'stall'
   /** บ้านชาวบ้าน: บังคับแบบบ้าน / สีหลังคา */
-  houseStyle?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2'
+  houseStyle?: 'stilt' | 'concrete' | 'halfhalf' | 'wood2' | 'modern'
   roof?: string
   /** ข้อความเมื่อผู้เล่นเดินมาถึง */
   arriveText?: string
@@ -46,6 +51,8 @@ export interface Place {
   color?: string
   /** วงชนสำหรับกันเดินทะลุ (0 = เดินผ่านได้) */
   solidRadius?: number
+  /** ขยายขนาดตัวบ้านชาวบ้าน (1 = ปกติ) */
+  houseScale?: number
   /** ลานโล่งหน้าบ้าน (ลึกกี่เมตร ด้านหน้าบ้าน) — ที่วิ่งเล่น จอดรถของเด็ก */
   frontYard?: number
 }
@@ -280,8 +287,16 @@ export const PLACES: Place[] = [
     solidRadius: 0,
   },
   // ฝั่งเหนือถนนหน้าบ้านแม่ฉัตร: บ้านปูนชั้นเดียวของน้องเนย โน๊ต นิว มีรั้วล้อม หันหน้าออกถนน (ผู้สร้าง 19 พ.ย. 2569)
-  { id: 'lot-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'fencedlot', pos: [49, 56.5], size: [22, 12], solidRadius: 0 },
-  { id: 'house-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'npchouse', houseStyle: 'concrete', roof: '#7a8a96', pos: [49, 57.5], rotation: Math.PI, size: [6, 5], color: '#ece4d4', arriveText: 'บ้านปูนชั้นเดียวของสามพี่น้อง น้องเนย น้องโน๊ต น้องนิว · มีรั้วล้อมรอบ', solidRadius: 4.2 },
+  // ถัดจากบ้านน้องเนยไปทางตะวันออก ริมถนนแยกซอย 1: บ้านน้าโรจน์ · ลานจอดรถหน้าบ้าน · สวนมะนาว 15 ต้น · บ่อปลาคาร์ฟมีน้ำตกจำลอง (ผู้สร้าง 19 พ.ย. 2569)
+  { id: 'rot-lemon', name: 'สวนมะนาวน้าโรจน์', kind: 'lemongarden', pos: [64.75, 55.5], size: [7.5, 9], arriveText: 'สวนมะนาว 15 ต้นของน้าโรจน์ ลูกดกเต็มต้น', solidRadius: 0 },
+  { id: 'rot-park', name: 'ที่จอดรถบ้านน้าโรจน์', kind: 'parkpad', pos: [72.4, 54.95], size: [5.8, 8.9], solidRadius: 0 },
+  { id: 'house-rot', name: 'บ้านน้าโรจน์', kind: 'npchouse', houseStyle: 'modern', pos: [72, 63.5], rotation: Math.PI, size: [11, 7], color: '#b98252', arriveText: 'บ้านชั้นเดียวสไตล์โมเดิร์นของน้าโรจน์ · ปีกฝั่งบ่อปลาเปิดเป็นร้านตัดผมชาย-หญิง ช่างโรจน์ · มีกำแพงอิฐกั้นสวนมะนาว และบ่อปลาคาร์ฟ', solidRadius: 4.6 },
+  // หลังบ้านน้าโรจน์: ครัวนอก (มีโต๊ะกินข้าว) + ต้นมัลเบอร์รี่ 3 ต้นเรียงติดกัน
+  { id: 'rot-kitchen', name: 'ครัวนอกบ้านน้าโรจน์', kind: 'outkitchen', pos: [71.8, 70.2], rotation: Math.PI, size: [4.6, 3.4], arriveText: 'ครัวนอกบ้าน มีเตาถ่านนึ่งข้าวเหนียว โอ่งน้ำ และโต๊ะกินข้าว', solidRadius: 0 },
+  { id: 'rot-mulberry', name: 'ต้นมัลเบอร์รี่น้าโรจน์', kind: 'mulberry', pos: [65.2, 70.4], size: [4, 4], arriveText: 'ต้นมัลเบอร์รี่ (หม่อน) 3 ต้น ลูกสุกสีม่วงดำ กินได้', solidRadius: 0 },
+  { id: 'rot-koi', name: 'บ่อปลาคาร์ฟน้าโรจน์', kind: 'koipond', pos: [78.5, 54.8], size: [5, 7], arriveText: 'บ่อปลาคาร์ฟหลากสี 5 ตัว มีน้ำตกจำลองเล็ก ๆ ไหลลงบ่อ เสียงน้ำเย็นชื่นใจ', solidRadius: 2.3 },
+  { id: 'lot-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'fencedlot', pos: [46.5, 57.1], rotation: Math.PI / 2, size: [14, 27], solidRadius: 0 },
+  { id: 'house-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'npchouse', houseStyle: 'concrete', roof: '#7a8a96', pos: [52.5, 57.1], rotation: -Math.PI / 2, size: [9, 7.5], houseScale: 1.5, color: '#ece4d4', arriveText: 'บ้านปูนชั้นเดียวหลังใหญ่ ครอบครัวห้าคนของน้องเนย น้องโน๊ต น้องนิว · ลานจอดหน้าบ้านมีรถไถ กระบะ มอเตอร์ไซค์ จักรยาน', solidRadius: 5.2 },
   // ถัดจากบ้านแม่ฉัตรไปทางตะวันออก: บ้านพี่เอม หันหน้าเข้าหาบ้านแม่ฉัตร · ลานยุ้งข้าวกับกองฟางใหญ่ (ผู้สร้าง 19 พ.ย. 2569)
   { id: 'house-aem', name: 'บ้านพี่เอม', kind: 'npchouse', pos: [72, 31], rotation: -Math.PI / 2, size: [6, 5], color: '#8a6040', houseStyle: 'stilt', arriveText: 'บ้านพี่เอม ข้างบ้านแม่ฉัตร มียุ้งข้าวกับกองฟางใหญ่', solidRadius: 4.2 },
   { id: 'aem-yard', name: 'ยุ้งข้าวและกองฟางพี่เอม', kind: 'barnyard', pos: [74.5, 40.5], size: [11, 8], arriveText: 'ยุ้งข้าวใต้ถุนสูง กองฟางก้อนใหญ่ไว้ให้วัวควายกิน', solidRadius: 0 },

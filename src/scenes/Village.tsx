@@ -29,6 +29,12 @@ import { getHouse } from '../game/content/houses'
 import { useSettings } from '../game/settings'
 import { House, VillagerHouse, GableRoof, Bush, HouseYard, PicketFence } from './models/House'
 import { RBox } from './models/RBox'
+import { Bicycle, Pickup, Tractor } from './models/Vehicles'
+import { KoiPond, LemonGarden, ParkPad, RotWalls } from './RotHome'
+import { MulberryRow, OutdoorKitchen } from './RotBackyard'
+import { ModernHouse } from './ModernHouse'
+import { Motorcycle } from './models/Motorcycle'
+import { NOEY_VEHICLES } from '../game/content/noeyYard'
 import { BigChedi, Temple } from './Temple'
 
 /** ฉากหมู่บ้านทั้งหมด (สิ่งที่อยู่นิ่ง) */
@@ -203,7 +209,12 @@ function PlaceMesh({ place }: { place: Place }) {
       break
     case 'fencedlot':
       labelY = 0
-      body = <FencedLot w={w} d={d} />
+      body = (
+        <group>
+          <FencedLot w={w} d={d} pad={place.id === 'lot-noey'} />
+          {place.id === 'lot-noey' && <NoeyParking />}
+        </group>
+      )
       break
     case 'barnyard':
       labelY = 4
@@ -212,6 +223,35 @@ function PlaceMesh({ place }: { place: Place }) {
     case 'overgrown':
       labelY = 3
       body = <OvergrownLot w={w} d={d} />
+      break
+    case 'mulberry':
+      labelY = 3.2
+      body = <MulberryRow w={w} d={d} />
+      break
+    case 'outkitchen':
+      labelY = 3.4
+      body = <OutdoorKitchen w={w} d={d} />
+      break
+    case 'koipond':
+      labelY = 3
+      body = (
+        <group>
+          <KoiPond w={w} d={d} />
+          {place.id === 'rot-koi' && (
+            <group position={[-x, 0, -z]}>
+              <RotWalls />
+            </group>
+          )}
+        </group>
+      )
+      break
+    case 'lemongarden':
+      labelY = 3
+      body = <LemonGarden w={w} d={d} />
+      break
+    case 'parkpad':
+      labelY = 0
+      body = <ParkPad w={w} d={d} />
       break
     case 'woodyard':
       labelY = 3
@@ -311,8 +351,14 @@ function PlaceMesh({ place }: { place: Place }) {
       labelY = 8
       body = (
         <group>
-          <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} style={place.houseStyle} roof={place.roof} />
-          <HouseYard seed={place.id.length} />
+          {place.houseStyle === 'modern' ? (
+            <ModernHouse shopWing={place.id === 'house-rot' ? -1 : undefined} />
+          ) : (
+          <group scale={place.houseScale ?? 1}>
+            <VillagerHouse color={place.color ?? '#8a5a3b'} seed={[...place.id].reduce((a, c) => a + c.charCodeAt(0), 0)} style={place.houseStyle} roof={place.roof} />
+            <HouseYard seed={place.id.length} />
+          </group>
+          )}
           {place.frontYard && <KidsYard depth={place.frontYard} />}
         </group>
       )
@@ -862,7 +908,7 @@ function BarnYard({ w, d }: { w: number; d: number }) {
 }
 
 /** ที่ดินมีรั้วล้อม (รั้วไม้ระแนง) · ประตูทางเข้าด้านหน้า (−z ด้านถนน) กว้าง 3 ม. · พื้นหญ้าตัดเรียบ */
-function FencedLot({ w, d }: { w: number; d: number }) {
+function FencedLot({ w, d, pad }: { w: number; d: number; pad?: boolean }) {
   const h = w / 2
   const dd = d / 2
   const gate = 1.5
@@ -872,9 +918,9 @@ function FencedLot({ w, d }: { w: number; d: number }) {
         <planeGeometry args={[w, d]} />
         <meshStandardMaterial color="#9fbf62" roughness={1} />
       </mesh>
-      {/* ทางเดินปูนจากประตูถึงหน้าบ้าน */}
-      <mesh position={[0, 0.03, -dd + 1.6]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.2, 3.2]} />
+      {/* ทางเดินปูนจากประตูถึงหน้าบ้าน (pad = ลานปูนจอดรถกว้างเต็มหน้าบ้าน) */}
+      <mesh position={[0, 0.03, pad ? -dd + 7 : -dd + 1.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={pad ? [w - 1.4, 14] : [2.2, 3.2]} />
         <meshStandardMaterial color="#d6d0c2" roughness={0.95} />
       </mesh>
       <PicketFence x={0} z={dd} len={w} />
@@ -888,6 +934,22 @@ function FencedLot({ w, d }: { w: number; d: number }) {
           <boxGeometry args={[0.18, 1.2, 0.18]} />
           <meshStandardMaterial color="#d8d2c4" />
         </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ลานจอดรถหน้าบ้านน้องเนย (พิกัดภายในที่ดิน: −z = ประตูรั้วฝั่งซอย 1, +z = หน้าบ้าน) */
+function NoeyParking() {
+  return (
+    <group>
+      {NOEY_VEHICLES.map((v, i) => (
+        <group key={i} position={[v.x, 0, v.z]} rotation={[0, v.rot ?? 0, 0]}>
+          {v.kind === 'pickup' && <Pickup />}
+          {v.kind === 'tractor' && <Tractor />}
+          {v.kind === 'moto' && <Motorcycle color={v.color} kind={v.moto} lean={0.1} />}
+          {v.kind === 'bike' && <Bicycle color={v.color} />}
+        </group>
       ))}
     </group>
   )

@@ -214,7 +214,7 @@ export function Player() {
 
   useFrame((state, rawDt) => {
     if (useGame.getState().paused) return
-    const dt = Math.min(rawDt, 0.05)
+    const dt = Math.min(rawDt, 0.066)
     const k = keys.current
     let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
     let r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)

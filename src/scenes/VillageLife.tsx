@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import { Pet } from './models/Pet'
+import { TextSprite } from './TextSprite'
 import { Character } from './models/Character'
 import type { PetChoice } from '../game/content/pets'
 import type { Appearance } from '../game/content/appearance'
@@ -259,6 +260,7 @@ const DOGS: DogSpec[] = [
   { home: 'house-kaew', pet: { species: 'dog', name: 'ด่างน้อย', color: '#f0e8d8', pattern: 'patches', patternColor: '#3a2e26' } as PetChoice },
   { home: 'house-namfon', pet: { species: 'dog', name: 'ดำ', color: '#2a2622', pattern: 'blacktan', patternColor: '#a8642a' } as PetChoice },
   { home: 'house-firewood', pet: { species: 'dog', name: 'โม่ง', color: '#c89a5a', pattern: 'plain', patternColor: '#e8d0a8' } as PetChoice },
+  { home: 'house-rot', pet: { species: 'dog', name: 'ประยุทธ', sex: 'm', breed: 'หมาพันธุ์ทาง', color: '#d8b48a', pattern: 'patches', patternColor: '#5a4030' } as PetChoice },
   { home: 'house-daeng', pet: { species: 'dog', name: 'ขาว', color: '#ece6da', pattern: 'plain', patternColor: '#d8cbb3' } as PetChoice },
 ]
 
@@ -286,6 +288,7 @@ function HouseDog({ spec }: { spec: DogSpec }) {
     return { cx: place.pos[0] + Math.sin(r) * off, cz: place.pos[1] + Math.cos(r) * off, r: 3.5, fx: place.pos[0] + Math.sin(r) * (off + 3.5), fz: place.pos[1] + Math.cos(r) * (off + 3.5) }
   }, [place, spec.owner])
   const m = useRef(mover(yard.cx, yard.cz))
+  const tag = useRef<Group>(null)
   const st = useRef({ bark: 0, barks: 0, calm: 0, greet: 0, sniff: 0 })
   useFrame(({ clock }, rawDt) => {
     if (!place || !g.current) return
@@ -362,11 +365,18 @@ function HouseDog({ spec }: { spec: DogSpec }) {
     }
     g.current.position.set(M.x, 0, M.z)
     g.current.rotation.y = M.h
+    // ป้ายชื่อหมา (มีสัญลักษณ์เพศ) ขึ้นเมื่อผู้เล่นเดินเข้ามาใกล้
+    if (tag.current) tag.current.visible = pd < 7
   })
   if (!place) return null
   return (
     <group ref={g}>
       <Pet pet={spec.pet} motion={motion} pose={pose} />
+      {spec.pet.sex && (
+        <group ref={tag} position={[0, 1.15, 0]} visible={false}>
+          <TextSprite text={spec.pet.name + (spec.pet.sex === 'm' ? ' ♂' : ' ♀')} color={spec.pet.sex === 'm' ? '#2f5fa8' : '#c8487a'} height={0.26} position={[0, 0, 0]} />
+        </group>
+      )}
     </group>
   )
 }

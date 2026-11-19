@@ -12,7 +12,7 @@ import { templeGroundY } from './content/temple'
 export type Gait = 'stand' | 'slow' | 'fast' | 'run'
 
 /** ความเร็ว (ม./วิ) ของแต่ละท่า (ก่อนคูณวัย/ไม้เท้า) */
-export const GAIT_SPEED: Record<Exclude<Gait, 'stand'>, number> = { slow: 3, fast: 4.8, run: 8 }
+export const GAIT_SPEED: Record<Exclude<Gait, 'stand'>, number> = { slow: 3.7, fast: 5.4, run: 8.6 }
 /** ค่า motion ที่ส่งให้โมเดลตัวละคร/สัตว์ (0 ยืน · 1 เดินช้า · 1.5 เดินเร็ว · 2 วิ่ง) */
 export const GAIT_MOTION: Record<Gait, number> = { stand: 0, slow: 1, fast: 1.5, run: 2 }
 /** ระยะก้าว (ม.) ใช้จับจังหวะเสียงฝีเท้า */

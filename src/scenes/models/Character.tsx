@@ -56,7 +56,7 @@ interface Props {
 export const JUMP_CROUCH = 0.16
 export const JUMP_LAND = 0.86
 
-export type CharacterAction = 'sweep' | 'hoe' | 'talk' | 'inspect'
+export type CharacterAction = 'sweep' | 'hoe' | 'talk' | 'inspect' | 'repair'
 export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi' | 'toolbelt'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
@@ -184,6 +184,10 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
         const scan = Math.sin(idle.current * 0.9) * 0.25
         ;[lx, lz, rx, rz] = [-0.15, 0.08, -1.35 + scan, -0.05]
       } else ;[lx, lz, rx, rz] = [-0.2, 0.55, -0.2, -0.55]
+    } else if (m === 0 && action === 'repair') {
+      // ซ่อมรถ: สองมือยื่นไปข้างหน้าต่ำ ๆ ขันน็อต/ไขควงเป็นจังหวะ บางช่วงหยุดมอง
+      const w = Math.sin(idle.current * 3.2) * (Math.sin(idle.current * 0.4) > -0.3 ? 1 : 0.15)
+      ;[lx, lz, rx, rz] = [-0.95 + w * 0.08, -0.12, -1.1 - w * 0.2, 0.12 + w * 0.06]
     } else if (m === 0 && action === 'talk') {
       // คุย: ยกมือประกอบเป็นพัก ๆ
       const g = Math.max(0, Math.sin(idle.current * 1.3)) * 0.5
@@ -244,9 +248,9 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     // ---------- ท่าในวัด ----------
     if (poseStart.current.pose !== pose) poseStart.current = { pose, t: idle.current }
     const pt = idle.current - poseStart.current.t
-    const kneel = m === 0 && (pose === 'prostrate' || pose === 'shake')
+    const kneel = m === 0 && (pose === 'prostrate' || pose === 'shake' || action === 'repair')
     let bow = 0
-    if (kneel && pose === 'shake') {
+    if (kneel && (pose === 'shake' || action === 'repair')) {
       if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, 1.45)
       if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, 1.45)
     } else if (kneel) {
