@@ -27,8 +27,39 @@ export function loadLayout(): LayoutMap {
 export const SAVED_LAYOUT: LayoutMap = loadLayout()
 /** ผังที่ใช้งานอยู่ตอนนี้ (อัปเดตทันทีเมื่อวางของ ไม่ต้องโหลดเกมใหม่) */
 export const LIVE = { map: SAVED_LAYOUT as LayoutMap }
-/** ผู้พัฒนา: กดค้างลากย้ายบ้าน/ร้าน/ของในบ้านตาได้ทันทีระหว่างเล่น (ปิดได้ภายหลังตอนปล่อยเกมจริง) */
+/** ยังคงไว้ให้โค้ดเดิมอ้างถึง: การย้ายเปิดเสมอ แต่สิทธิ์ขึ้นกับ canMove() */
 export const DEV_MOVE = true
+
+// ---------- สิทธิ์การย้าย (ผู้เล่นทั่วไป / ผู้สร้างเกม) ----------
+const CREATOR_KEY = 'baan-paiboon-creator'
+function loadCreator() {
+  // ผู้สร้างเกม: เปิดได้เฉพาะตอนพัฒนา (เกมที่ปล่อยจริงผู้เล่นทุกคนเป็นผู้เล่นทั่วไป)
+  if (!import.meta.env.DEV) return false
+  try {
+    return localStorage.getItem(CREATOR_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
+/** ต้นไม้ที่เกิดเองตามธรรมชาติ (ผู้เล่นทั่วไปย้ายไม่ได้) */
+export const isNaturalTree = (id: string) => /^home:(tree|palm|bamboo|cashew):/.test(id)
+/**
+ * ย้ายได้ไหม:
+ * - ผู้สร้างเกม: ทุกอย่าง (บ้านทุกหลัง ร้าน วัด ต้นไม้ธรรมชาติ) ไม่จำกัดพื้นที่
+ * - ผู้เล่นทั่วไป: เฉพาะของที่เป็นเจ้าของ = บ้านและสิ่งปลูกสร้างในบ้านตัวเอง (บ้านตา) — ยกเว้นต้นไม้ธรรมชาติ
+ */
+export function canMove(id: string) {
+  if (useLayoutEdit.getState().creator) return true
+  return id.startsWith('home:') && !isNaturalTree(id)
+}
+export function setCreator(on: boolean) {
+  try {
+    localStorage.setItem(CREATOR_KEY, on ? '1' : '0')
+  } catch {
+    /* ไม่เป็นไร */
+  }
+  useLayoutEdit.setState({ creator: on, active: on ? useLayoutEdit.getState().active : false })
+}
 
 /** สิ่งที่ย้ายได้: ลงทะเบียนตอนแสดงผล (ตำแหน่งฐานในพิกัดโลก) */
 export interface EditableInfo {
@@ -55,8 +86,10 @@ interface EditUi {
   dragging: boolean
   /** เปลี่ยนทุกครั้งที่บันทึกผัง (ให้กล่องชนสร้างใหม่) */
   ver: number
+  /** สิทธิ์ผู้สร้างเกม */
+  creator: boolean
 }
-export const useLayoutEdit = create<EditUi>(() => ({ active: false, selected: null, draft: { ...SAVED_LAYOUT }, dirty: false, dragging: false, ver: 0 }))
+export const useLayoutEdit = create<EditUi>(() => ({ active: false, selected: null, draft: { ...SAVED_LAYOUT }, dirty: false, dragging: false, ver: 0, creator: loadCreator() }))
 
 export function toggleLayoutEdit() {
   useLayoutEdit.setState((s) => ({ active: !s.active, selected: s.active ? null : s.selected }))

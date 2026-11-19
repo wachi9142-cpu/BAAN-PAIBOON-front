@@ -6,6 +6,11 @@ import { CHOP_TOOLS } from '../game/content/trees'
 import { GEM_ORDER, GEMS, setWandGem, type GemColor } from '../game/wand'
 import { ITEMS, type ItemId } from '../game/content/items'
 import { eat } from '../game/garden'
+import { itemIcon3D } from '../game/itemIcons'
+import { create } from 'zustand'
+
+/** ช่องที่เลือกอยู่ในแถบไอเทม (0–8) */
+export const useHotbar = create<{ sel: number }>(() => ({ sel: 0 }))
 
 const SLOTS = 9
 /** ลำดับชนิดของในแถบ: ของกิน → เมล็ดพันธุ์ → วัตถุดิบ (เครื่องมืออยู่หน้าสุดเสมอ) */
@@ -25,7 +30,8 @@ export function hotbarSlots(inv: Partial<Record<ItemId, number>> | undefined): H
 }
 
 /** ใช้ช่องที่เลือก: เครื่องมือ = ถือ · ของกิน = กิน · อื่น ๆ = บอกวิธีใช้ */
-export function activateHotSlot(s: HotSlot | undefined) {
+export function activateHotSlot(s: HotSlot | undefined, index?: number) {
+  if (index !== undefined) useHotbar.setState({ sel: index })
   if (!s) return
   if (s.kind === 'tool') return equip(s.tool)
   const def = ITEMS[s.id]
@@ -41,6 +47,10 @@ export function ToolBar() {
   const [tip, setTip] = useState<number | null>(null)
   useEffect(() => checkEquipped(), [inv])
   const slots = hotbarSlots(inv)
+  const sel = useHotbar((st) => st.sel)
+  // ชื่อของช่องที่เลือก (แสดงเหนือแถบ)
+  const cur = slots[sel]?.kind === 'item' ? slots[sel] : slots.find((x) => x.kind === 'tool' && x.tool === equipped)
+  const curName = cur ? (cur.kind === 'tool' ? (cur.tool === 'wand' ? 'คฑา' : CHOP_TOOLS[cur.tool].name) : `${ITEMS[cur.id].name} ×${cur.qty}`) : ''
   return (
     <div className="hotbar-wrap">
       {equipped === 'wand' && (
@@ -60,10 +70,11 @@ export function ToolBar() {
           ))}
         </div>
       )}
+      {curName && <div className="hot-name">{curName}</div>}
       <div className="hotbar" role="toolbar" aria-label="แถบไอเทม">
         {Array.from({ length: SLOTS }).map((_, i) => {
           const s = slots[i]
-          const on = s?.kind === 'tool' && s.tool === equipped
+          const on = s?.kind === 'tool' ? s.tool === equipped : i === sel
           let icon: string | null = null
           let name = ''
           if (s?.kind === 'tool') {
@@ -79,18 +90,21 @@ export function ToolBar() {
               key={i}
               type="button"
               className={`hot-slot${on ? ' on' : ''}${s ? '' : ' empty'}`}
-              onClick={() => activateHotSlot(s)}
+              onClick={() => activateHotSlot(s, i)}
               onMouseEnter={() => setTip(i)}
               onMouseLeave={() => setTip((t) => (t === i ? null : t))}
               aria-label={s ? `${name} (กด ${i + 1})` : `ช่องว่าง ${i + 1}`}
             >
               <span className="hot-key">{i + 1}</span>
-              {icon && (
-                <span className={`hot-icon${s?.kind === 'tool' && s.tool === 'axe2' ? ' steel' : ''}`}>
-                  <ItemIcon icon={icon} />
+              {icon && s && (
+                <span className="hot-icon">
+                  {(() => {
+                    const url = itemIcon3D(s.kind === 'tool' ? s.tool : s.id)
+                    return url ? <img src={url} alt="" draggable={false} /> : <ItemIcon icon={icon} />
+                  })()}
                 </span>
               )}
-              {s?.kind === 'item' && s.qty > 1 && <span className="hot-qty">{s.qty}</span>}
+              {s?.kind === 'item' && <span className="hot-qty">×{s.qty}</span>}
               {s?.kind === 'tool' && s.tool === 'wand' && <span className="tool-gem" style={{ background: GEMS[gem].color }} />}
               {tip === i && s && <span className="hot-tip">{name}{s.kind === 'item' && ITEMS[s.id].food ? ' · คลิกเพื่อกิน' : ''}</span>}
             </button>

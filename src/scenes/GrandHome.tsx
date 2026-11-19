@@ -721,7 +721,28 @@ function StrawBarn({ x, z }: { x: number; z: number }) {
 
 // ---------------------------------------------------------------------------
 // ต้นไม้ในบ้าน (สวนผลไม้ + รอบบ้าน)
-const TrunkTree = ({ x, z, h = 2.2, r = 1.2, color = '#4f8640', trunk = '#6b5440', fruit, fruitColor = '#e0402f', fruitR = 0.08 }: { x: number; z: number; h?: number; r?: number; color?: string; trunk?: string; fruit?: number; fruitColor?: string; fruitR?: number }) => (
+/** จุดกลางบ้านตาในพิกัดโลก (ต้นไม้ในบ้านย้ายได้) */
+const homeO = (): [number, number] => {
+  const hp = PLACES.find((p) => p.id === 'home-tarang')
+  return hp ? [hp.pos[0], hp.pos[1]] : [0, 0]
+}
+/** ต้นไม้ในบ้านตาเป็นของเรา: กดค้างลากย้ายได้ (เหมือนบ้าน) */
+const TrunkTree = (p: Parameters<typeof TrunkTreeModel>[0]) => (
+  <Editable id={'home:tree:' + p.x + ':' + p.z} name="ต้นไม้" x={p.x} z={p.z} r={(p.r ?? 1.2) + 0.8} origin={homeO()}>
+    <TrunkTreeModel {...p} />
+  </Editable>
+)
+const Palm = (p: Parameters<typeof PalmModel>[0]) => (
+  <Editable id={'home:palm:' + p.x + ':' + p.z} name={p.areca ? 'ต้นหมาก' : 'ต้นมะพร้าว'} x={p.x} z={p.z} r={1.2} origin={homeO()}>
+    <PalmModel {...p} />
+  </Editable>
+)
+const Bamboo = (p: Parameters<typeof BambooModel>[0]) => (
+  <Editable id={'home:bamboo:' + p.x + ':' + p.z} name="กอไผ่" x={p.x} z={p.z} r={2} origin={homeO()}>
+    <BambooModel {...p} />
+  </Editable>
+)
+const TrunkTreeModel = ({ x, z, h = 2.2, r = 1.2, color = '#4f8640', trunk = '#6b5440', fruit, fruitColor = '#e0402f', fruitR = 0.08 }: { x: number; z: number; h?: number; r?: number; color?: string; trunk?: string; fruit?: number; fruitColor?: string; fruitR?: number }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, h / 2, 0]} castShadow>
       <cylinderGeometry args={[0.1 + r * 0.06, 0.14 + r * 0.08, h, 10]} />
@@ -741,7 +762,7 @@ const TrunkTree = ({ x, z, h = 2.2, r = 1.2, color = '#4f8640', trunk = '#6b5440
   </group>
 )
 
-const Palm = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: number; areca?: boolean }) => (
+const PalmModel = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: number; areca?: boolean }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, h / 2, 0]} castShadow>
       <cylinderGeometry args={[areca ? 0.07 : 0.13, areca ? 0.09 : 0.2, h, 8]} />
@@ -772,7 +793,7 @@ const Palm = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: number
   </group>
 )
 
-const Bamboo = ({ x, z }: { x: number; z: number }) => (
+const BambooModel = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
     {Array.from({ length: 9 }).map((_, i) => {
       const a = i * 0.7
@@ -912,9 +933,11 @@ function Surroundings() {
         [-8.5, 18],
         [-12, 19.8],
       ].map(([x, z], i) => (
-        <group key={'cashew' + i} position={[x, 0, z]}>
+        <Editable key={'cashew' + i} id={`home:cashew:${i}`} name="ต้นมะม่วงหิมพานต์" x={x} z={z} r={2.6} origin={homeO()}>
+        <group position={[x, 0, z]}>
           <CashewTree seed={i + 3} scale={1 + (i % 2) * 0.12} />
         </group>
+        </Editable>
       ))}
       {/* มะม่วงเขียวใหญ่ */}
       <TrunkTree x={-13} z={6} h={2.6} r={1.5} color="#3f6e33" fruit={5} fruitColor="#8ac040" fruitR={0.1} />

@@ -19,6 +19,7 @@ import { chestHint, openChest, useChests } from '../game/treasure'
 import { whistle } from '../game/whistle'
 import { activateHotSlot, hotbarSlots, ToolBar } from './ToolBar'
 import { HelpButton } from './HelpOverlay'
+import { PetPicker } from './PetPicker'
 import { useBuild, toggleBuild, rotateTool } from '../game/building'
 import { BuildBar, ChestWindow } from './BuildBar'
 import { STRUCTURES } from '../game/content/structures'
@@ -134,7 +135,7 @@ export function WorldScreen() {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return
       // แถบไอเทม: กด 1–9 เลือกช่อง (เครื่องมือ = ถือ · ของกิน = กิน)
       if (/^Digit[1-9]$/.test(e.code) && !e.repeat) {
-        activateHotSlot(hotbarSlots(useGame.getState().save?.inventory)[Number(e.code.slice(5)) - 1])
+        activateHotSlot(hotbarSlots(useGame.getState().save?.inventory)[Number(e.code.slice(5)) - 1], Number(e.code.slice(5)) - 1)
       }
       // โหมดสร้าง: B เปิด/ปิด · R หมุน · Esc ออก
       if (e.code === 'KeyB' && !e.repeat) {
@@ -858,6 +859,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
 
       <HelpButton />
+      <PetPicker />
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { create } from 'zustand'
 import { moveProblem, moveStructure, rotateTool, snap, structureAt, useBuild } from '../game/building'
 import { inTerritory } from '../game/content/structures'
 import { PLACES } from '../game/content/village'
-import { commitLayout, DEV_MOVE, editables, moveSelectedTo, nudgeSelected, useLayoutEdit } from '../game/layoutEdit'
+import { canMove, commitLayout, DEV_MOVE, editables, moveSelectedTo, nudgeSelected, useLayoutEdit } from '../game/layoutEdit'
 import { useGame } from '../game/store'
 
 /** สถานะการกดค้าง: เมนูที่เปิด · ของที่กำลังลาก */
@@ -61,10 +61,31 @@ export function HoldInteract() {
       let bd = Infinity
       for (const it of editables.values()) {
         // ทั้งบริเวณบ้านตาไม่ลากทั้งก้อน · ย้ายได้ทีละหลัง/ทีละชิ้น
-        if (it.id === 'place:home-tarang') continue
+        if (it.id === 'place:home-tarang' || !canMove(it.id)) continue
         const d = Math.hypot(it.wx - p[0], it.wz - p[1])
         if (d < it.r && d - it.r < bd) {
           bd = d - it.r
+          best = it.id
+        }
+      }
+      if (best) return { kind: 'dev', id: best }
+      // ไม่โดนที่พื้น: ไล่ตามแนวเมาส์ (ทรงกระบอกสูง 6 ม.) — กดที่พุ่มไม้/หลังคาก็จับได้
+      const o = ray.ray.origin
+      const dv = ray.ray.direction
+      let bt = Infinity
+      for (const it of editables.values()) {
+        if (it.id === 'place:home-tarang' || !canMove(it.id)) continue
+        const hx = dv.x
+        const hz = dv.z
+        const hl = hx * hx + hz * hz
+        if (hl < 1e-6) continue
+        const t = ((it.wx - o.x) * hx + (it.wz - o.z) * hz) / hl
+        if (t <= 0) continue
+        const px = o.x + dv.x * t
+        const pz = o.z + dv.z * t
+        const py = o.y + dv.y * t
+        if (Math.hypot(px - it.wx, pz - it.wz) < it.r && py > 0 && py < 6 && t < bt) {
+          bt = t
           best = it.id
         }
       }
@@ -167,10 +188,20 @@ export function HoldInteract() {
       const hadTarget = target
       target = null
       if (devDrag) {
+        const id = useLayoutEdit.getState().selected
+        // ผู้เล่นทั่วไป: ของในบ้านตัวเองต้องวางในอาณาเขตของตัวเอง (วางนอกเขต = กลับที่เดิม)
+        if (id && !useLayoutEdit.getState().creator) {
+          const it = editables.get(id)
+          const save = useGame.getState().save
+          if (it && save && !inTerritory(it.wx, it.wz, save.ownedPlotIds)) {
+            cancelDrag()
+            toast('วางนอกอาณาเขตไม่ได้', 'ย้ายบ้านและสิ่งปลูกสร้างของตัวเองได้ภายในพื้นที่ของคุณ · ของกลับที่เดิมแล้ว', 'warn')
+            return
+          }
+        }
         devDrag = false
         devBefore = null
         lockCam(false)
-        const id = useLayoutEdit.getState().selected
         // ย้ายสถานที่ในหมู่บ้าน: อัปเดตข้อมูลสถานที่ทันที (ป้ายชื่อ ระยะใกล้ กล่องชน)
         if (id?.startsWith('place:')) {
           const m = useLayoutEdit.getState().draft[id]

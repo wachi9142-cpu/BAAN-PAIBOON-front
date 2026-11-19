@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { clearAllLayout, editables, layoutText, nudgeSelected, resetSelected, saveLayoutAndReload, toggleLayoutEdit, useLayoutEdit } from '../game/layoutEdit'
+import { clearAllLayout, editables, layoutText, nudgeSelected, resetSelected, saveLayoutAndReload, setCreator, toggleLayoutEdit, useLayoutEdit } from '../game/layoutEdit'
 import { useGame } from '../game/store'
 
 /** ปุ่ม "ย้ายที่" + แผงคำสั่ง (ใช้เมาส์กดค้างลากในฉาก) */
@@ -8,6 +8,7 @@ export function LayoutEditor() {
   const selected = useLayoutEdit((s) => s.selected)
   const dirty = useLayoutEdit((s) => s.dirty)
   const count = useLayoutEdit((s) => Object.keys(s.draft).length)
+  const creator = useLayoutEdit((s) => s.creator)
   const [copied, setCopied] = useState(false)
   const name = selected ? (editables.get(selected)?.name ?? selected) : null
 
@@ -20,6 +21,13 @@ export function LayoutEditor() {
       useGame.getState().toast({ title: 'คัดลอกไม่ได้', body: 'เบราว์เซอร์ไม่อนุญาตให้คัดลอก', tone: 'warn' })
     }
   }
+  if (!import.meta.env.DEV) return null
+  if (!creator)
+    return (
+      <button type="button" className="layout-toggle" onClick={() => setCreator(true)} title="เปิดสิทธิ์ผู้สร้างเกม (เฉพาะตอนพัฒนา)">
+        👤 ผู้เล่นทั่วไป
+      </button>
+    )
   return (
     <>
       <button type="button" className={`layout-toggle${active ? ' on' : ''}`} onClick={toggleLayoutEdit} title="ย้ายตำแหน่งบ้าน อาคาร และของในบ้าน">
@@ -27,7 +35,10 @@ export function LayoutEditor() {
       </button>
       {active && (
         <div className="layout-panel">
-          <strong>โหมดย้ายที่</strong>
+          <strong>โหมดย้ายที่ (ผู้สร้างเกม)</strong>
+          <label className="layout-row">
+            <input type="checkbox" checked={creator} onChange={(ev) => setCreator(ev.target.checked)} /> สิทธิ์ผู้สร้างเกม: ย้ายได้ทุกอย่าง (เอาออก = ทดลองเป็นผู้เล่นทั่วไป)
+          </label>
           <p>
             กดเมาส์ค้างที่บ้าน/อาคาร/ของ แล้ว<b>ลาก</b>ไปวาง ปล่อยเมาส์ = วาง · หมุนล้อเมาส์ระหว่างลาก = หมุน · กดค้างที่พื้นว่าง = เมนูสร้าง
           </p>
