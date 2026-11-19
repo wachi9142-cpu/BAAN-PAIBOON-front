@@ -52,7 +52,7 @@ interface Props {
   /** สีอัญมณีบนคฑา */
   wandGem?: GemColor
   /** กำลังชี้คฑายิงลำแสง */
-  aim?: { aiming: boolean }
+  aim?: { aiming: boolean; until?: number }
   /** จังหวะกระโดด 0→1 (-1 = ไม่ได้กระโดด) */
   jump?: { current: number }
   /** อุ้มสัตว์: แนบอก (ตัวเล็ก) / สองมือประคองข้างหน้า (ตัวใหญ่) · bend = ก้มตัวตอนอุ้มขึ้น/วางลง (0–1) */
@@ -64,7 +64,7 @@ export const JUMP_CROUCH = 0.16
 export const JUMP_LAND = 0.86
 
 export type CharacterAction = 'sweep' | 'hoe' | 'talk' | 'inspect' | 'repair'
-export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi' | 'toolbelt'
+export type ToolId = 'broom' | 'hoe' | 'pole' | 'axe' | 'axe2' | 'wand' | 'siamsi' | 'toolbelt' | 'net'
 
 /** ท่าแขนตอนยืน: [ซ้าย x, ซ้าย z, ขวา x, ขวา z] (เรเดียน) — แขนห้อยลงที่ 0,0 */
 const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
@@ -225,6 +225,18 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
     const axeHeld = tool === 'axe' || tool === 'axe2'
     if (axeHeld && m === 0 && cp < 0) [lx, lz, rx, rz] = [-0.55, 0.35, -0.55, -0.35]
     // ถือคฑา: ยืน = ถือคฑาเอียงขึ้นข้างตัว · ยิงลำแสง = เหยียดแขนชี้ไปข้างหน้า (คฑาสั่นเบา ๆ ตามพลัง)
+    // ตวัดสวิง: ยกแขนขวาขึ้นสูงแล้วฟาดลงครอบไปข้างหน้า
+    if (tool === 'net' && cp < 0) {
+      if (aim?.aiming) {
+        const k = 1 - Math.max(0, Math.min(1, ((aim.until ?? 0) - performance.now()) / 900))
+        rx = k < 0.45 ? -2.6 * (k / 0.45) : -2.6 + ((k - 0.45) / 0.55) * 1.5
+        rz = -0.05
+        if (m === 0) [lx, lz] = [-0.4, 0.1]
+      } else if (m === 0) {
+        rx = -0.6
+        rz = -0.1
+      }
+    }
     if (tool === 'wand' && cp < 0) {
       if (aim?.aiming) {
         rx = -1.5 + Math.sin(idle.current * 30) * 0.03
@@ -837,6 +849,37 @@ function StrawHat() {
 
 /** เครื่องมือในมือขวา (จุดกำเนิด = มือ, ด้ามยาวต่อลงไปตามแนวแขน) */
 function Tool({ kind }: { kind: ToolId }) {
+  if (kind === 'net') {
+    // สวิงจับสัตว์: ด้ามไม้ไผ่ยาว ห่วงหวาย ถุงตาข่ายเชือกสีเขียวอ่อน
+    return (
+      <group position={[0, -0.55, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.45, 0]} castShadow>
+          <cylinderGeometry args={[0.018, 0.022, 1.0, 8]} />
+          <meshStandardMaterial color="#c8a060" roughness={0.7} />
+        </mesh>
+        {[0.15, 0.4, 0.65].map((y) => (
+          <mesh key={y} position={[0, y, 0]}>
+            <torusGeometry args={[0.022, 0.006, 4, 10]} />
+            <meshStandardMaterial color="#9a7a40" />
+          </mesh>
+        ))}
+        <group position={[0, 1.08, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh>
+            <torusGeometry args={[0.2, 0.014, 6, 24]} />
+            <meshStandardMaterial color="#a8803a" />
+          </mesh>
+          <mesh position={[0, 0, 0.17]} rotation={[-Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.2, 0.36, 12, 1, true]} />
+            <meshStandardMaterial color="#a8d8a0" wireframe />
+          </mesh>
+          <mesh position={[0, 0, 0.17]} rotation={[-Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.195, 0.35, 12, 1, true]} />
+            <meshStandardMaterial color="#c8ecc0" transparent opacity={0.35} side={2} />
+          </mesh>
+        </group>
+      </group>
+    )
+  }
   if (kind === 'siamsi') {
     // กระบอกเซียมซีสีแดงทรงสูง (ขนาดพอดีมือ) มีไม้สีแดงอยู่ข้างใน — ถือเอียงไปข้างหน้า
     return (

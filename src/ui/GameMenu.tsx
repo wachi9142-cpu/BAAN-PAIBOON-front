@@ -575,15 +575,15 @@ export function SettingsTab() {
               const g = useGame.getState()
               if (!g.save) return
               const inv = { ...g.save.inventory }
-              inv.wand = Math.max(1, inv.wand ?? 0)
+              inv.net = Math.max(1, inv.net ?? 0)
+              inv.trap_cage = Math.max(1, inv.trap_cage ?? 0)
               inv.treat = (inv.treat ?? 0) + 10
               inv.feed = (inv.feed ?? 0) + 10
               useGame.setState({ save: { ...g.save, inventory: inv }, dirty: true })
-              equip('wand')
-              g.toast({ title: '🪄 ได้ไม้คฑาแล้ว (ถืออยู่)', body: 'เลือกสีอัญมณีได้ 4 แบบ (เขียว เหลือง แดง ม่วง) ที่วงกลมเหนือแถบไอเทม · แถมกล้วยสุก 10 + อาหารสัตว์ 10', tone: 'success' })
+              g.toast({ title: '🥅 ได้สวิง + กรงดักสัตว์แล้ว', body: 'สวิง = สัตว์เพชรเหลือง · กรงดัก = สัตว์เพชรแดง (ป้อนกล้วยให้เชื่องก่อน) · แถมกล้วยสุก 10 + อาหารสัตว์ 10', tone: 'success' })
             }}
           >
-            🪄 รับไม้คฑา + อัญมณีครบ 4 สี
+            🥅 รับสวิง + กรงดักสัตว์
           </button>
         </div>
       )}

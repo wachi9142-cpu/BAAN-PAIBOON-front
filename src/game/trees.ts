@@ -22,7 +22,7 @@ interface ToolState {
 export const useTools = create<ToolState>(() => ({ equipped: 'hand' }))
 
 /** เครื่องมือที่มีให้เลือก (มือเปล่ามีเสมอ) */
-export const toolChoices = (): HeldTool[] => ['hand', ...(['axe', 'axe2', 'wand'] as const).filter((t) => countOf(t) > 0)]
+export const toolChoices = (): HeldTool[] => ['hand', ...(['axe', 'axe2'] as const).filter((t) => countOf(t) > 0)]
 
 /** เครื่องมือที่ใช้ฟันต้นไม้ (ถือคฑาอยู่ = ทุบด้วยมือ) */
 export const chopTool = (): ChopTool => {

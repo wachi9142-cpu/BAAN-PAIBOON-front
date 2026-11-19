@@ -256,6 +256,16 @@ function build(id: string): Group {
       add(part(new SphereGeometry(0.2, 10, 8), '#e88a20', [0.12, -0.35, 0.18], [0, 0, 0], [1, 1, 0.6]))
       add(part(new ConeGeometry(0.1, 0.3, 5), '#4a8a2a', [-0.28, 0.5, 0], [0, 0, 0.9], [1, 1, 0.3]))
       break
+    case 'net':
+      add(part(new CylinderGeometry(0.05, 0.06, 1.5, 8), '#c8a060', [0.35, -0.45, 0], [0, 0, 0.7]))
+      add(part(new TorusGeometry(0.42, 0.04, 8, 24), '#a8803a', [-0.3, 0.35, 0], [0, 0.5, 0]))
+      add(part(new ConeGeometry(0.4, 0.75, 12, 1, true), '#a8d8a0', [-0.42, 0.2, -0.25], [-1.1, 0.5, 0], [1, 1, 1], { rough: 0.9 }))
+      break
+    case 'trap_cage':
+      add(part(new BoxGeometry(1.3, 0.1, 0.9), '#8a6038', [0, -0.55, 0], [0.35, 0.6, 0]))
+      add(part(new BoxGeometry(1.36, 0.1, 0.96), '#9a6a3c', [0, 0.45, 0], [0.35, 0.6, 0]))
+      for (let i = 0; i < 6; i++) add(part(new CylinderGeometry(0.035, 0.035, 0.95, 6), '#c8a868', [-0.6 + i * 0.24, -0.05, 0.35], [0.35, 0.6, 0]))
+      break
     case 'mulberry_leaf':
       add(part(new SphereGeometry(0.6, 12, 8), '#5aa040', [0, 0, 0], [0, 0, 0.5], [1, 0.8, 0.08]))
       add(part(new CylinderGeometry(0.025, 0.025, 1, 4), '#3a7a2a', [0, 0, 0.06], [0, 0, 0.5]))

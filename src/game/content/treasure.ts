@@ -63,7 +63,7 @@ export const CHEST_KINDS: Record<ChestKind, ChestKindDef> = {
     name: 'หีบโบราณ',
     note: 'ต้องใช้กุญแจโบราณ (ซ่อนอยู่ในหีบลับ)',
     needs: 'oldkey',
-    loot: [{ coins: [250, 350] }, { item: 'hardwood', qty: [3, 4] }, { item: 'wand', qty: [1, 1] }, { item: 'axe2', qty: [1, 1], chance: 0.5 }],
+    loot: [{ coins: [250, 350] }, { item: 'hardwood', qty: [3, 4] }, { item: 'trap_cage', qty: [1, 1] }, { item: 'axe2', qty: [1, 1], chance: 0.5 }],
   },
   secret: {
     name: 'หีบลับ',

@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Quaternion, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three'
+import { AdditiveBlending, Quaternion, Vector3, type Group, type Mesh, type MeshBasicMaterial } from 'three'
 import { useGame } from '../game/store'
 import { cancelTrap, PULL_DURATION, refreshWild, springTrap, tierOf, useTraps, wild, wildPos } from '../game/catching'
 import { GEMS, wandGem } from '../game/wand'
@@ -40,14 +40,92 @@ export function Wildlife() {
       {WILD_SPAWNS.map((s, i) => (
         <WildAnimal key={s.id} spawn={s} seed={i} />
       ))}
+      <TrapCages />
+    </group>
+  )
+}
+/** กรงดักไม้ไผ่ที่วางไว้ (ประตูยกค้าง · สัตว์เดินเข้าไปกินกล้วย → ประตูตกปิด) */
+function TrapCages() {
+  useTraps((s) => s.ver)
+  const list = WILD_SPAWNS.map((s) => ({ id: s.id, trap: wild.get(s.id)?.trap })).filter((x) => x.trap)
+  return (
+    <group>
+      {list.map(({ id, trap }) => (
+        <TrapCage key={id} x={trap!.x} z={trap!.z} shut={trap!.shut} />
+      ))}
     </group>
   )
 }
 
+function TrapCage({ x, z, shut }: { x: number; z: number; shut?: number }) {
+  const door = useRef<Mesh>(null)
+  const rot = useMemo(() => Math.atan2(playerPose.x - x, playerPose.z - z), [x, z])
+  useFrame(() => {
+    if (!door.current) return
+    // ประตูตกลงเร็ว ๆ แล้วเด้งเล็กน้อย
+    const k = shut ? Math.min(1, (performance.now() - shut) / 180) : 0
+    door.current.position.y = 0.95 - k * 0.5 + (shut && k === 1 ? Math.max(0, Math.sin((performance.now() - shut) / 40) * 0.03 * Math.max(0, 1 - (performance.now() - shut) / 600)) : 0)
+  })
+  const W = 0.9
+  const D = 1.2
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot + Math.PI, 0]}>
+      {/* พื้นไม้ + หลังคาไม้กระดาน */}
+      <mesh position={[0, 0.04, 0]} receiveShadow>
+        <boxGeometry args={[W, 0.06, D]} />
+        <meshStandardMaterial color="#8a6038" />
+      </mesh>
+      <mesh position={[0, 0.72, 0]} castShadow>
+        <boxGeometry args={[W + 0.08, 0.06, D + 0.08]} />
+        <meshStandardMaterial color="#9a6a3c" />
+      </mesh>
+      {/* ซี่ไม้ไผ่ 2 ข้าง + ด้านหลัง */}
+      {[-1, 1].flatMap((sx) =>
+        Array.from({ length: 6 }, (_, i) => (
+          <mesh key={`${sx}${i}`} position={[(sx * W) / 2, 0.38, -D / 2 + 0.1 + i * 0.2]}>
+            <cylinderGeometry args={[0.022, 0.022, 0.66, 6]} />
+            <meshStandardMaterial color="#c8a868" />
+          </mesh>
+        )),
+      )}
+      {Array.from({ length: 5 }, (_, i) => (
+        <mesh key={i} position={[-W / 2 + 0.1 + i * 0.175, 0.38, -D / 2]}>
+          <cylinderGeometry args={[0.022, 0.022, 0.66, 6]} />
+          <meshStandardMaterial color="#c8a868" />
+        </mesh>
+      ))}
+      {/* เสากรอบประตู + ประตูตก (ยกค้างไว้) */}
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[(sx * W) / 2, 0.55, D / 2]}>
+          <boxGeometry args={[0.06, 1.0, 0.06]} />
+          <meshStandardMaterial color="#6a4426" />
+        </mesh>
+      ))}
+      <mesh ref={door} position={[0, 0.95, D / 2]} castShadow>
+        <boxGeometry args={[W - 0.06, 0.6, 0.04]} />
+        <meshStandardMaterial color="#b8955a" />
+      </mesh>
+      {/* เชือกกลไก */}
+      <mesh position={[0, 1.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.008, 0.008, D, 4]} />
+        <meshStandardMaterial color="#a88a50" />
+      </mesh>
+      {/* กล้วยสุกเป็นเหยื่อ */}
+      {!shut && (
+        <mesh position={[0, 0.14, -0.25]} rotation={[0, 0.4, Math.PI / 2]}>
+          <capsuleGeometry args={[0.04, 0.16, 4, 8]} />
+          <meshStandardMaterial color="#f2d040" />
+        </mesh>
+      )}
+    </group>
+  )
+}
+
+
 function WildAnimal({ spawn, seed }: { spawn: WildSpawn; seed: number }) {
   const root = useRef<Group>(null!)
   const body = useRef<Group>(null!)
-  const marker = useRef<Mesh>(null!)
+  const marker = useRef<Group>(null!)
   const beamG = useRef<Group>(null!)
   const core = useRef<Mesh>(null!)
   const glow = useRef<Mesh>(null!)
@@ -294,7 +372,7 @@ function WildAnimal({ spawn, seed }: { spawn: WildSpawn; seed: number }) {
     // ป้ายสีบอกความยาก ลอยขึ้นลงเบา ๆ (เห็นชัดเมื่ออยู่ใกล้)
     marker.current.position.y = 1.15 + Math.sin(s.t * 2.2) * 0.07
     marker.current.rotation.y += dt * 1.5
-    marker.current.visible = dPlayer < 14
+    marker.current.visible = dPlayer < 18 && !r.trap?.shut
   })
 
   const scale = spawn.pet.species === 'buffalo' || spawn.pet.species === 'cow' ? 0.8 : 1

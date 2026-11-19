@@ -1,11 +1,10 @@
-import { useTools } from './trees'
 import { startCast } from './wand'
 /**
  * ระบบเก็บสัตว์ (ไม่ใช้การปาบอล)
  * อุปกรณ์แบบชนบทไทย (ผู้สร้าง 19 พ.ย. 2569) ตามสีเพชรบนหัวสัตว์:
  *   💚 ง่าย = มือเปล่า เข้าใกล้แล้วเก็บ · 💛 ปานกลาง = สวิงจับสัตว์ (หรือกล้วยล่อ โอกาสน้อยกว่า)
  *   ❤️ ยาก = ป้อนกล้วยให้เชื่องก่อน แล้ววางกรงดักใส่กล้วยเป็นเหยื่อ รอสัตว์เดินเข้ากรง · 💜 พิเศษ = สายสิญจน์/เครื่องราง (อนาคต)
- * ไม้คฑา (ของเก่า) ยังใช้ได้กับคนที่มีอยู่แล้ว
+ * เลิกใช้ไม้คฑาแล้ว (ใครมีอยู่ได้สวิง + กรงดักแทน ดู migrateSave ใน store.ts)
  * สถานะสัตว์ป่าแต่ละตัว (หนี/ถูกเก็บ/ฟื้นคืน) เก็บในหน่วยความจำ ไม่ต้องเซฟ
  */
 import { create } from 'zustand'
@@ -78,12 +77,12 @@ function use(id: ItemId) {
 }
 
 /** ถือสวิงตอนตวัด (ฉากตัวละครอ่านไปวาดสวิงในมือ) */
-export const captureFx = { netUntil: 0 }
+export const useCapture = create<{ net: boolean }>(() => ({ net: false }))
 /** กรงดักที่วางอยู่ (ฉาก 3D วาดกรง) */
 export const useTraps = create<{ ver: number }>(() => ({ ver: 0 }))
 const bumpTraps = () => useTraps.setState((s) => ({ ver: s.ver + 1 }))
 
-const GEM_ICON: Record<Tier, string> = { easy: '💚', medium: '💛', hard: '❤️', legend: '💜' }
+export const GEM_ICON: Record<Tier, string> = { easy: '💚', medium: '💛', hard: '❤️', legend: '💜' }
 
 /** ข้อความบอกวิธีเก็บตัวที่อยู่ใกล้ (มีสีเพชรนำหน้า) */
 export function catchHint(id: string) {
@@ -92,18 +91,15 @@ export function catchHint(id: string) {
   const tier = tierOf(id)
   const r = wild.get(id)!
   const gem = GEM_ICON[tier]
-  const wandHeld = useTools.getState().equipped === 'wand' && hasTool('wand')
-  if (tier === 'easy') return `${gem} ${wandHeld ? `ใช้คฑาดูด${name}` : `เก็บ${name}${countOf('feed') > 0 ? ' (ให้อาหารสัตว์)' : ''}`} · มือเปล่า`
+  if (tier === 'easy') return `${gem} เก็บ${name}${countOf('feed') > 0 ? ' (ให้อาหารสัตว์)' : ''} · มือเปล่า`
   if (tier === 'medium') {
     if (hasTool('net')) return `${gem} ตวัดสวิงจับ${name}`
-    if (hasTool('wand')) return `${gem} ใช้ไม้คฑาเก็บ${name}`
     if (countOf('treat') > 0) return `${gem} ล่อ${name}ด้วยกล้วยสุก (มีสวิงจะง่ายกว่า)`
     return `${gem} ${name} — ต้องมีสวิงจับสัตว์ (ร้านพี่แดง/ประดิษฐ์เอง)`
   }
   if (r.trap) return `${gem} ${name}กำลังเดินเข้ากรง… อยู่นิ่ง ๆ`
   if (!r.tamed) return `${gem} ${countOf('treat') > 0 ? `ป้อนกล้วยให้${name}เชื่องก่อน` : `${name} — ต้องมีกล้วยสุกไว้ป้อนก่อน`}`
   if (hasTool('trap_cage')) return countOf('treat') > 0 ? `${gem} วางกรงดักใส่กล้วยล่อ${name}` : `${gem} ${name}เชื่องแล้ว — ต้องมีกล้วยไว้ใส่กรงเป็นเหยื่อ`
-  if (hasTool('wand')) return `${gem} ใช้ไม้คฑาเก็บ${name}`
   return `${gem} ${name}เชื่องแล้ว — ต้องมีกรงดักสัตว์`
 }
 
@@ -140,15 +136,16 @@ function failed(id: string, tier: Tier, name: string) {
   useGame.getState().saveNow('event')
 }
 
-/** ตวัดสวิง (สัตว์เพชรเหลือง) */
+/** ตวัดสวิง (สัตว์เพชรเหลือง) — ผู้เล่นหันไปหาสัตว์ ยกสวิงตวัดลงครอบ */
 function swingNet(id: string) {
   const r = wild.get(id)!
   const spawn = WILD_SPAWNS.find((s) => s.id === id)!
   const name = getSpecies(spawn.pet.species).label
   const p = wildPos.get(id) ?? spawn.home
   startCast(p[0], p[1], 900)
-  captureFx.netUntil = performance.now() + 900
-  const ok = Math.random() < 0.8
+  useCapture.setState({ net: true })
+  window.setTimeout(() => useCapture.setState({ net: false }), 950)
+  const ok = Math.random() < CATCH_RULES.medium.chance + 0.05
   window.setTimeout(() => {
     if (r.status !== 'free') return
     if (!ok) return failed(id, 'medium', name)
@@ -175,7 +172,7 @@ function placeTrap(id: string) {
   r.trap = { x: ax + (dx / l) * 1.6, z: az + (dz / l) * 1.6, at: performance.now() }
   bumpTraps()
   useGame.getState().doGesture('offer', 1200)
-  toast(`🪤 วางกรงดักใส่กล้วยแล้ว`, `ถอยออกมาอยู่นิ่ง ๆ รอ${name}เดินเข้าไปกินเหยื่อ…`, 'info')
+  toast('🪤 วางกรงดักใส่กล้วยแล้ว', `ถอยออกมาอยู่นิ่ง ๆ รอ${name}เดินเข้าไปกินเหยื่อ…`, 'info')
 }
 
 /** เรียกจากฉาก: สัตว์เดินถึงกรงแล้ว → ประตูตก */
@@ -198,7 +195,7 @@ export function springTrap(id: string) {
   }, 900)
 }
 
-/** สัตว์ไม่เดินเข้ากรงนานเกิน (ผู้เล่นวิ่งเข้าใส่/อยู่ใกล้เกิน) → เก็บกรงคืน */
+/** สัตว์ไม่ยอมเข้ากรง (ผู้เล่นวิ่งเข้าใส่/รอนานเกิน) → เก็บกรงคืน */
 export function cancelTrap(id: string, why: string) {
   const r = wild.get(id)
   if (!r?.trap || r.trap.shut) return
@@ -215,19 +212,12 @@ export function tryCatch(id: string) {
   const name = getSpecies(spawn.pet.species).label
   const tier = tierOf(id)
   let chance = 1
-  let beam = false
-  // ถือคฑาอยู่ (ของเก่า) = ใช้ลำแสงกับทุกระดับที่จับได้
-  const wandHeld = useTools.getState().equipped === 'wand' && hasTool('wand')
 
   if (tier === 'easy') {
     if (countOf('feed') > 0) use('feed')
-    beam = wandHeld
   } else if (tier === 'medium') {
-    if (hasTool('net') && !wandHeld) return swingNet(id)
-    if (hasTool('wand')) {
-      beam = true
-      chance = CATCH_RULES.medium.chance
-    } else if (countOf('treat') > 0) {
+    if (hasTool('net')) return swingNet(id)
+    if (countOf('treat') > 0) {
       use('treat')
       chance = 0.6
     } else {
@@ -246,41 +236,24 @@ export function tryCatch(id: string) {
       toast(`${name}กินกล้วยแล้ว เริ่มเชื่อง`, hasTool('trap_cage') ? 'ตอนนี้วางกรงดักใส่กล้วยได้แล้ว (กด E อีกครั้ง)' : 'ต้องมีกรงดักสัตว์ (ร้านพี่แดง หรือประดิษฐ์ด้วยค้อน)', 'info')
       return
     }
-    if (hasTool('trap_cage') && !wandHeld) {
-      if (countOf('treat') === 0) return toast('ต้องมีกล้วยสุกไว้ใส่กรงเป็นเหยื่อ', 'ซื้อที่ร้านพี่แดง หรือลอกเชือกกล้วยแล้วบางทีได้กล้วยสุก', 'warn')
-      return placeTrap(id)
-    }
-    if (!hasTool('wand')) {
+    if (!hasTool('trap_cage')) {
       toast(`${name}เชื่องแล้ว แต่ต้องมีกรงดักสัตว์`, 'ซื้อที่ร้านพี่แดง (ซอย 5) หรือประดิษฐ์: ไม้กระดาน 2 กิ่งไม้ 4 เชือกกล้วย 3 + ค้อน', 'warn')
       return
     }
-    beam = true
-    chance = CATCH_RULES.hard.chance
+    if (countOf('treat') === 0) return toast('ต้องมีกล้วยสุกไว้ใส่กรงเป็นเหยื่อ', 'ซื้อที่ร้านพี่แดง หรือลอกเชือกกล้วยแล้วบางทีได้กล้วยสุก', 'warn')
+    return placeTrap(id)
   } else {
     return
   }
 
-  // ใช้ลำแสง (คฑา): ถือคฑาให้อัตโนมัติ แล้วหันไปชี้ที่สัตว์
-  const p = wildPos.get(id) ?? spawn.home
-  const pullMs = beam ? (tier === 'easy' ? 1400 : tier === 'medium' ? 1900 : 2500) : PULL_MS
-  if (beam) {
-    if (useTools.getState().equipped !== 'wand') useTools.setState({ equipped: 'wand' })
-  }
-  if (Math.random() > chance) {
-    if (beam) {
-      r.resistUntil = performance.now() + 1100
-      startCast(p[0], p[1], 1100)
-    }
-    return failed(id, tier, name)
-  }
+  if (Math.random() > chance) return failed(id, tier, name)
 
-  // สำเร็จ: ดึงเข้าหาอย่างนุ่มนวล แล้วเข้าสมุดสะสม
+  // สำเร็จ: เดินเข้ามาหาอย่างนุ่มนวล แล้วเข้าสมุดสะสม
   r.status = 'pulling'
-  r.beam = beam
-  r.pullMs = pullMs
+  r.beam = false
+  r.pullMs = PULL_MS
   r.pullStart = performance.now()
-  if (beam) startCast(p[0], p[1], pullMs)
-  window.setTimeout(() => collect(id, beam ? 'ดูดเข้าคฑาสำเร็จ · ' : ''), pullMs)
+  window.setTimeout(() => collect(id, ''), PULL_MS)
 }
 
 /** เรียกสัตว์ออกมาเดินตาม (null = เก็บเข้าไปพักก่อน) */

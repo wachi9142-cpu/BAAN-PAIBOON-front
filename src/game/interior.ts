@@ -182,3 +182,34 @@ export function insideDoorOf(house: string): [number, number] {
   if (isSmallHouse(house)) return SMALL[house].inside
   return house === 'home' ? INSIDE_DOOR : NPC_INSIDE_DOOR
 }
+
+/**
+ * กล้องนอกบ้านไม่จมเข้าไปในตัวบ้านหลัก (บ้านไม้สองชั้น 13×9 ม.)
+ * ยืนที่ประตูหันหลังให้บ้าน → กล้องข้างหลังเคยอยู่ในผนัง จอเป็นสีน้ำตาลทั้งจอ
+ * คืนค่า 0..1 = ระยะกล้องที่ใช้ได้ (1 = เดิม) โดยดึงกล้องเข้ามาหาตัวละครจนพ้นตัวบ้าน
+ */
+export function homeCameraFit(tx: number, tz: number, cx: number, cy: number, cz: number): number {
+  const hp = PLACES.find((p) => p.id === 'home-tarang')
+  if (!hp) return 1
+  const m = LIVE.map['home:main'] ?? { x: -7.5, z: -6, rot: 0 }
+  const hx = hp.pos[0] + m.x
+  const hz = hp.pos[1] + m.z
+  const c = Math.cos(m.rot)
+  const s = Math.sin(m.rot)
+  const inside = (x: number, z: number, y: number) => {
+    if (y > 9.5) return false
+    const dx = x - hx
+    const dz = z - hz
+    const lx = dx * c - dz * s
+    const lz = dx * s + dz * c
+    return Math.abs(lx) < 13 / 2 + 0.6 && Math.abs(lz) < 9 / 2 + 0.6
+  }
+  // เดินจากตัวละครออกไปหากล้อง: เจอตัวบ้านขวางก่อน = ดึงกล้องมาอยู่หน้าบ้าน (กันบ้านบังทั้งจอ)
+  const N = 40
+  for (let i = 1; i <= N; i++) {
+    const k = i / N
+    const y = cy * k + 1.5 * (1 - k)
+    if (inside(tx + (cx - tx) * k, tz + (cz - tz) * k, y)) return Math.max(0, (i - 1) / N)
+  }
+  return 1
+}

@@ -3,7 +3,7 @@ import { useLayoutEdit } from '../game/layoutEdit'
 import { GAIT_MOTION, GAIT_SPEED, jumpReq, stepRt, stepTick, stick, surfaceAt, useMove, type Gait } from '../game/movement'
 import { useWater, waterRt } from '../game/water'
 import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
-import { collidersFor, FLOOR2, interiorCameraBox, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
+import { collidersFor, FLOOR2, interiorCameraBox, homeCameraFit, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
 import { nearSmallDoor } from '../game/smallHouses'
 import { clampCave, inCave, nearCaveDoor, nearCaveMouth } from '../game/cave'
 import { findMount, useMount } from '../game/mounts'
@@ -13,6 +13,7 @@ import { bindPlayerNow, useActivity } from '../game/houseLife'
 import { carryBend, findCarrySpot, useCarry } from '../game/carry'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
+import { useCapture } from '../game/catching'
 import { TextSprite } from './TextSprite'
 import { hitRock, hitTree, IMPACT, pickupNear, punchRock, swing, swingTargetPos, tendTree, useTools } from '../game/trees'
 import { findUsable, useBuild } from '../game/building'
@@ -269,8 +270,8 @@ export function Player() {
       heading.current = w.heading
       orbit.current.yaw = w.heading + Math.PI
       // ในบ้าน: มองจากด้านบน (บ้านตุ๊กตา) · ออกนอกบ้าน: มุมปกติ
-      orbit.current.pitch = useInterior.getState().inside ? 1.05 : 0.5
-      orbit.current.dist = useInterior.getState().inside ? 8 : 14
+      orbit.current.pitch = useInterior.getState().inside ? 0.85 : 0.5
+      orbit.current.dist = useInterior.getState().inside ? 6.5 : 14
       if (root.current) root.current.position.set(w.x, w.y, w.z)
       baseY.current = w.y
       state.camera.position.set(w.x, 2, w.z + 3)
@@ -475,6 +476,11 @@ export function Player() {
       camPos.y = Math.min(camPos.y, TEMPLE.floorY + TEMPLE.wallH - 0.3)
     }
     camPos.y += root.current?.position.y ?? 0
+    // นอกบ้าน: กล้องไม่จมเข้าไปในบ้านหลัก (ยืนหน้าประตูหันหลังให้บ้าน)
+    if (!useInterior.getState().inside && !inCave(x, z)) {
+      const k = homeCameraFit(camTarget.x, camTarget.z, camPos.x, camPos.y, camPos.z)
+      if (k < 1) camPos.set(camTarget.x + (camPos.x - camTarget.x) * k, camTarget.y + (camPos.y - camTarget.y) * Math.max(k, 0.55), camTarget.z + (camPos.z - camTarget.z) * k)
+    }
     // ในบ้าน: กล้องไม่ทะลุผนัง/เพดาน
     if (useInterior.getState().inside) {
       const ib = interiorCameraBox((root.current?.position.y ?? 0) > FLOOR2 * 0.5)
@@ -606,6 +612,7 @@ export function Player() {
     }
   }, [updatePosition])
 
+  const netHeld = useCapture((s) => s.net)
   const gearR = useLoadout((s) => s.weapon)
   const gearL = useLoadout((s) => s.item)
   return (
@@ -615,7 +622,7 @@ export function Player() {
         appearance={riding || mountRide ? { ...save.player.appearance, pose: 'ride' } : wPose ? { ...save.player.appearance, pose: wPose } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
-        tool={gesture === 'shake' ? 'siamsi' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
+        tool={gesture === 'shake' ? 'siamsi' : netHeld ? 'net' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
         gear={riding || wPose || gesture || carryKey ? null : gearR}
         gearL={riding || wPose || gesture || carryKey ? null : gearL}

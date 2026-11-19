@@ -183,6 +183,14 @@ function withGarden(data: SaveData): Pick<SaveData, 'garden' | 'inventory'> {
   return { garden, inventory: inv }
 }
 
+/** เลิกใช้ไม้คฑาจับสัตว์ (19 พ.ย. 2569): ใครมีคฑาอยู่ แลกเป็นสวิง + กรงดักสัตว์ให้อัตโนมัติ */
+function swapWand(inv: SaveData['inventory']): SaveData['inventory'] {
+  if (!inv?.wand) return inv
+  const { wand: _w, ...rest } = inv
+  void _w
+  return { ...rest, net: Math.max(1, rest.net ?? 0), trap_cage: Math.max(1, rest.trap_cage ?? 0) }
+}
+
 function migrateSave(data: SaveData): SaveData {
   // v1 เป็นรุ่นแรก — เติมค่าเริ่มต้นให้ฟิลด์ที่อาจขาด
   return {
@@ -195,7 +203,7 @@ function migrateSave(data: SaveData): SaveData {
     bagLevel: data.bagLevel ?? 0,
     collection: data.collection ?? [],
     quests: data.quests ?? [],
-    ...withGarden(data),
+    ...withGarden({ ...data, inventory: swapWand(data.inventory) }),
     structures: data.structures ?? [],
     chests: data.chests ?? {},
     trees: data.trees ?? {},
