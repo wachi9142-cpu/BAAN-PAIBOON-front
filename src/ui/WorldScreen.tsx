@@ -33,6 +33,16 @@ import { useVillageSoundscape } from '../game/audio/useSoundscape'
 import { Village } from '../scenes/Village'
 import { Player } from '../scenes/Player'
 import { PetFollower } from '../scenes/PetFollower'
+import { activeKeys, moodOf, openParty, petOf } from '../game/party'
+import { PetPartyWindow } from './PetPartyWindow'
+import { FriendsWindow, InvitePopup } from './FriendsWindow'
+import { PetCard } from './PetCard'
+import { FloatingHistory } from './EditHistoryBar'
+import { Weather } from '../scenes/Weather'
+import { forceWeather, seasonLabel, useWeather, WEATHER } from '../game/weather'
+import { BookButton, GameBook } from './GameBook'
+import { StatIcon, type StatIconId } from './StatIcons'
+import { FriendsButton } from './FriendsWindow'
 import { WaterLife } from '../scenes/WaterLife'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu, type Tab } from './GameMenu'
@@ -113,7 +123,11 @@ function PetBond() {
 }
 
 export function WorldScreen() {
-  const save = useGame((s) => s.save)
+  // อย่าอ่านทั้งเซฟ: ตำแหน่ง/ค่าสถานะเปลี่ยนบ่อย จะทำให้ทั้งฉาก 3 มิติวาดใหม่ (เกมกระตุก)
+  const hasSave = useGame((s) => !!s.save)
+  const houseDesignId = useGame((s) => s.save?.home.houseDesignId ?? '')
+  const playerName = useGame((s) => s.save?.player.name ?? '')
+  const save = hasSave ? { home: { houseDesignId }, player: { name: playerName } } : null
   const exitToTitle = useGame((s) => s.exitToTitle)
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
@@ -178,6 +192,7 @@ export function WorldScreen() {
         const hn = useInterior.getState().near
         if (hn) {
           if (hn === 'enter') enterHome()
+          else if (hn.startsWith('enter:')) enterHome(hn.slice(6))
           else activateHomeSpot(hn)
         }
         else if (isBoard(g.nearbyPlaceId)) {
@@ -246,20 +261,22 @@ export function WorldScreen() {
   useEffect(() => () => setPaused(false), [setPaused])
 
   useEffect(() => {
-    if (!save) exitToTitle(true)
-  }, [save, exitToTitle])
+    if (!hasSave) exitToTitle(true)
+  }, [hasSave, exitToTitle])
   if (!save) return null
 
   return (
     <>
       <Canvas
         shadows="soft"
+        dpr={[1, 1.5]}
         camera={{ fov: 50, near: 0.1, far: 400 }}
         gl={{ preserveDrawingBuffer: true }}
         style={{ position: 'absolute', inset: 0 }}
       >
         {/* แสง ท้องฟ้า หมอก ไฟตะเกียง เปลี่ยนตามเวลาในเกม */}
         <DayLight />
+        <Weather />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
         <Wildlife />
@@ -268,7 +285,7 @@ export function WorldScreen() {
         <WaterLife />
         <LayoutDragger />
         <HoldInteract />
-        {save.player.pet && <PetFollower key={save.player.pet.species + save.player.pet.name + save.player.pet.color} pet={save.player.pet} start={save.position} />}
+        <PartyFollowers />
         <PlayClock />
         <PetBond />
       </Canvas>
@@ -328,11 +345,11 @@ function useAutoSave() {
 }
 
 /** หลอดค่าสถานะ */
-function StatBar({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+function StatBar({ icon, label, value, color }: { icon: StatIconId; label: string; value: number; color: string }) {
   return (
     <div className="stat" title={`${label} ${Math.round(value)}/100`}>
       <span className="stat-icon" aria-hidden="true">
-        {icon}
+        <StatIcon id={icon} size={22} />
       </span>
       <span className="stat-label">{label}</span>
       <span className="stat-track" role="meter" aria-label={label} aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
@@ -348,15 +365,49 @@ function StatusPanel() {
   const pops = useGame((s) => s.moneyPops)
   const setPetLeashed = useGame((s) => s.setPetLeashed)
   const pet = save.player.pet
+  const [full, setFull] = useState(false)
+  // ปกติเป็นแถบเล็ก ไม่บังวิว · กดเพื่อขยายดูรายละเอียด
+  if (!full)
+    return (
+      <button type="button" className="status-mini" onClick={() => setFull(true)} title="กดเพื่อดูรายละเอียด">
+        {(
+          [
+            ['health', save.stats.health, '#d9534f'],
+            ['hunger', save.stats.hunger, '#e0a35c'],
+            ['thirst', save.stats.thirst, '#4a90d8'],
+            ['fun', save.stats.fun, '#5c9a4a'],
+          ] as [StatIconId, number, string][]
+        ).map(([ic, v, c]) => (
+          <span key={ic} className={'sm-bar' + (v < 25 ? ' low' : '')} title={Math.round(v) + '%'}>
+            <i><StatIcon id={ic} size={19} /></i>
+            <span className="sm-track">
+              <span style={{ width: Math.max(0, Math.min(100, v)) + '%', background: c }} />
+            </span>
+          </span>
+        ))}
+        <span className="sm-coins"><StatIcon id="coin" size={17} /> {save.coins.toLocaleString('th-TH')}</span>
+        {pops.map((p) => (
+          <span key={p.id} className={'money-pop' + (p.amount < 0 ? ' neg' : '')}>
+            {p.amount > 0 ? '+' : '−'}
+            {Math.abs(p.amount).toLocaleString('th-TH')}
+          </span>
+        ))}
+      </button>
+    )
   return (
     <div className="status">
-      <div className="status-name">{save.player.name}</div>
-      <StatBar icon="❤️" label="ชีวิต" value={save.stats.health} color="#d9534f" />
-      <StatBar icon="🍚" label="อิ่ม" value={save.stats.hunger} color="#e0a35c" />
-      <StatBar icon="💧" label="น้ำ" value={save.stats.thirst} color="#4a90d8" />
-      <StatBar icon="😊" label="สนุก" value={save.stats.fun} color="#5c9a4a" />
+      <div className="status-name">
+        {save.player.name}
+        <button type="button" className="status-fold" onClick={() => setFull(false)} title="ย่อ">
+          ▴ ย่อ
+        </button>
+      </div>
+      <StatBar icon="health" label="ชีวิต" value={save.stats.health} color="#d9534f" />
+      <StatBar icon="hunger" label="อิ่ม" value={save.stats.hunger} color="#e0a35c" />
+      <StatBar icon="thirst" label="น้ำ" value={save.stats.thirst} color="#4a90d8" />
+      <StatBar icon="fun" label="สนุก" value={save.stats.fun} color="#5c9a4a" />
       <div className="money">
-        <span aria-hidden="true">💰</span>
+        <span aria-hidden="true"><StatIcon id="coin" size={22} /></span>
         <span>
           ถุงเงิน <strong>{save.coins.toLocaleString('th-TH')}</strong> บาท
         </span>
@@ -406,6 +457,8 @@ function HudClock() {
     <>
       <span>วันที่ {day}</span>
       <span className="sep" />
+      <WeatherBadge day={day} />
+      <span className="sep" />
       <span title={p.mood}>
         {formatClock(minute)} · {p.label}
       </span>
@@ -418,6 +471,19 @@ function HudClock() {
     </>
   )
 }
+
+/** ฤดู + สภาพอากาศตอนนี้ (ชี้เพื่อดูรายละเอียด) */
+function WeatherBadge({ day }: { day: number }) {
+  const kind = useWeather((s) => s.kind)
+  const w = WEATHER[kind]
+  const se = seasonLabel(day)
+  return (
+    <span className="wx-badge" title={se.label + ' · ' + w.label + ' — ' + w.note}>
+      {w.icon} <small>{w.label}</small>
+    </span>
+  )
+}
+if (import.meta.env.DEV) (window as unknown as { __weather: unknown }).__weather = forceWeather
 
 /** ปุ่ม 🐾 เรียกสัตว์ออกมา / เก็บเข้า — สัตว์เลี้ยงตัวแรก + สัตว์ที่จับมาได้ */
 function AnimalButton() {
@@ -433,7 +499,7 @@ function AnimalButton() {
   ]
   return (
     <div className="animal-btn-wrap">
-      <button type="button" className="animal-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <button type="button" className="animal-btn" onClick={() => openParty()} aria-expanded={open}>
         🐾 เรียกสัตว์ {list.length > 0 && <span className="gm-badge">{list.length}</span>}
       </button>
       {open && (
@@ -736,6 +802,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           <HudClock />
           <span className="sep" />
           <SaveIndicator />
+          <BookButton />
+          <FriendsButton />
           <button className="btn small" onClick={onMenu} aria-label="เปิดเมนูเกม">
             เมนู
           </button>
@@ -807,7 +875,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
       {homeNear && (
         <div className="gather-hint">
-          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeSpotLabel(homeNear)}
+          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeNear.startsWith('enter:') ? '🚪 เปิดประตูเข้า' + (PLACES.find((p) => 'enter:' + p.id === homeNear)?.name ?? 'บ้าน') : homeSpotLabel(homeNear)}
         </div>
       )}
       {!building && toyNear && (
@@ -860,6 +928,12 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
 
       <HelpButton />
       <PetPicker />
+      <PetPartyWindow />
+      <FriendsWindow />
+      <PetCard />
+      <FloatingHistory />
+      <GameBook />
+      <InvitePopup />
     </div>
   )
 }
@@ -885,5 +959,26 @@ function SaveIndicator() {
     >
       💾 {text}
     </button>
+  )
+}
+
+/** สัตว์ที่เรียกออกมาเดินตาม (สูงสุด 3 ตัว แต่ละตัวมีตำแหน่งในขบวนและบุคลิกของตัวเอง) */
+function PartyFollowers() {
+  // อ่านเฉพาะทีมสัตว์ (ไม่วาดสัตว์ใหม่ทุกครั้งที่ตำแหน่งผู้เล่นถูกบันทึก)
+  useGame((s) => s.save?.activePets)
+  useGame((s) => s.save?.collection)
+  useGame((s) => s.save?.homePet)
+  useGame((s) => s.save?.player.pet)
+  const save = useGame.getState().save
+  if (!save) return null
+  const keys = activeKeys()
+  return (
+    <>
+      {keys.map((k, i) => {
+        const o = petOf(k)
+        if (!o) return null
+        return <PetFollower key={k + o.pet.color + o.pet.name} pet={o.pet} start={save.position} slot={i} mood={moodOf(k, o.pet)} />
+      })}
+    </>
   )
 }

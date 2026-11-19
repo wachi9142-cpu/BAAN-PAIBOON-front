@@ -169,7 +169,7 @@ export function tryCatch(id: string) {
     r.until = Date.now() + RESPAWN_MS
     const g = useGame.getState()
     if (!g.save) return
-    const caught = { uid: `${spawn.id}-${Date.now().toString(36)}`, pet: { ...spawn.pet, name: getSpecies(spawn.pet.species).suggestName }, day: g.save.day }
+    const caught = { uid: `${spawn.id}-${Date.now().toString(36)}`, pet: { ...spawn.pet, name: getSpecies(spawn.pet.species).suggestName, sex: (Math.random() < 0.5 ? 'm' : 'f') as 'm' | 'f' }, day: g.save.day }
     useGame.setState({ save: { ...g.save, collection: [...g.save.collection, caught] }, dirty: true })
     g.saveNow('event')
     toast(`🐾 เก็บ${name}ได้แล้ว!`, `${beam ? 'ดูดเข้าคฑาสำเร็จ · ' : ''}ระดับ${TIERS[tier].label} · ดูได้ที่ เมนู → สัตว์ของฉัน`, 'discover')
@@ -181,7 +181,11 @@ export function summonPet(pet: import('./content/pets').PetChoice | null) {
   const g = useGame.getState()
   if (!g.save) return
   // เปลี่ยนตัวหรือเก็บสัตว์ = ลงจากหลังก่อน
-  useGame.setState({ save: { ...g.save, player: { ...g.save.player, pet } }, dirty: true, riding: false })
+  // ระบบทีม: ตัวนี้เป็นตัวหลัก (ตัวอื่นที่เดินตามอยู่ยังเดินตามต่อ)
+  const key = pet ? (g.save.homePet && g.save.homePet.name === pet.name && g.save.homePet.species === pet.species ? 'home' : g.save.collection.find((c) => c.pet.name === pet.name && c.pet.species === pet.species && c.pet.color === pet.color)?.uid) : undefined
+  const others = (g.save.activePets ?? []).filter((k) => k !== key)
+  const activePets = pet ? (key ? [key, ...others].slice(0, 3) : undefined) : others.slice(0, 3)
+  useGame.setState({ save: { ...g.save, activePets, player: { ...g.save.player, pet } }, dirty: true, riding: false })
   g.saveNow('event')
   toast(pet ? `${pet.name}ออกมาเดินตามแล้ว` : 'ให้สัตว์เลี้ยงพักก่อน', pet ? undefined : 'กดปุ่ม 🐾 เพื่อเรียกออกมาใหม่ได้ทุกเมื่อ', 'success')
 }
@@ -192,7 +196,8 @@ export function setFollower(uid: string) {
   if (!g.save) return
   const c = g.save.collection.find((x) => x.uid === uid)
   if (!c) return
-  useGame.setState({ save: { ...g.save, player: { ...g.save.player, pet: c.pet } }, dirty: true })
+  const others = (g.save.activePets ?? []).filter((k) => k !== uid)
+  useGame.setState({ save: { ...g.save, activePets: [uid, ...others].slice(0, 3), player: { ...g.save.player, pet: c.pet } }, dirty: true })
   g.saveNow('event')
   toast(`${c.pet.name}เดินตามคุณแล้ว`, undefined, 'success')
 }

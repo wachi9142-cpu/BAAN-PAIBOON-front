@@ -18,14 +18,16 @@ export const BOARDS: Record<BoardId, BoardDef> = {
 }
 
 // ---------- ฤดูกาลและเหตุการณ์ ----------
-export type Season = 'hot' | 'rain' | 'cool'
+import { seasonOfDate, today, type Season } from './calendar'
+export type { Season }
 export const SEASONS: Record<Season, { label: string; icon: string }> = {
   hot: { label: 'ฤดูร้อน', icon: '☀️' },
   rain: { label: 'ฤดูฝน', icon: '🌧️' },
   cool: { label: 'ฤดูหนาว', icon: '🍃' },
 }
-/** ฤดูละ 30 วันในเกม: ร้อน → ฝน → หนาว */
-export const seasonOf = (day: number): Season => (['hot', 'rain', 'cool'] as const)[Math.floor((day - 1) / 30) % 3]
+/** ฤดูตามเดือนในปฏิทินเกม (ร้อน มี.ค.–พ.ค. · ฝน มิ.ย.–ต.ค. · หนาว พ.ย.–ก.พ.) — day เก็บไว้เพื่อเข้ากันกับโค้ดเดิม */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const seasonOf = (_day?: number): Season => seasonOfDate(today())
 /** วันพระ: ทุก 7 วัน */
 export const isHolyDay = (day: number) => day % 7 === 0
 /** ตลาดนัด: ทุก 3 วัน */
@@ -129,7 +131,7 @@ export const POOLS: Record<BoardId, Pool> = {
     news: [
       () => ({ icon: '📢', title: 'ประกาศจากผู้ใหญ่บ้าน', detail: 'ขอให้ทุกบ้านช่วยกันดูแลความสะอาด ทิ้งขยะให้เป็นที่ และระวังไฟตอนหน้าแล้ง', when: 'ทุกวัน' }),
       () => ({ icon: '🛡️', title: 'ระวังคนแปลกหน้า', detail: 'บ้านเรามีผู้สูงอายุเยอะ ถ้าเห็นคนแปลกหน้าแวะเวียนผิดปกติ แจ้งผู้ใหญ่บ้านได้เลย', when: 'ทุกวัน' }),
-      (d) => ({ icon: SEASONS[seasonOf(d)].icon, title: `ตอนนี้${SEASONS[seasonOf(d)].label}`, detail: seasonOf(d) === 'rain' ? 'ฝนตกบ่อย อย่าลืมรดน้ำแปลงผักน้อยลงได้ (เร็ว ๆ นี้)' : seasonOf(d) === 'hot' ? 'อากาศร้อน ดื่มน้ำบ่อย ๆ นะ' : 'อากาศเย็นสบาย เหมาะกับการเดินเที่ยวรอบหมู่บ้าน', when: 'ฤดูละ 30 วันในเกม' }),
+      (d) => ({ icon: SEASONS[seasonOf(d)].icon, title: `ตอนนี้${SEASONS[seasonOf(d)].label}`, detail: seasonOf(d) === 'rain' ? 'ฝนตกบ่อย อย่าลืมรดน้ำแปลงผักน้อยลงได้ (เร็ว ๆ นี้)' : seasonOf(d) === 'hot' ? 'อากาศร้อน ดื่มน้ำบ่อย ๆ นะ' : 'อากาศเย็นสบาย เหมาะกับการเดินเที่ยวรอบหมู่บ้าน', when: 'ตามเดือนในปฏิทิน (ร้อน มี.ค.–พ.ค. · ฝน มิ.ย.–ต.ค. · หนาว พ.ย.–ก.พ.)' }),
     ],
     events: [
       (d) =>

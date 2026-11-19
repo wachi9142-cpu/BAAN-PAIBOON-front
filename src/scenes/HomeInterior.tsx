@@ -4,6 +4,7 @@ import { RBox } from './models/RBox'
 import { SignBoard } from './SignBoard'
 import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
 import { useHomeTv } from '../game/homeActions'
+import { NpcInterior } from './NpcInterior'
 
 /**
  * ภายในบ้านตารัง–ยายเลียน — ตามผังใน docs/HOME_TARANG_YAILIAN.md ข้อ 1
@@ -14,6 +15,11 @@ import { useHomeTv } from '../game/homeActions'
  * (ของที่ผู้พัฒนาเสนอเพิ่ม: หิ้งพระ พัดลม มุ้ง ปฏิทิน ตู้กับข้าวมุ้งลวด หม้อหุงข้าว กระติกน้ำ เสื่อ — ตัดออกได้)
  */
 export function HomeInterior() {
+  const house = useInterior((s) => s.house)
+  return house === 'home' ? <GrandInterior /> : <NpcInterior />
+}
+
+function GrandInterior() {
   const [ox, oz] = INTERIOR_ORIGIN
   const floorTex = useMemo(() => tileTexture('#d8d2c4', '#c9c2b2', 64), [])
   const woodTex = useMemo(() => plankTexture(), [])

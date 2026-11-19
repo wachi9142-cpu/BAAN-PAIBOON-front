@@ -11,6 +11,7 @@ import { useClock } from '../game/clock'
 import { npcPos, useTalk } from '../game/talk'
 import { playerPose } from '../game/playerPose'
 import { villagersOut } from '../game/content/daytime'
+import { useWeather } from '../game/weather'
 import { NPC_INFO } from '../game/content/villagers'
 import { TextSprite } from './TextSprite'
 
@@ -121,7 +122,9 @@ function VillageDog({ dog, index }: { dog: (typeof VILLAGE_DOGS)[number]; index:
 /** ชาวบ้านและหมาที่ใช้ชีวิตอยู่ในหมู่บ้าน (บรรยากาศ) */
 export function Villagers() {
   // ค่ำแล้วชาวบ้านกลับเข้าบ้าน (หมาในหมู่บ้านยังเดินเล่น)
-  const out = useClock((s) => villagersOut(s.minute))
+  // ฝนตกหนัก: ชาวบ้านเข้าบ้านหลบฝน
+  const storm = useWeather((s) => s.kind === 'storm')
+  const out = useClock((s) => villagersOut(s.minute)) && !storm
   // หาชาวบ้านที่อยู่ใกล้พอจะคุย (5 ครั้ง/วินาที)
   const tick = useRef(0)
   useFrame((_, dt) => {

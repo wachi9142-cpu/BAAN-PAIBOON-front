@@ -1,60 +1,39 @@
 import { useEffect } from 'react'
-import { useGame } from '../game/store'
-import { summonPet } from '../game/catching'
-import { getSpecies, type PetChoice, type PetSpecies } from '../game/content/pets'
-import { ItemIcon } from './ItemIcon'
-
-/** ไอคอนสัตว์แต่ละชนิด */
-const ICON: Record<PetSpecies, string> = {
-  dog: '🐶',
-  cat: '🐱',
-  buffalo: '🐃',
-  cow: '🐮',
-  pig: '🐷',
-  goat: '🐐',
-  sheep: '🐑',
-  monkey: '🐵',
-  squirrel: '🐿️',
-  mouse: '🐭',
-  rabbit: '🐰',
-  bird: '🐦',
-  chicken: '🐔',
-  duck: '🦆',
-  goose: '🦢',
-  turtle: '🐢',
-}
-const SLOTS = 9
-const same = (a?: PetChoice | null, b?: PetChoice | null) => !!a && !!b && a.species === b.species && a.name === b.name && a.color === b.color
-
-/** รายชื่อสัตว์ที่เลือกเดินตามได้ (สูงสุด 9 ตัว): สัตว์คู่ใจ + สัตว์ที่จับได้ */
-export function companionList(): PetChoice[] {
-  const s = useGame.getState().save
-  if (!s) return []
-  const out: PetChoice[] = []
-  if (s.homePet) out.push(s.homePet)
-  for (const c of s.collection) if (!out.some((p) => same(p, c.pet))) out.push(c.pet)
-  return out.slice(0, SLOTS)
-}
-
-/** เลื่อนเลือกสัตว์ตัวถัดไป/ก่อนหน้า (dir = +1/−1) */
-export function cycleCompanion(dir: 1 | -1) {
-  const list = companionList()
-  if (list.length === 0) {
-    useGame.getState().toast({ title: 'ยังไม่มีสัตว์เพื่อนเดินทาง', body: 'จับสัตว์ด้วยคฑา หรือเลี้ยงสัตว์คู่ใจก่อนนะ', tone: 'info' })
-    return
-  }
-  const cur = useGame.getState().save?.player.pet
-  const i = list.findIndex((p) => same(p, cur))
-  const next = list[(i + dir + list.length) % list.length]
-  if (!same(next, cur)) summonPet(next)
-}
+import { MAX_PET_HEARTS, useGame } from '../game/store'
+import { getSpecies } from '../game/content/pets'
+import { activeKeys, MAX_ACTIVE, openParty, partySlots, petOf, PARTY_SIZE } from '../game/party'
+import { PetPortraitImg } from './PetPortrait'
+import { openPetCard } from './PetCard'
+import { useBuild } from '../game/building'
 
 /**
- * ตัวเลือกสัตว์เพื่อนเดินทาง (มุมซ้ายล่าง): วงกลมแสดงสัตว์ที่เดินตามอยู่ + ชื่อ + ลำดับ
- * กด Z / X (หรือคลิกลูกศร) เลื่อนเลือกตัวก่อนหน้า/ถัดไป — เปลี่ยนได้ตลอดเวลา · มี 9 ช่อง
+ * เลื่อนเปลี่ยนตัวหลัก (Z/X): หยิบตัวถัดไปในทีม 9 ช่องมาเป็นตัวหลัก (ตัวเดิมยังอยู่ในทีม)
+ * ตัวที่เดินตามอยู่ตัวอื่น ๆ ยังเดินตามต่อ
  */
+export function cycleCompanion(dir: 1 | -1) {
+  const party = partySlots().filter((k): k is string => !!k)
+  const g = useGame.getState()
+  if (!g.save) return
+  if (party.length === 0) {
+    g.toast({ title: 'ยังไม่มีสัตว์ในทีม', body: 'จับสัตว์ด้วยคฑา หรือเปิดทีมสัตว์เลี้ยง (คลิกวงกลมมุมซ้ายล่าง)', tone: 'info' })
+    return
+  }
+  const active = activeKeys()
+  const lead = active[0]
+  const i = lead ? party.indexOf(lead) : -1
+  const next = party[(i + dir + party.length) % party.length]
+  if (next === lead) return
+  const rest = active.filter((k) => k !== next && k !== lead)
+  const nextActive = [next, ...(lead ? [lead] : []), ...rest].slice(0, MAX_ACTIVE)
+  const o = petOf(next)
+  useGame.setState({ save: { ...g.save, party: partySlots().map((k) => k ?? ''), activePets: nextActive, player: { ...g.save.player, pet: o?.pet ?? null } }, dirty: true, riding: false })
+  g.saveNow('event')
+}
+
+/** มุมซ้ายล่าง: สัตว์ที่เดินตามอยู่ (สูงสุด 3) · ตัวหลักวงใหญ่ · Z/X เปลี่ยนตัวหลัก · คลิก = เปิดทีมสัตว์เลี้ยง */
 export function PetPicker() {
   const save = useGame((s) => s.save)
+  const building = useBuild((s) => s.active)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
@@ -66,33 +45,55 @@ export function PetPicker() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  if (!save) return null
-  const list = companionList()
-  const cur = save.player.pet
-  const idx = list.findIndex((p) => same(p, cur))
+  // โหมดสร้าง: ซ่อนไว้ ไม่ให้ทับแถบสร้าง
+  if (!save || building) return null
+  const active = activeKeys()
+  const party = partySlots()
+  const lead = active[0] ? petOf(active[0]) : undefined
+  const others = active.slice(1).map((k) => petOf(k)).filter(Boolean)
+  const leadIdx = lead ? party.indexOf(lead.key) : -1
   return (
     <div className="pet-picker" aria-label="สัตว์เพื่อนเดินทาง">
-      <button type="button" className="pp-key" onClick={() => cycleCompanion(-1)} title="ตัวก่อนหน้า (Z)">
+      <button type="button" className="pp-key" onClick={() => cycleCompanion(-1)} title="ตัวหลักก่อนหน้า (Z)">
         Z
       </button>
       <div className="pp-main">
-        <div className={`pp-circle${cur ? '' : ' none'}`}>{cur ? <ItemIcon icon={ICON[cur.species] ?? '🐾'} /> : '—'}</div>
-        <div className="pp-dots">
-          {Array.from({ length: SLOTS }).map((_, i) => (
-            <span key={i} className={`pp-dot${i === idx ? ' on' : ''}${i < list.length ? ' has' : ''}`} />
+        <div className="pp-row">
+          <button type="button" className={`pp-circle${lead ? '' : ' none'}`} onClick={() => (lead ? openPetCard(lead.key) : openParty())} title={lead ? 'การ์ดสัตว์เลี้ยง' : 'เปิดทีมสัตว์เลี้ยง'}>
+            {lead ? <PetPortraitImg pet={lead.pet} size={56} /> : '🐾'}
+          </button>
+          {others.map((o) => (
+            <button key={o!.key} type="button" className="pp-circle small" onClick={() => openPetCard(o!.key)} title={o!.pet.name}>
+              <PetPortraitImg pet={o!.pet} size={36} />
+            </button>
+          ))}
+        </div>
+        {lead && (
+          <div className="pp-heart" title={`ความผูกพัน ${save.petHearts}/${MAX_PET_HEARTS}`}>
+            <span>❤</span>
+            <i>
+              <b style={{ width: `${(save.petHearts / MAX_PET_HEARTS) * 100}%` }} />
+            </i>
+            <small>{save.petHearts}/{MAX_PET_HEARTS}</small>
+          </div>
+        )}
+        <div className="pp-dots" title={`ทีม ${party.filter(Boolean).length}/${PARTY_SIZE}`}>
+          {party.map((k, i) => (
+            <span key={i} className={`pp-dot${k ? ' has' : ''}${k && active.includes(k) ? ' act' : ''}${i === leadIdx ? ' on' : ''}`} />
           ))}
         </div>
         <div className="pp-name">
-          {cur ? (
+          {lead ? (
             <>
-              <b>{idx >= 0 ? idx + 1 : '·'}</b> {cur.name} <small>{getSpecies(cur.species).label}</small>
+              <b>{leadIdx + 1}</b> {lead.pet.name} <small>{getSpecies(lead.pet.species).label}</small>
+              <small> · เดินตาม {active.length}/{MAX_ACTIVE}</small>
             </>
           ) : (
-            'ไม่มีสัตว์เดินตาม'
+            'ไม่มีสัตว์เดินตาม · คลิกวงกลม'
           )}
         </div>
       </div>
-      <button type="button" className="pp-key" onClick={() => cycleCompanion(1)} title="ตัวถัดไป (X)">
+      <button type="button" className="pp-key" onClick={() => cycleCompanion(1)} title="ตัวหลักถัดไป (X)">
         X
       </button>
     </div>

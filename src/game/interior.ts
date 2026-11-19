@@ -23,11 +23,32 @@ interface InteriorState {
   near: string | null
   /** อยู่ชั้นบน (ซ่อนเพดาน/ชั้นบนตอนอยู่ชั้นล่าง ให้มองจากด้านบนแบบบ้านตุ๊กตา) */
   upper: boolean
+  /** บ้านที่เข้ามา: 'home' = บ้านตารัง–ยายเลียน · หรือรหัสบ้านชาวบ้าน */
+  house: string
 }
-export const useInterior = create<InteriorState>(() => ({ inside: false, near: null, upper: false }))
+export const useInterior = create<InteriorState>(() => ({ inside: false, near: null, upper: false, house: 'home' }))
+
+/** บ้านชาวบ้าน: ประตูหน้าบ้าน (ด้านนอก) ในพิกัดโลก — ประตูอยู่ด้านหน้า (+z ของตัวบ้าน) */
+export function npcDoorOf(id: string): [number, number] | null {
+  const p = PLACES.find((q) => q.id === id)
+  if (!p) return null
+  const m = LIVE.map['place:' + id]
+  const [px, pz] = m ? [m.x, m.z] : p.pos
+  const r = m ? m.rot : p.rotation ?? 0
+  const off = p.size[1] / 2 + 0.9
+  return [px + Math.sin(r) * off, pz + Math.cos(r) * off]
+}
+/** ประตู (ด้านใน) ของบ้านชาวบ้าน พิกัดภายใน */
+export const NPC_INSIDE_DOOR: [number, number] = [0, -4.3]
+export const isNpcInterior = () => useInterior.getState().house !== 'home'
 
 /** ประตูหน้าบ้าน (ด้านนอก) ในพิกัดโลก */
 export function outsideDoor(): [number, number] {
+  const h = useInterior.getState().house
+  if (h !== 'home') {
+    const d = npcDoorOf(h)
+    if (d) return d
+  }
   const hp = PLACES.find((p) => p.id === 'home-tarang')!
   // บ้านไม้สองชั้นอยู่ที่ (−8, −5) ภายในบริเวณบ้าน · ประตูสีน้ำเงินที่ x +1.4 ด้านเหนือ (+z) หันเข้าลานในบ้าน
   const m = LIVE.map['home:main'] ?? { x: -7.5, z: -6, rot: 0 }
@@ -43,6 +64,7 @@ export const toWorld = (lx: number, lz: number): [number, number] => [INTERIOR_O
 
 /** ความสูงพื้นใต้เท้า (พิกัดภายใน) — ขึ้นบันไดได้ ชั้นบนเป็นพื้นไม้ */
 export function interiorGround(lx: number, lz: number, curY: number) {
+  if (isNpcInterior()) return 0
   const { x0, x1, zBottom, zTop } = STAIRS
   if (lx > x0 - 0.1 && lx < x1 && lz < zBottom + 0.4 && lz > zTop - 0.6) {
     const k = Math.min(1, Math.max(0, (zBottom - lz) / (zBottom - zTop)))
@@ -84,11 +106,12 @@ export const WALLS_UPPER: [number, number, number, number][] = [
 ]
 
 /** กล่องชนภายในตามชั้น */
-export function interiorColliders(upper: boolean): Rect[] {
+export function interiorColliders(upper: boolean, npc = false): Rect[] {
   const h = IW / 2
   const d = ID / 2
   const t = 0.2
   const outer = [R(-h - t, h + t, -d - t, -d), R(-h - t, h + t, d, d + t), R(-h - t, -h, -d, d), R(h, h + t, -d, d)]
+  if (npc) return [...outer, ...NPC_FURNITURE.map(([x0, x1, z0, z1]) => R(x0, x1, z0, z1))]
   const walls = (upper ? WALLS_UPPER : WALLS_GROUND).map(([x0, x1, z0, z1]) => R(x0, x1, z0, z1))
   const furniture = upper
     ? [R(3.9, 6.1, 2.85, 4.55), R(-0.4, 2.3, 2.6, 4.8), R(-7.8, -5.2, 2.6, 4.8)] // เตียง 3 ห้อง
@@ -114,3 +137,15 @@ export function interiorCameraBox(upper: boolean) {
   const [ox, oz] = INTERIOR_ORIGIN
   return { minX: ox - IW / 2 + 0.4, maxX: ox + IW / 2 - 0.4, minZ: oz - ID / 2 + 0.4, maxZ: oz + ID / 2 - 0.4, maxY: (upper ? FLOOR2 : 0) + 8 }
 }
+
+/** บ้านชาวบ้าน (ห้องโถงใหญ่ชั้นเดียว): เฟอร์นิเจอร์ที่ชน [x0, x1, z0, z1] — ใช้ทั้งชนและวาดโมเดล */
+export const NPC_FURNITURE: [number, number, number, number][] = [
+  [-7.8, -4.6, 3.2, 4.9], // ที่นอน + มุ้ง
+  [-3.6, -1.6, 4.3, 4.9], // ตู้เสื้อผ้า
+  [-1, 1, 4.5, 4.9], // หิ้งพระ
+  [2, 4.2, 4.2, 4.9], // ตู้ทีวี
+  [2.3, 3.9, 1.6, 2.6], // โต๊ะเตี้ย
+  [5.2, 7.9, 2.6, 4.9], // ครัว: เตาถ่าน + ตู้กับข้าว
+  [5.6, 7.9, -4.9, -3.4], // โอ่งน้ำ
+  [-7.8, -6, -4.9, -3.6], // ชั้นวางของ
+]

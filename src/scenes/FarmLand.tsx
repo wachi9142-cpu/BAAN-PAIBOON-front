@@ -26,6 +26,8 @@ export function FarmLand({ w, d }: { w: number; d: number }) {
       {/* ยุ้งข้าว 2 หลัง */}
       <Barn x={-7} z={5} />
       <Barn x={1} z={5.5} />
+      {/* หญ้ารก ๆ ปลูกให้ควายกิน (หญ้าเนเปียร์สูง) + ต้นไม้ขึ้นแซม */}
+      <ForageGrass w={w} d={d} />
       {/* กองฟาง */}
       {[
         [7, 4],
@@ -99,6 +101,56 @@ function Barn({ x, z }: { x: number; z: number }) {
         <meshStandardMaterial color="#8a5a34" />
       </mesh>
       <GableRoof width={3.2} depth={2.8} height={1.5} y={2.7} color="#6a4a2e" overhang={0.5} />
+    </group>
+  )
+}
+
+/** หญ้าสูงขึ้นเป็นกอ ๆ รกเต็มพื้นที่ (เว้นคอกควาย ยุ้งข้าว กองฟาง) + ต้นไม้ขึ้นแซมริมรั้ว */
+function ForageGrass({ w, d }: { w: number; d: number }) {
+  const h = w / 2 - 0.8
+  const dd = d / 2 - 0.8
+  const busy = (x: number, z: number) =>
+    (Math.abs(x + 4) < 4 && Math.abs(z + 3.5) < 3.2) || (Math.abs(x - 4.5) < 4 && Math.abs(z + 3.5) < 3.2) || (Math.abs(x + 7) < 2.2 && Math.abs(z - 5) < 2.2) || (Math.abs(x - 1) < 2.2 && Math.abs(z - 5.5) < 2.2) || (x > 5.5 && x < 10.5 && z > -0.5 && z < 7.5) || (x < -h + 2 && Math.abs(z) < 2.5)
+  const clumps: [number, number, number, number][] = []
+  let seed = 7
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280)
+  for (let i = 0; i < 140; i++) {
+    const x = -h + rnd() * h * 2
+    const z = -dd + rnd() * dd * 2
+    if (busy(x, z)) continue
+    clumps.push([x, z, 0.7 + rnd() * 0.9, rnd() * Math.PI])
+  }
+  const trees: [number, number, number][] = [
+    [-h + 0.6, dd - 0.6, 2.6],
+    [-2, dd - 0.4, 2.2],
+    [h - 0.6, dd - 0.8, 2.8],
+    [h - 0.5, -dd + 0.8, 2.3],
+    [-h + 0.8, -dd + 0.8, 2.0],
+  ]
+  return (
+    <group>
+      {clumps.map(([x, z, ht, r], i) => (
+        <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
+          {[0, 1, 2].map((k) => (
+            <mesh key={k} position={[Math.cos(k * 2.1) * 0.15, ht / 2, Math.sin(k * 2.1) * 0.15]} rotation={[Math.cos(k * 2.1) * 0.25, 0, Math.sin(k * 2.1) * 0.25]}>
+              <coneGeometry args={[0.16, ht, 4]} />
+              <meshStandardMaterial color={k === 1 ? '#6f9a3a' : '#5d8a32'} flatShading />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {trees.map(([x, z, ht], i) => (
+        <group key={'t' + i} position={[x, 0, z]}>
+          <mesh position={[0, ht / 2, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.18, ht, 6]} />
+            <meshStandardMaterial color="#6b5440" />
+          </mesh>
+          <mesh position={[0, ht + 0.5, 0]} castShadow>
+            <icosahedronGeometry args={[1.3, 0]} />
+            <meshStandardMaterial color="#4f7f38" flatShading />
+          </mesh>
+        </group>
+      ))}
     </group>
   )
 }

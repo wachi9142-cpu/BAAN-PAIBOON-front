@@ -9,6 +9,7 @@ import { Pet, petScale } from './models/Pet'
 import { PET_ANCHORS } from './models/PetOutfit'
 import { playerPose } from '../game/playerPose'
 import { templeGroundY } from '../game/content/temple'
+import { MOODS, type Mood } from '../game/party'
 import { waterAt } from '../game/content/water'
 import { waterRt } from '../game/water'
 
@@ -25,7 +26,14 @@ const LEASH_LEN = 2.2
  * - ผู้เล่นเดินออกไป → ลุกขึ้นวิ่งตาม (บางครั้งส่งเสียงร้อง)
  * - จูงอยู่ → เดินชิดผู้เล่น มีสายจูงจากมือถึงคอ และวิ่งเล่นได้แค่ในระยะสายจูง
  */
-export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, number] }) {
+/** ตำแหน่งในขบวน (สูงสุด 3 ตัว): [ระยะถอยหลัง+, ด้านข้าง] */
+const FORMATION: [number, number][] = [
+  [0, 0.6],
+  [0.5, -0.9],
+  [1.5, 0],
+]
+export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: PetChoice; start: [number, number]; slot?: number; mood?: Mood }) {
+  const M = MOODS[mood]
   const info = getSpecies(pet.species)
   const root = useRef<Group>(null)
   const leash = useRef<Mesh>(null)
@@ -44,18 +52,21 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
 
   useFrame(({ clock }, rawDt) => {
     const g = useGame.getState()
-    const leashed = !!g.save?.petLeashed
+    // จูงได้เฉพาะตัวหลัก (ตัวแรก)
+    const leashed = slot === 0 && !!g.save?.petLeashed
     if (g.paused) return
     const dt = Math.min(rawDt, 0.05)
     const { x: px, z: pz, heading: ph, motion: pm } = playerPose
-    const back = leashed ? Math.min(info.followDistance, 1.1) : info.followDistance
-    const side = leashed ? 0.5 : 0.6
+    const [fb, fs] = FORMATION[slot] ?? FORMATION[0]
+    const back = leashed ? Math.min(info.followDistance, 1.1) : info.followDistance * M.follow + fb
+    const side = leashed ? 0.5 : fs
     let tx = px - Math.sin(ph) * back + Math.cos(ph) * side
     let tz = pz - Math.cos(ph) * back - Math.sin(ph) * side
 
     let [x, z] = pos.current
     // เจ้าของหมดแรงกลางน้ำ: สัตว์ตัวใหญ่กระโดดลงไปว่ายเคียงข้าง แล้วลากเข้าฝั่งด้วยกัน
-    const rescuing = !!waterRt.rescue?.byPet
+    // ลากเข้าฝั่ง: ตัวหลักเท่านั้น
+    const rescuing = slot === 0 && !!waterRt.rescue?.byPet
     if (rescuing) {
       tx = px + Math.cos(ph) * 0.55
       tz = pz - Math.sin(ph) * 0.55
@@ -112,7 +123,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
         if (pose.current > 0 && Math.random() < 0.5) playPetSound(pet, 0.8)
         idle.current = 0
         play.current.until = 0
-        play.current.next = 6 + Math.random() * 6
+        play.current.next = (6 + Math.random() * 6) * M.play
       } else {
         idle.current += dt
       }
@@ -121,7 +132,7 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       const fromPlayer = Math.hypot(px - x, pz - z)
       const pulled = leashed && fromPlayer > LEASH_LEN
       const running = rescuing || playing || pulled || dist > 3 || pm === 2
-      const speed = rescuing ? 7 : playing ? 5 : Math.min(12, 2.5 + dist * 2.2 + (pm === 2 ? 3 : 0) + (pulled ? 3 : 0))
+      const speed = (rescuing ? 7 : playing ? 5 : Math.min(12, 2.5 + dist * 2.2 + (pm === 2 ? 3 : 0) + (pulled ? 3 : 0))) * M.speed
       const step = Math.min(dist, speed * dt)
       x += (dx / dist) * step
       z += (dz / dist) * step
@@ -131,11 +142,11 @@ export function PetFollower({ pet, start }: { pet: PetChoice; start: [number, nu
       motion.current = 0
       idle.current += dt
       turnToward(Math.atan2(px - x, pz - z), dt * 0.5)
-      pose.current = idle.current > LIE_AFTER ? 2 : idle.current > SIT_AFTER ? 1 : 0
+      pose.current = idle.current > LIE_AFTER * M.sit ? 2 : idle.current > SIT_AFTER * M.sit ? 1 : 0
       // ถึงเวลาวิ่งเล่น (ยังไม่ง่วงนอน)
       if (pose.current < 2 && idle.current > play.current.next && !info.flies) {
         play.current.until = idle.current + 3 + Math.random() * 2.5
-        play.current.next = play.current.until + 8 + Math.random() * 8
+        play.current.next = play.current.until + (8 + Math.random() * 8) * M.play
         play.current.angle = Math.atan2(x - px, z - pz)
         play.current.dir = Math.random() < 0.5 ? 1 : -1
         if (Math.random() < 0.4) playPetSound(pet, 0.7)

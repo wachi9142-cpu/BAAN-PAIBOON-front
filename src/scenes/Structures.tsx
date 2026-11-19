@@ -6,6 +6,7 @@ import { blockedZones, buildArea, footprint, rectOf, STRUCTURES, type PlacedStru
 import type { Rect } from '../game/content/temple'
 import { RBox } from './models/RBox'
 import { useHold } from './HoldInteract'
+import { GrayOut } from './GrayOut'
 
 /** สิ่งปลูกสร้างที่ผู้เล่นวางไว้ + เลเยอร์โหมดสร้าง */
 export function Structures() {
@@ -24,7 +25,9 @@ export function Structures() {
         return (
           <group key={s.uid}>
             <group position={[x, d ? 0.25 : 0, z]} rotation={[0, (rot * Math.PI) / 2, 0]}>
-              <StructureModel id={s.id} />
+              <GrayOut on={!!d}>
+                <StructureModel id={s.id} />
+              </GrayOut>
             </group>
             {d && <ZoneRect r={rectOf(s.id, x, z, rot)} color={d.ok ? '#3fcf6a' : '#e0443a'} opacity={0.55} y={0.06} />}
           </group>

@@ -2,6 +2,7 @@
  * โหมดสร้าง (กด B): เลือกสิ่งปลูกสร้าง → คลิกพื้นในที่ดินของตัวเองเพื่อวาง (หักวัตถุดิบ)
  * โหมด "เก็บคืน" คลิกของที่วางแล้วเพื่อรื้อ ได้วัตถุดิบคืนครบ (ใช้ย้ายที่ได้)
  */
+import { recordEdit } from './editHistory'
 import { create } from 'zustand'
 import { useGame } from './store'
 import { canAfford } from './inventory'
@@ -89,6 +90,7 @@ export function placeAt(x: number, z: number) {
   const save = stored > 0
     ? { ...g.save, storedStructures: { ...g.save.storedStructures, [tool]: stored - 1 }, structures: [...g.save.structures, s] }
     : { ...g.save, inventory: spend(g.save.inventory, def.cost), structures: [...g.save.structures, s] }
+  recordEdit()
   useGame.setState({ save, dirty: true })
   g.saveNow('event')
   toast(`${def.icon} ${stored > 0 ? 'วาง' : 'สร้าง'}${def.name}แล้ว`, stored > 0 ? 'เอาออกจากคลังมาวาง' : def.note, 'success')
@@ -124,6 +126,7 @@ export function removeStructure(uid: string) {
   }
   const chests = { ...g.save.chests }
   delete chests[uid]
+  recordEdit()
   useGame.setState({ save: { ...g.save, inventory, chests, structures: g.save.structures.filter((t) => t.uid !== uid) }, dirty: true })
   g.saveNow('event')
   toast(`รื้อ${def.name}แล้ว`, 'ได้วัตถุดิบคืน: ' + costText(def.cost), 'info')
@@ -194,6 +197,7 @@ export function moveStructure(uid: string, x: number, z: number, rot: number): s
   const others = g.save.structures.filter((t) => t.uid !== uid)
   const why = canPlace(s.id, x, z, rot, others, g.save.ownedPlotIds)
   if (why) return why
+  recordEdit()
   useGame.setState({ save: { ...g.save, structures: g.save.structures.map((t) => (t.uid === uid ? { ...t, x, z, rot } : t)) }, dirty: true })
   g.saveNow('event')
   return null
@@ -222,6 +226,7 @@ export function storeStructure(uid: string) {
   delete chests[uid]
   const stored = { ...(g.save.storedStructures ?? {}) }
   stored[s.id] = (stored[s.id] ?? 0) + 1
+  recordEdit()
   useGame.setState({ save: { ...g.save, chests, storedStructures: stored, structures: g.save.structures.filter((t) => t.uid !== uid) }, dirty: true })
   g.saveNow('event')
   toast(`📦 เก็บ${def.name}เข้าคลังแล้ว`, 'กดค้างที่พื้นว่างในบ้าน → เลือกของในคลังเพื่อวางใหม่', 'info')

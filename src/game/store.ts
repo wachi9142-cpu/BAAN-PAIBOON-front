@@ -53,6 +53,18 @@ export interface SaveData {
   collection: CaughtAnimal[]
   /** สัตว์เลี้ยงตัวแรกที่เลือกตอนสร้างตัวละคร (ไม่หายแม้สลับตัวที่เดินตาม) */
   homePet: PetChoice | null
+  /** ทีมสัตว์เลี้ยง 9 ช่อง (กุญแจ: 'home' หรือ uid · '' = ช่องว่าง) */
+  party?: string[]
+  /** กิจกรรมเทศกาลที่ทำแล้ว (วันที่:กิจกรรม · ปี:เทศกาล) */
+  festivalLog?: Record<string, boolean>
+  /** สภาพอากาศตอนนี้ (โลกมีวงจรของตัวเอง) */
+  weather?: import('./weather').WeatherSave
+  /** หนังสือเมนูส่วนตัว: การตกแต่ง + โครงสร้าง */
+  book?: import('./bookStyle').BookStyle
+  /** สถานะรายตัวของสัตว์ (การ์ดสัตว์เลี้ยง) */
+  petCare?: Record<string, import('./petCare').PetCare>
+  /** สัตว์ที่เรียกออกมาเดินตาม (สูงสุด 3 · ตัวแรก = ตัวหลัก) */
+  activePets?: string[]
   /** จำนวนครั้งที่แปะทองพระประธาน (เห็นทองบนองค์พระเพิ่มขึ้น) */
   goldLeaf?: number
   /** ภารกิจที่รับจากชาวบ้าน (ยังไม่เสร็จ) */

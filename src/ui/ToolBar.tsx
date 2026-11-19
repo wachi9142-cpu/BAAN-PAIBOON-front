@@ -8,6 +8,7 @@ import { ITEMS, type ItemId } from '../game/content/items'
 import { eat } from '../game/garden'
 import { itemIcon3D } from '../game/itemIcons'
 import { create } from 'zustand'
+import { useBuild } from '../game/building'
 
 /** ช่องที่เลือกอยู่ในแถบไอเทม (0–8) */
 export const useHotbar = create<{ sel: number }>(() => ({ sel: 0 }))
@@ -50,7 +51,10 @@ export function ToolBar() {
   const sel = useHotbar((st) => st.sel)
   // ชื่อของช่องที่เลือก (แสดงเหนือแถบ)
   const cur = slots[sel]?.kind === 'item' ? slots[sel] : slots.find((x) => x.kind === 'tool' && x.tool === equipped)
+  // โหมดสร้าง: ซ่อนแถบไอเทม ไม่ให้ซ้อนกับแถบสร้าง
+  const building = useBuild((st) => st.active)
   const curName = cur ? (cur.kind === 'tool' ? (cur.tool === 'wand' ? 'คฑา' : CHOP_TOOLS[cur.tool].name) : `${ITEMS[cur.id].name} ×${cur.qty}`) : ''
+  if (building) return null
   return (
     <div className="hotbar-wrap">
       {equipped === 'wand' && (

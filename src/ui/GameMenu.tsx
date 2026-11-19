@@ -201,7 +201,7 @@ function CharacterTab({ onDone }: { onDone: () => void }) {
 }
 
 /** กระเป๋า (ช่องใส่ของ) — ระบบของในกระเป๋ามาใน Part 7 */
-function BagTab({ onCraft }: { onCraft: () => void }) {
+export function BagTab({ onCraft }: { onCraft: () => void }) {
   const save = useGame((s) => s.save)!
   const cap = bagSlots(save.bagLevel)
   const slots = toSlots(save.inventory)
@@ -465,7 +465,7 @@ function useFullscreen() {
   return [on, set] as const
 }
 
-function SettingsTab() {
+export function SettingsTab() {
   const settings = useSettings()
   const [full, setFull] = useFullscreen()
   const mode = full ? 'full' : settings.displaySize

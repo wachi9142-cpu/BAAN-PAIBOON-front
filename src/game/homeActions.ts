@@ -3,7 +3,8 @@
  */
 import { create } from 'zustand'
 import { useGame } from './store'
-import { INSIDE_DOOR, INTERIOR_ORIGIN, FLOOR2, outsideDoor, toWorld, useInterior } from './interior'
+import { INSIDE_DOOR, INTERIOR_ORIGIN, FLOOR2, NPC_INSIDE_DOOR, outsideDoor, toWorld, useInterior } from './interior'
+import { PLACES } from './content/village'
 
 export const useHomeTv = create<{ on: boolean; on2: boolean }>(() => ({ on: false, on2: false }))
 
@@ -29,24 +30,37 @@ export const HOME_SPOTS: HomeSpot[] = [
   { id: 'tv2', label: '📺 เปิด/ปิดทีวีชั้นบน', x: 0, z: -2.9, upper: true },
 ]
 
-export function enterHome() {
+export function enterHome(house = 'home') {
+  if (house !== 'home') {
+    // บ้านชาวบ้าน: ห้องโถงใหญ่ชั้นเดียว (ห้องนอน มุ้ง หิ้งพระ ทีวี ครัว โอ่งน้ำ)
+    const [x, z] = toWorld(NPC_INSIDE_DOOR[0], NPC_INSIDE_DOOR[1] + 0.6)
+    warp.pending = { x, z, heading: 0, y: 0 }
+    useInterior.setState({ inside: true, house, upper: false })
+    const name = PLACES.find((p) => p.id === house)?.name ?? 'บ้านชาวบ้าน'
+    useGame.getState().toast({ title: '🏠 เข้า' + name, body: 'เดินดูในบ้านได้ · กลับมาที่ประตูกด E เพื่อออก', tone: 'info' })
+    return
+  }
   const [x, z] = toWorld(INSIDE_DOOR[0], INSIDE_DOOR[1] + 0.6)
   warp.pending = { x, z, heading: 0, y: 0 }
-  useInterior.setState({ inside: true })
+  useInterior.setState({ inside: true, house: 'home' })
   useGame.getState().toast({ title: '🏡 เข้าบ้านตารัง–ยายเลียน', body: 'เดินดูได้ทั้งชั้นล่างและชั้นบน (บันไดชิดผนังขวา) · กลับมาที่ประตูกด E เพื่อออกจากบ้าน', tone: 'info' })
 }
 
 export function exitHome() {
   const [x, z] = outsideDoor()
   // ออกจากบ้านทางประตูด้านเหนือ: หันหน้าไปทางเหนือ (ลานในบ้าน)
-  warp.pending = { x, z, heading: 0, y: 0 }
-  useInterior.setState({ inside: false })
+  // ออกมาแล้วหันหลังให้ประตู
+  const h = useInterior.getState().house
+  const p = PLACES.find((q) => q.id === h)
+  warp.pending = { x, z, heading: h === 'home' ? 0 : p?.rotation ?? 0, y: 0 }
+  useInterior.setState({ inside: false, house: 'home' })
 }
 
 export function findHomeSpot(wx: number, wz: number, wy: number): string | null {
   const lx = wx - INTERIOR_ORIGIN[0]
   const lz = wz - INTERIOR_ORIGIN[1]
   const upper = wy > FLOOR2 * 0.5
+  if (useInterior.getState().house !== 'home') return Math.hypot(NPC_INSIDE_DOOR[0] - lx, NPC_INSIDE_DOOR[1] - lz) < 1.4 ? 'exit' : null
   let best: string | null = null
   let bd = 1.4
   for (const s of HOME_SPOTS) {

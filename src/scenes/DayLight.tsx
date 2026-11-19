@@ -6,6 +6,7 @@ import { exactMinute } from '../game/clock'
 import { LIGHT_KEYS, type LightKey } from '../game/content/daytime'
 import { PLACES } from '../game/content/village'
 import { TEMPLE } from '../game/content/temple'
+import { weatherRt } from '../game/weather'
 
 const tmpA = new Color()
 const tmpB = new Color()
@@ -69,6 +70,12 @@ export function DayLight() {
     // ท้องฟ้า: ตำแหน่งดวงอาทิตย์ในเชดเดอร์ (ใต้ขอบฟ้า = ฟ้ามืด)
     const mat = skyRef.current?.material as unknown as { uniforms?: { sunPosition: { value: { set: (x: number, y: number, z: number) => void } } } }
     mat?.uniforms?.sunPosition.value.set(Math.cos(ang), s.sun, 0.3)
+    // สภาพอากาศ: เมฆบังแดด แสงหม่น หมอกสีเทา · ฟ้าแลบสว่างวาบ
+    const cl = weatherRt.cloud
+    sunRef.current.intensity *= 1 - 0.78 * cl
+    hemiRef.current.intensity *= 1 - 0.32 * cl
+    ambRef.current.intensity = ambRef.current.intensity * (1 - 0.2 * cl) + weatherRt.flash * 2.2
+    fog.color.lerp(tmpB.set('#9aa2a8'), Math.min(0.75, cl * 0.6 + weatherRt.fog * 0.4))
     // ไฟตะเกียงยามค่ำ
     for (const l of lampRefs.current) if (l) l.intensity = s.lamps * 7
   })

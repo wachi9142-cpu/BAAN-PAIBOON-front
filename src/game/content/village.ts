@@ -262,15 +262,16 @@ export const PLACES: Place[] = [
     id: 'farm-soi2',
     name: 'คอกควายและยุ้งข้าว (พื้นที่ส่วนบุคคล)',
     kind: 'farm',
-    pos: [-20, 34],
-    size: [24, 18],
+    // ผู้สร้าง 19 พ.ย. 2569: สลับฝั่ง — แถวบ้าน (บ้านพ่อน้องน้ำฝน) อยู่ใกล้ปากซอย · คอกควายอยู่ลึกเข้าไปจนถึงทางแยก ฝั่งเหนือเป็นหญ้ารก ๆ ปลูกให้ควายกิน
+    pos: [-20, 40.5],
+    size: [24, 17],
     arriveText: 'พื้นที่ส่วนบุคคลกว้าง มีรั้วล้อม คอกควาย ยุ้งข้าว กองฟาง',
     solidRadius: 0,
   },
   // ตรงข้ามบ้านตารัง–ยายเลียน (ฝั่งใต้ถนนดินแดง): บ้านพ่อน้องน้ำฝน (หลังคาม่วง) + บ้านอีก 2 หลังในกลุ่มเดียวกัน
-  { id: 'house-namfon', name: 'บ้านพ่อน้องน้ำฝน', kind: 'npchouse', houseStyle: 'concrete', roof: '#4f3a7a', pos: [-26.5, 48.5], size: [6, 5], color: '#e8dcc0', solidRadius: 4.2 },
-  { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-17.5, 48.5], size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
-  { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-8.5, 48.5], size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
+  { id: 'house-namfon', name: 'บ้านพ่อน้องน้ำฝน', kind: 'npchouse', houseStyle: 'concrete', roof: '#4f3a7a', pos: [-28.5, 28], rotation: -Math.PI / 2, size: [6, 5], color: '#e8dcc0', solidRadius: 4.2 },
+  { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-19.5, 28], rotation: Math.PI, size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
+  { id: 'house-kham', name: 'บ้านป้าคำ', kind: 'npchouse', pos: [-10.5, 28], rotation: Math.PI, size: [6, 5], color: '#b89a72', solidRadius: 4.2 },
   { id: 'house-dam', name: 'บ้านพี่ดำ', kind: 'npchouse', pos: [58, 14], size: [6, 5], color: '#6e4f37', solidRadius: 4.2 },
   // ฝั่งตะวันตกของซอย 2 ช่วงที่ 2 (เดิมเป็นทุ่งนา): บ้านยายแดงตรงข้ามบ้านฟ่างพอดี · บ้านยายวานอยู่ลึกเข้าไป (ตรงที่เคยเป็นนา) หน้าบ้านเป็นลานกว้าง
   { id: 'house-daeng', name: 'บ้านยายแดง', kind: 'npchouse', pos: [-45, 66], rotation: Math.PI / 2, size: [6, 5], color: '#b0704a', arriveText: 'บ้านยายแดง ลูกสาวอี๊ดเอี๊ยง หลานน้องไม้วายุ · อยู่ตรงข้ามบ้านฟ่างพอดี', solidRadius: 4.2 },

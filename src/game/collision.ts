@@ -1,4 +1,4 @@
-import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, homeSolids } from '../scenes/GrandHome'
+import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, HOME_SIDE_GAP, homeSolids } from '../scenes/GrandHome'
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
@@ -131,7 +131,9 @@ export function homeWalls(): Rect[] {
   // มุม (x0, z1) เว้นเป็นทางลัดไม่มีรั้ว
   out.push({ minX: cx + x0 + HOME_CORNER_GAP, maxX: cx + HOME_BACK_GATE.x - HOME_BACK_GATE.half, minZ: cz + z1 - t, maxZ: cz + z1 + t })
   out.push({ minX: cx + HOME_BACK_GATE.x + HOME_BACK_GATE.half, maxX: cx + x1, minZ: cz + z1 - t, maxZ: cz + z1 + t })
-  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + z0, maxZ: cz + z1 - HOME_CORNER_GAP })
+  // ฝั่งซอย 2: เว้นช่องทางเข้าออกข้างรถ
+  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + z0, maxZ: cz + HOME_SIDE_GAP.z - HOME_SIDE_GAP.half })
+  out.push({ minX: cx + x0 - t, maxX: cx + x0 + t, minZ: cz + HOME_SIDE_GAP.z + HOME_SIDE_GAP.half, maxZ: cz + z1 - HOME_CORNER_GAP })
   out.push({ minX: cx + x1 - t, maxX: cx + x1 + t, minZ: cz + z0, maxZ: cz + z1 })
   return out
 }

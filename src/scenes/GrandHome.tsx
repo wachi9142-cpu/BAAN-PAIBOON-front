@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { CanvasTexture, RepeatWrapping } from 'three'
 import { RBox } from './models/RBox'
 import { CashewTree } from './models/CashewTree'
+import { WaterTower } from './models/WaterTower'
 import { Editable } from './Editable'
 import { LIVE } from '../game/layoutEdit'
 import { PLACES } from '../game/content/village'
@@ -24,6 +25,8 @@ export const HOME_BOX = { x0: -15, x1: 39, z0: -13, z1: 38 }
 export const HOME_BACK_GATE = { x: 1.5, half: 4.5 }
 /** มุมรั้วด้านซอย 2 ฝั่งถนนหลังบ้าน (มุม x0, z1) ไม่มีรั้ว เป็นพื้นที่ว่างทางลัดเดินเข้าออก — เว้นกี่เมตรจากมุมทั้งสองด้าน */
 export const HOME_CORNER_GAP = 4
+/** ช่องทางเข้าออกที่รั้วฝั่งซอย 2 (ข้างรถ หน้ายุ้งข้าว) ไม่มีรั้ว (ผู้สร้าง 19 พ.ย. 2569): z กลางช่อง · ครึ่งความกว้าง */
+export const HOME_SIDE_GAP = { z: 8.5, half: 4.5 }
 export const HOME_W = HOME_BOX.x1 - HOME_BOX.x0
 export const HOME_D = HOME_BOX.z1 - HOME_BOX.z0
 const BOX_CX = (HOME_BOX.x0 + HOME_BOX.x1) / 2
@@ -41,6 +44,7 @@ const BASE_SOLIDS: [number, number, number, number, string][] = [
   [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
   [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
   [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
+  [4, 17, 3.2, 3.2, 'watertower'], // หอถังน้ำ (เสา 4 ต้น)
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
 export function homeSolids(): [number, number, number, number][] {
@@ -108,6 +112,11 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
+      <Editable id="home:watertower" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={4} z={17} r={2.6} origin={O}>
+        <group position={[4, 0, 17]}>
+          <WaterTower />
+        </group>
+      </Editable>
       <Editable id="home:veggarden" name="สวนผักสวนดอกไม้" x={2.2} z={2.5} r={3} origin={O}>
         <VegFlowerGarden x={2.2} z={2.5} />
       </Editable>
@@ -147,7 +156,8 @@ export function GrandHome() {
         <planeGeometry args={[HOME_BACK_GATE.half * 2 - 1, 6]} />
         <meshStandardMaterial color="#b8865a" roughness={1} />
       </mesh>
-      <PicketFence x={x0} z={(z0 + z1 - HOME_CORNER_GAP) / 2} len={HOME_D - HOME_CORNER_GAP} rot={Math.PI / 2} />
+      <PicketFence x={x0} z={(z0 + HOME_SIDE_GAP.z - HOME_SIDE_GAP.half) / 2} len={HOME_SIDE_GAP.z - HOME_SIDE_GAP.half - z0} rot={Math.PI / 2} />
+      <PicketFence x={x0} z={(HOME_SIDE_GAP.z + HOME_SIDE_GAP.half + z1 - HOME_CORNER_GAP) / 2} len={z1 - HOME_CORNER_GAP - HOME_SIDE_GAP.z - HOME_SIDE_GAP.half} rot={Math.PI / 2} />
       <PicketFence x={x1} z={BOX_CZ} len={HOME_D} rot={Math.PI / 2} />
       {/* ป้ายหน้าบ้าน */}
       <group position={[HOME_GATE[0] + 2.6, 0, z0 - 0.3]}>

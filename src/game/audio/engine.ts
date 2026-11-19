@@ -63,6 +63,11 @@ class AudioEngine {
     if (this.ctx.state === 'suspended') void this.ctx.resume()
   }
 
+  /** ให้ระบบเสียงอื่น (อากาศ) ต่อเข้า bus เดียวกัน · null = ยังไม่ปลดล็อกเสียง */
+  outputs(): { ctx: AudioContext; ambience: GainNode; sfx: GainNode } | null {
+    return this.ctx ? { ctx: this.ctx, ambience: this.buses.ambience, sfx: this.buses.sfx } : null
+  }
+
   get unlocked() {
     return !!this.ctx && this.ctx.state === 'running'
   }

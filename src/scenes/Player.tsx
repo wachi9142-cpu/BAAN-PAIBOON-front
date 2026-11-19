@@ -3,7 +3,7 @@ import { useLayoutEdit } from '../game/layoutEdit'
 import { GAIT_MOTION, GAIT_SPEED, jumpReq, stepTick, stick, surfaceAt, useMove, type Gait } from '../game/movement'
 import { useWater, waterRt } from '../game/water'
 import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
-import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, outsideDoor, useInterior } from '../game/interior'
+import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
 import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { findChest, useChests } from '../game/treasure'
@@ -101,7 +101,15 @@ function useOrbit() {
         return
       }
       if (!dragging) return
-      const s = useSettings.getState().mouseSensitivity
+      // กำลังวางของ (เลือกของในโหมดสร้างอยู่): กล้องเลื่อนช้าลงมาก ไม่ให้ทั้งฉากเลื่อนตามเมาส์ · วางจากเมนู = ล็อกนิ่ง
+      const b = useBuild.getState()
+      const placing = b.active && !!b.tool && b.tool !== 'remove'
+      if (placing && b.once) {
+        lx = e.clientX
+        ly = e.clientY
+        return
+      }
+      const s = useSettings.getState().mouseSensitivity * (placing ? 0.25 : 1)
       orbit.current.yaw -= (e.clientX - lx) * 0.006 * s
       orbit.current.pitch = Math.min(1.2, Math.max(0.12, orbit.current.pitch + (e.clientY - ly) * 0.004 * s))
       lx = e.clientX
@@ -111,6 +119,8 @@ function useOrbit() {
     const wheel = (e: WheelEvent) => {
       e.preventDefault()
       if (useLayoutEdit.getState().dragging) return
+      const b = useBuild.getState()
+      if (b.active && b.tool && b.tool !== 'remove') return // ล้อเมาส์ = หมุนของ
       orbit.current.dist = Math.min(32, Math.max(4, orbit.current.dist + e.deltaY * 0.01))
     }
     el.addEventListener('pointerdown', down)
@@ -133,7 +143,12 @@ const WALK = 4.2
 const RUN = 8
 
 export function Player() {
-  const save = useGame((s) => s.save)!
+  // อ่านเฉพาะส่วนที่ใช้ (ตำแหน่งที่บันทึกทุก 3 วิ ไม่ทำให้ตัวละครวาดใหม่ทั้งตัว = ไม่กระตุก)
+  const player = useGame((s) => s.save!.player)
+  const structures = useGame((s) => s.save!.structures)
+  const houseDesignId = useGame((s) => s.save!.home.houseDesignId)
+  const save0 = useRef(useGame.getState().save!).current
+  const save = { position: save0.position, heading: save0.heading, player, structures, home: { houseDesignId } }
   const updatePosition = useGame((s) => s.updatePosition)
   const discoverPlace = useGame((s) => s.discoverPlace)
   const setNearby = useGame((s) => s.setNearby)
@@ -172,7 +187,7 @@ export function Player() {
   const layoutVer = useLayoutEdit((s) => s.ver)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures, layoutVer])
-  const homeCol = useMemo(() => ({ low: interiorColliders(false), up: interiorColliders(true) }), [])
+  const homeCol = useMemo(() => ({ low: interiorColliders(false), up: interiorColliders(true), npc: interiorColliders(false, true) }), [])
   // โหลดเซฟตอนอยู่ในบ้าน → อยู่ในบ้านต่อ
   useEffect(() => {
     useInterior.setState({ inside: isInterior(save.position[0], save.position[1]) })
@@ -343,7 +358,7 @@ export function Player() {
       const insideNow = useInterior.getState().inside
       const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
       const before = pos.current
-      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? (upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
+      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? (useInterior.getState().house !== 'home' ? homeCol.npc : upperNow ? homeCol.up : homeCol.low) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
       // ท่าตามความเร็วจริง (ตอนชะลอจะเปลี่ยนจากวิ่ง → เดินเร็ว → เดินช้า → หยุด)
       const ageK = AGE_RULES[save.player.appearance.age ?? 'adult'].walkSpeed
       const g: Gait = sp < 0.35 ? 'stand' : sp > 6 * ageK ? 'run' : sp > 3.9 * ageK ? 'fast' : 'slow'
@@ -392,7 +407,7 @@ export function Player() {
       const inHome = useInterior.getState().inside
       const gy = inHome ? interiorGround(x - INTERIOR_ORIGIN[0], z - INTERIOR_ORIGIN[1], root.current.position.y) : templeGroundY(x, z)
       // ขี่อยู่: ยกตัวขึ้นนั่งบนหลังสัตว์
-      const rideY = useGame.getState().riding ? rideHeight(save) : 0
+      const rideY = useGame.getState().riding ? rideHeight(useGame.getState().save!) : 0
       const jp = airP >= 0 ? 4 * JUMP_H * airP * (1 - airP) : 0
       const targetY = gy + rideY + wf.sink
       if (pp) {
@@ -467,6 +482,17 @@ export function Player() {
       else {
         const [dx, dz] = outsideDoor()
         if (Math.hypot(dx - x, dz - z) < 1.8) hn = 'enter'
+        else {
+          // ประตูบ้านชาวบ้านทุกหลัง: เข้าไปดูในบ้านได้
+          for (const p of PLACES) {
+            if (p.kind !== 'npchouse') continue
+            const dd = npcDoorOf(p.id)
+            if (dd && Math.hypot(dd[0] - x, dd[1] - z) < 2) {
+              hn = 'enter:' + p.id
+              break
+            }
+          }
+        }
       }
       if (ins.near !== hn) useInterior.setState({ near: hn })
       const up = ins.inside && (root.current?.position.y ?? 0) > FLOOR2 * 0.5

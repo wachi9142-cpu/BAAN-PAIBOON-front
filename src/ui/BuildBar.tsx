@@ -1,9 +1,11 @@
+import './buildbar.css'
 import { useGame } from '../game/store'
 import { costText, moveItem, placeProblem, rotateTool, toggleBuild, useBuild, type BuildTool } from '../game/building'
 import { canAfford } from '../game/inventory'
 import { CHEST_SLOTS, STRUCTURE_LIST } from '../game/content/structures'
 import { bagSlots, ITEMS, slotsUsed, type ItemId } from '../game/content/items'
 import { ItemIcon } from './ItemIcon'
+import { HistoryButtons } from './EditHistoryBar'
 
 /** แถบโหมดสร้าง (ล่างจอ): เลือกสิ่งปลูกสร้าง · หมุน · เก็บคืน · ออก */
 export function BuildBar() {
@@ -18,25 +20,34 @@ export function BuildBar() {
   return (
     <div className="build-bar" role="toolbar" aria-label="โหมดสร้าง">
       <div className="build-head">
-        <strong>🔨 โหมดสร้าง</strong>
-        <span className="build-tip">
-          {tool === 'remove'
-            ? 'คลิกสิ่งปลูกสร้างเพื่อรื้อ (ได้วัตถุดิบคืนครบ)'
-            : tool
-              ? why
-                ? `❌ ${why}`
-                : '✅ คลิกพื้นเพื่อวาง · ลากเมาส์หมุนกล้องได้'
-              : 'เลือกของที่จะสร้าง · พื้นสีเขียว = สร้างได้ · สีแดง = สร้างไม่ได้'}
-        </span>
-        <button type="button" className="btn small ghost" onClick={rotateTool} title="หมุน (R)">
-          ↻ หมุน (R)
-        </button>
-        <button type="button" className={`btn small ghost${tool === 'remove' ? ' on' : ''}`} onClick={() => pick('remove')}>
-          🧹 รื้อ/ย้าย
-        </button>
-        <button type="button" className="btn small" onClick={() => toggleBuild(false)}>
-          เสร็จแล้ว (B)
-        </button>
+        <div className="build-title">
+          <span className="build-badge">🔨</span>
+          <div>
+            <strong>โหมดสร้าง</strong>
+            <span className={'build-tip' + (why ? ' bad' : '')}>
+              {tool === 'remove'
+                ? 'คลิกสิ่งปลูกสร้างเพื่อรื้อ (ได้วัตถุดิบคืนครบ)'
+                : tool
+                  ? why
+                    ? '❌ ' + why
+                    : '✅ คลิกพื้นเพื่อวาง · R หรือล้อเมาส์ = หมุนของ (กล้องไม่หมุนตาม)'
+                  : 'เลือกของที่จะสร้าง · พื้นเขียว = สร้างได้ · แดง = ไม่ได้'}
+            </span>
+          </div>
+        </div>
+        <div className="build-actions">
+          <HistoryButtons />
+          <span className="build-sep" />
+          <button type="button" className="build-act" onClick={rotateTool} title="หมุน (R)">
+            <span>↻</span>หมุน (R)
+          </button>
+          <button type="button" className={'build-act' + (tool === 'remove' ? ' on' : '')} onClick={() => pick('remove')} title="รื้อ/ย้าย">
+            <span>✥</span>รื้อ/ย้าย
+          </button>
+          <button type="button" className="build-act done" onClick={() => toggleBuild(false)} title="เสร็จแล้ว (B)">
+            <span>✓</span>เสร็จแล้ว (B)
+          </button>
+        </div>
       </div>
       <div className="build-items">
         {STRUCTURE_LIST.map((d) => {
@@ -49,9 +60,12 @@ export function BuildBar() {
               onClick={() => pick(d.id)}
               title={d.note}
             >
-              <span className="build-icon">{d.icon}</span>
+              <span className="build-icon">
+                <ItemIcon icon={d.icon} />
+              </span>
               <span className="build-name">{d.name}</span>
               <small>{costText(d.cost)}</small>
+              {!ok && <em className="build-poor">วัตถุดิบไม่พอ</em>}
             </button>
           )
         })}

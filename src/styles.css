@@ -2830,3 +2830,204 @@ button.save-ind:hover {
   padding: 3px 12px; border-radius: 999px; background: rgba(30, 24, 18, 0.7); color: #fff3cf;
   font: 600 13px 'Mitr', sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
+
+/* ---------- ทีมสัตว์เลี้ยง ---------- */
+.pp-row { display: flex; align-items: flex-end; gap: 4px; }
+.pp-circle { padding: 0; overflow: hidden; cursor: pointer; }
+.pp-circle.small { width: 40px; height: 40px; border-width: 2px; border-color: #7fd08a; }
+.pp-dot.act { background: #7fd08a; }
+.pp-wait { display: block; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.6), rgba(200, 190, 170, 0.4)); }
+.party-win { width: min(940px, calc(100vw - 32px)); max-height: 88vh; overflow: auto; }
+.party-head { display: flex; align-items: center; gap: 14px; }
+.party-head h3 { margin: 0; }
+.party-count { flex: 1; color: #6a6a52; }
+.party-count b { color: #3f5a2e; }
+.party-count b.act { color: #2f8a3a; }
+.party-body { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; margin-top: 12px; }
+@media (max-width: 760px) { .party-body { grid-template-columns: 1fr; } }
+.party-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.party-slot {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px 6px;
+  border-radius: 16px; border: 2px solid rgba(80, 90, 60, 0.18); cursor: pointer; font: inherit;
+  background: radial-gradient(circle at 50% 30%, #fffdf6, #efe6d2); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.party-slot.empty { cursor: default; opacity: 0.6; }
+.party-slot.sel { border-color: #ffd23a; box-shadow: 0 0 0 3px rgba(255, 210, 58, 0.4); }
+.party-slot.active { background: radial-gradient(circle at 50% 30%, #f4fff0, #d8f0cf); border-color: #7fd08a; }
+.party-no { position: absolute; left: 8px; top: 4px; font-size: 11px; color: #8a8a72; }
+.party-plus { width: 64px; height: 64px; display: grid; place-items: center; font-size: 26px; color: #b8b09a; }
+.party-name { font-size: 13px; color: #3a3a2a; }
+.party-badge { position: absolute; right: 6px; top: 4px; font-size: 10px; padding: 1px 6px; border-radius: 999px; background: #2f8a3a; color: #fff; }
+.party-all { display: flex; flex-wrap: wrap; gap: 6px; }
+.party-mini {
+  display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(80, 90, 60, 0.2); background: #fffdf6;
+}
+.party-mini.in { background: #f1f7e6; }
+.party-mini.sel { border-color: #ffd23a; box-shadow: 0 0 0 2px rgba(255, 210, 58, 0.4); }
+.party-right { display: flex; flex-direction: column; gap: 6px; }
+.party-preview { height: 260px; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 40%, #fffaf0, #e9dcc0); }
+.party-title { margin: 6px 0 0; font-size: 22px; }
+.party-sub, .party-mood { margin: 0; color: #5a5a44; }
+.party-state { margin: 0; padding: 4px 10px; border-radius: 999px; align-self: flex-start; background: #ece4d2; color: #6a6a52; font-size: 13px; }
+.party-state.on { background: #d8f0cf; color: #2f6a2a; }
+.party-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- เมนูจัดการวัตถุ ---------- */
+.obj-menu { width: 300px; }
+.obj-head { display: flex; gap: 10px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid rgba(80, 90, 60, 0.15); }
+.obj-head small { display: block; color: #7a7a62; font-size: 12px; }
+.obj-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 28px; background: #efe6d2; }
+.hold-item.danger { color: #a8322a; }
+.hold-item:disabled { opacity: 0.45; cursor: not-allowed; }
+.obj-confirm p { margin: 4px 0 8px; }
+
+/* ---------- แผงสถานะแบบย่อ (ไม่บังวิว) ---------- */
+.status-mini {
+  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 14px; cursor: pointer;
+  background: rgba(255, 250, 238, 0.42); backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); font: 12px 'Mitr', sans-serif; color: #3a3a2a; width: 150px; text-align: left;
+}
+.sm-bar { display: flex; align-items: center; gap: 5px; }
+.sm-bar i { font-style: normal; width: 18px; display: grid; place-items: center; }
+.sm-track { flex: 1; height: 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+.sm-track span { display: block; height: 100%; border-radius: 999px; }
+.sm-bar.low i { animation: smPulse 1s infinite; }
+@keyframes smPulse { 50% { transform: scale(1.3); } }
+.sm-coins { display: flex; align-items: center; gap: 5px; font-weight: 600; color: #6a4e10; text-shadow: 0 0 4px rgba(255, 255, 255, 0.8); }
+.status-fold { float: right; border: none; background: rgba(255, 255, 255, 0.5); border-radius: 999px; padding: 1px 8px; font: 11px 'Mitr', sans-serif; cursor: pointer; }
+
+/* ───── เพื่อน + คำเชิญ (§2.48) ───── */
+.avatar-img { display: block; border-radius: 22%; background: radial-gradient(circle at 50% 35%, #fdf6e6, #d9cbb0); object-fit: cover; }
+.avatar-img.wait { display: grid; place-items: center; color: #6a5a3a; font-weight: 700; }
+.friends-win { width: min(560px, calc(100vw - 32px)); max-height: 88vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.fr-me { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: #fffaf0; border: 1.5px solid var(--line); }
+.fr-who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fr-who small { color: #7a705a; font-size: 12px; }
+.fr-who code { background: #efe6d2; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+.fr-tools, .fr-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fr-search, .fr-add input { flex: 1; min-width: 160px; padding: 8px 12px; border-radius: 10px; border: 1.5px solid var(--line); font: inherit; background: #fff; }
+.fr-err { width: 100%; color: #b23a2a; font-size: 13px; }
+.fr-list { display: flex; flex-direction: column; gap: 6px; }
+.fr-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; background: #fffdf6; border: 1px solid rgba(80, 90, 60, 0.14); }
+.fr-row.off { opacity: 0.6; }
+.fr-av { position: relative; }
+.fr-dot { position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 50%; background: #9a9a8a; border: 2px solid #fff; }
+.fr-dot.on { background: #33b24a; }
+.fr-plus { width: 38px; height: 38px; border-radius: 50%; border: none; background: #2f8a3a; color: #fff; font-size: 20px; cursor: pointer; }
+.fr-plus:disabled { background: #cfc8b6; cursor: not-allowed; }
+.invite-pop {
+  position: fixed; top: 76px; left: 50%; transform: translateX(-50%); z-index: 60; width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px 10px; border-radius: 16px; background: rgba(12, 14, 12, 0.92); color: #fff; border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4); animation: invite-in 0.3s ease-out;
+}
+@keyframes invite-in { from { opacity: 0; transform: translate(-50%, -14px); } }
+.invite-title { font-weight: 700; display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.invite-body { display: flex; gap: 14px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+.invite-body > div { display: flex; flex-direction: column; gap: 2px; }
+.invite-body strong { font-size: 18px; }
+.invite-body small { color: #b8c0b4; font-size: 12px; }
+.invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.invite-actions button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border-radius: 12px; border: none; font: inherit; font-weight: 700; color: #fff; cursor: pointer; background: transparent; }
+.invite-actions span { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; border: 1.5px solid currentColor; }
+.invite-yes { background: #0b2a17 !important; }
+.invite-yes span { color: #3ad16a; }
+.invite-yes:hover { background: #12401f !important; }
+.invite-no:hover { background: rgba(255, 255, 255, 0.08) !important; }
+.invite-timer { height: 3px; margin-top: 8px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.invite-timer i { display: block; height: 100%; background: #3ad16a; transition: width 0.5s linear; }
+.pp-heart { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #fff; }
+.pp-heart span { color: #ff6f8f; }
+.pp-heart i { width: 74px; height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.pp-heart b { display: block; height: 100%; background: #ff6f8f; }
+.pp-heart small { opacity: 0.85; }
+
+/* ───── การ์ดสัตว์เลี้ยง ───── */
+.pc-root { position: fixed; inset: 0; z-index: 300; background: radial-gradient(ellipse at 50% 55%, transparent 35%, rgba(30, 22, 10, 0.28)); animation: pc-in 0.25s ease-out; }
+@keyframes pc-in { from { opacity: 0; } }
+.pc-stage { position: absolute; left: 50%; top: 50%; width: min(560px, 70vw); height: min(560px, 62vh); transform: translate(-50%, -56%); pointer-events: none; }
+.pc-panel {
+  position: absolute; background: rgba(250, 243, 225, 0.82); backdrop-filter: blur(3px); color: #3b2f1e;
+  border: 3px solid #7a5530; border-radius: 14px; box-shadow: 0 0 0 2px rgba(255, 240, 210, 0.7) inset, 0 10px 26px rgba(40, 25, 10, 0.32);
+}
+.pc-panel::before, .pc-panel::after { content: ''; position: absolute; width: 18px; height: 18px; border: 3px solid #5a3b1e; }
+.pc-panel::before { left: -6px; top: -6px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
+.pc-panel::after { right: -6px; bottom: -6px; border-left: none; border-top: none; border-radius: 0 0 6px 0; }
+.pc-info { left: 20px; top: 20px; width: min(340px, calc(100vw - 40px)); padding: 16px 18px; }
+.pc-top { display: flex; gap: 14px; align-items: center; }
+.pc-face { width: 86px; height: 86px; flex: none; border-radius: 50%; border: 3px solid #7a5530; background: radial-gradient(circle at 50% 40%, #fffaf0, #e8d6b2); display: grid; place-items: center; overflow: hidden; }
+.pc-info h2 { margin: 0; font-size: 30px; line-height: 1.1; color: #3a2a14; }
+.pc-breed { margin: 2px 0; color: #5a4a30; }
+.pc-sex { margin: 0; font-size: 14px; color: #4a6a2a; }
+.pc-blurb { margin: 12px 0 10px; font-size: 15px; line-height: 1.55; }
+.pc-bond { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.pc-leaf { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #d8ecc0; }
+.pc-hearts { display: flex; gap: 4px; margin-left: 4px; }
+.pc-hearts i { font-style: normal; font-size: 20px; color: #fff; -webkit-text-stroke: 1.5px #7aa84a; }
+.pc-hearts i.on { color: #6aae3a; }
+.pc-hearts i.half { background: linear-gradient(90deg, #6aae3a 50%, #fff 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pc-state { margin-top: 8px; font-size: 12px; display: inline-block; padding: 2px 10px; border-radius: 999px; background: rgba(122, 85, 48, 0.12); }
+.pc-stats { right: 20px; top: 20px; width: min(360px, calc(100vw - 40px)); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.pc-close { position: absolute; right: -12px; top: -12px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #7a5530; background: #fff6e2; cursor: pointer; font-weight: 700; color: #5a3b1e; }
+.pc-stat { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 252, 244, 0.7); }
+.pc-stat > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.pc-sic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; }
+.pc-sic.g { background: #cfe7b4; } .pc-sic.b { background: #c7dcf3; } .pc-sic.o { background: #f8dcae; }
+.pc-slabel { font-size: 14px; font-weight: 600; }
+.pc-bar { height: 12px; border-radius: 8px; background: rgba(120, 100, 70, 0.18); overflow: hidden; }
+.pc-bar i { display: block; height: 100%; border-radius: 8px; transition: width 0.5s; }
+.pc-bar i.g { background: linear-gradient(#7cc24a, #4f9a2a); } .pc-bar i.b { background: linear-gradient(#5aa2e8, #2f74c4); } .pc-bar i.o { background: linear-gradient(#f7b04a, #e88a1e); }
+.pc-num { font-size: 13px; min-width: 52px; text-align: right; }
+.pc-row { display: flex; gap: 8px; justify-content: flex-end; }
+.pc-skills { left: 50%; bottom: 20px; transform: translateX(-50%); width: min(860px, calc(100vw - 40px)); padding: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.pc-skill { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; border-radius: 12px; border: 1.5px solid rgba(122, 85, 48, 0.25); background: rgba(255, 251, 240, 0.85); font: inherit; color: #3b2f1e; cursor: pointer; transition: transform 0.12s; }
+.pc-skill:hover { transform: translateY(-2px); background: #fffaf0; }
+.pc-skill.off { opacity: 0.55; }
+.pc-sicon { font-size: 34px; line-height: 1.1; }
+.pc-skill b { font-size: 17px; }
+.pc-skill small { font-size: 12px; color: #6a5a40; text-align: center; }
+@media (max-width: 760px) {
+  .pc-info, .pc-stats { position: absolute; width: calc(50vw - 26px); padding: 10px; }
+  .pc-info h2 { font-size: 20px; }
+  .pc-face { width: 52px; height: 52px; }
+  .pc-blurb { font-size: 12px; }
+  .pc-skills { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ───── โหมดสร้าง (จัดใหม่: หัวแถบแยกจากรายการ · ไม่ซ้อนแถบไอเทม) ───── */
+.build-bar { bottom: 14px; width: min(980px, calc(100vw - 32px)); padding: 12px 14px 14px; background: rgba(250, 243, 225, 0.88); border: 1.5px solid rgba(122, 85, 48, 0.3); backdrop-filter: blur(4px); }
+.build-head { flex-wrap: nowrap; justify-content: space-between; gap: 16px; margin-bottom: 12px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 252, 244, 0.7); }
+.build-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.build-title > div { display: flex; flex-direction: column; min-width: 0; }
+.build-title strong { font-size: 20px; color: #4a3218; line-height: 1.2; }
+.build-badge { width: 40px; height: 40px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 22px; background: #f3e2bd; border: 1.5px solid rgba(122, 85, 48, 0.3); }
+.build-tip { flex: none; min-width: 0; font-size: 13px; color: #7a6040; }
+.build-tip.bad { color: #b0473a; }
+.build-actions { display: flex; gap: 8px; flex: none; }
+.build-act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 76px; height: 54px; padding: 4px 10px; border-radius: 12px; border: 1.5px solid rgba(122, 85, 48, 0.35); background: #fffaf0; color: #4a3218; font: inherit; font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 rgba(122, 85, 48, 0.25); }
+.build-act span { font-size: 20px; line-height: 1; }
+.build-act:hover { background: #fff; transform: translateY(-1px); }
+.build-act.on { border-color: #e0443a; box-shadow: 0 0 0 2px rgba(224, 68, 58, 0.3); }
+.build-act.done { background: linear-gradient(#6a9a3a, #4f7d24); color: #fff; border-color: #3f6a1c; min-width: 110px; }
+.build-items { gap: 10px; padding: 2px 2px 4px; }
+.build-item { width: 112px; padding: 10px 6px 8px; gap: 4px; border: 1.5px solid rgba(122, 85, 48, 0.2); background: rgba(255, 252, 244, 0.85); }
+.build-item.on { border-color: #b07a32; background: #fff7e2; box-shadow: 0 0 0 3px rgba(224, 165, 42, 0.35); }
+.build-icon { font-size: 30px; height: 40px; display: grid; place-items: center; }
+.build-name { font-size: 14px; font-weight: 600; color: #4a3218; text-align: center; line-height: 1.2; }
+.build-poor { font-style: normal; font-size: 10px; color: #b0473a; }
+@media (max-width: 720px) {
+  .build-head { flex-wrap: wrap; }
+  .build-act { min-width: 60px; height: 48px; }
+}
+
+/* การ์ดสัตว์: เพศ · เลเวล · อายุ · เปลี่ยนชื่อ */
+.pc-sex { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pc-sexbadge { padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.pc-sexbadge.m { background: #d6e8fb; color: #1f5fa8; }
+.pc-sexbadge.f { background: #f6dcf0; color: #9a2f86; }
+.pc-lv { padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #f3e2bd; color: #7a5230; }
+.pc-age { font-size: 12px; color: #6a5a40; }
+.pc-rename { margin-left: 6px; border: none; background: transparent; cursor: pointer; font-size: 16px; opacity: 0.7; vertical-align: middle; }
+.pc-rename:hover { opacity: 1; }
+.pc-nameform { display: flex; gap: 6px; }
+.pc-nameform input { width: 150px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #7a5530; font: inherit; font-size: 18px; }

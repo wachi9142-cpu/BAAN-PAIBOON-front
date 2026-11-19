@@ -1,0 +1,50 @@
+/* ───── โหมดสร้าง (จัดใหม่: หัวแถบแยกจากรายการ · ไม่ซ้อนแถบไอเทม) ───── */
+.build-bar { bottom: 14px; width: min(980px, calc(100vw - 32px)); padding: 12px 14px 14px; background: rgba(250, 243, 225, 0.88); border: 1.5px solid rgba(122, 85, 48, 0.3); backdrop-filter: blur(4px); }
+.build-head { flex-wrap: nowrap; justify-content: space-between; gap: 16px; margin-bottom: 12px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 252, 244, 0.7); }
+.build-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.build-title > div { display: flex; flex-direction: column; min-width: 0; }
+.build-title strong { font-size: 20px; color: #4a3218; line-height: 1.2; }
+.build-badge { width: 40px; height: 40px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 22px; background: #f3e2bd; border: 1.5px solid rgba(122, 85, 48, 0.3); }
+.build-tip { flex: none; min-width: 0; font-size: 13px; color: #7a6040; }
+.build-tip.bad { color: #b0473a; }
+.build-actions { display: flex; gap: 8px; flex: none; }
+.build-act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 76px; height: 54px; padding: 4px 10px; border-radius: 12px; border: 1.5px solid rgba(122, 85, 48, 0.35); background: #fffaf0; color: #4a3218; font: inherit; font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 rgba(122, 85, 48, 0.25); }
+.build-act span { font-size: 20px; line-height: 1; }
+.build-act:hover { background: #fff; transform: translateY(-1px); }
+.build-act.on { border-color: #e0443a; box-shadow: 0 0 0 2px rgba(224, 68, 58, 0.3); }
+.build-act.done { background: linear-gradient(#6a9a3a, #4f7d24); color: #fff; border-color: #3f6a1c; min-width: 110px; }
+.build-items { gap: 10px; padding: 2px 2px 4px; }
+.build-item { width: 112px; padding: 10px 6px 8px; gap: 4px; border: 1.5px solid rgba(122, 85, 48, 0.2); background: rgba(255, 252, 244, 0.85); }
+.build-item.on { border-color: #b07a32; background: #fff7e2; box-shadow: 0 0 0 3px rgba(224, 165, 42, 0.35); }
+.build-icon { font-size: 30px; height: 40px; display: grid; place-items: center; }
+.build-name { font-size: 14px; font-weight: 600; color: #4a3218; text-align: center; line-height: 1.2; }
+.build-poor { font-style: normal; font-size: 10px; color: #b0473a; }
+@media (max-width: 720px) {
+  .build-head { flex-wrap: wrap; }
+  .build-act { min-width: 60px; height: 48px; }
+}
+
+/* ปุ่มไอคอนบนแถบด้านบน (หนังสือ · เพื่อน) */
+.btn.hud-ic { padding: 6px 10px; font-size: 18px; line-height: 1; position: relative; }
+.btn.hud-ic .gm-badge { position: absolute; top: -4px; right: -4px; }
+
+/* แผงควบคุมตอนย้ายของ (ขวาบน แยกจากแถบไอเทม) */
+.move-ctl { position: absolute; top: 72px; right: 16px; z-index: 60; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 16px; background: rgba(250, 243, 225, 0.92); border: 2px solid #3fcf6a; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25); font-family: 'Mitr', sans-serif; max-width: calc(100vw - 32px); }
+.move-ctl.bad { border-color: #e0443a; }
+.move-info { display: flex; flex-direction: column; max-width: 300px; margin-right: 4px; }
+.move-info strong { color: #4a3218; font-size: 15px; }
+.move-info small { color: #6a5a40; font-size: 12px; }
+.move-ctl .build-act:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ย้อนกลับ · ทำซ้ำ · คืนค่าเดิม */
+.build-act:disabled { opacity: 0.4; cursor: default; transform: none; }
+.build-sep { width: 1px; align-self: stretch; background: rgba(122, 85, 48, 0.25); margin: 0 2px; }
+.hist-float { position: absolute; top: 116px; right: 16px; z-index: 30; display: flex; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(250, 243, 225, 0.85); border: 1.5px solid rgba(122, 85, 48, 0.3); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); font-family: 'Mitr', sans-serif; }
+.hist-float .build-act { min-width: 64px; height: 50px; }
+.hist-confirm { width: min(440px, calc(100vw - 32px)); }
+.hist-confirm p { margin: 0; line-height: 1.6; }
+
+/* สภาพอากาศบนแถบด้านบน */
+.wx-badge { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.wx-badge small { font-size: 12px; opacity: 0.85; }
+@media (max-width: 1100px) { .wx-badge small { display: none; } }

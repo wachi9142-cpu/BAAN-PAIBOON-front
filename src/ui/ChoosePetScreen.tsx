@@ -156,6 +156,19 @@ export function ChoosePetScreen() {
               />
             </div>
 
+            <div className="field">
+              <label>เพศ</label>
+              <div className="chips">
+                <button type="button" className="chip" aria-pressed={pet.sex === 'm'} onClick={() => patch({ sex: 'm' })}>
+                  ♂ เพศผู้
+                </button>
+                <button type="button" className="chip" aria-pressed={pet.sex === 'f'} onClick={() => patch({ sex: 'f' })}>
+                  ♀ เพศเมีย
+                </button>
+              </div>
+              <p className="hint" style={{ margin: '4px 0 0' }}>ไม่เลือก = ระบบสุ่มให้ · ตั้งชื่ออะไรก็ได้ ไม่ต้องตามเพศ · เพศไม่มีผลต่อความเก่ง</p>
+            </div>
+
             <ColorChoiceField
               key={'c' + pet.species}
               label={pet.species === 'turtle' ? 'สีกระดอง' : 'สีตัว'}
