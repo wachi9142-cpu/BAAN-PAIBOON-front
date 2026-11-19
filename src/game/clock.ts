@@ -70,3 +70,20 @@ export function skipToNextPeriod() {
 
 /** เวลาละเอียด (ทศนิยม) สำหรับไล่แสงอย่างนุ่มนวลในฉาก 3D */
 export const exactMinute = () => exact
+
+/** ตั้งเวลาไปที่นาที/วันที่กำหนด (นอนหลับ งีบ) — ไม่แจ้งเตือน */
+export function setClockTo(minute: number, day: number) {
+  const g = useGame.getState()
+  if (!g.save) return
+  let m = minute
+  let d = day
+  while (m >= 1440) {
+    m -= 1440
+    d += 1
+  }
+  exact = m
+  g.save.minuteOfDay = m
+  g.save.day = d
+  useClock.setState({ minute: Math.floor(m), day: d })
+  g.saveNow('event')
+}

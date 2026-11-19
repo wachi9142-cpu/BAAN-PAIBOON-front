@@ -88,6 +88,11 @@ const POSE_ARMS: Record<PoseId, [number, number, number, number]> = {
   swim: [-2.8, -0.3, -2.8, 0.3],
   struggle: [-2.6, -0.4, -2.6, 0.4],
   paddle: [-1, -0.2, -1, 0.2],
+  // กิจกรรมในบ้าน: นอน (แขนวางข้างตัว) · อาบน้ำ/ตักน้ำอาบ/ทำอาหาร (แอนิเมชันอยู่ใน useFrame)
+  lie: [0.1, 0.12, 0.1, -0.12],
+  shower: [-2.4, -0.6, -2.4, 0.6],
+  bathe: [-1.2, -0.2, -1.2, 0.2],
+  cook: [-1.1, -0.15, -1.2, 0.25],
 }
 
 /** กราบสามครั้ง: ช่วงคุกเข่าพนมมือ แล้วกราบลง-ขึ้น 3 รอบ (วินาที) */
@@ -384,6 +389,43 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       }
       if (legL.current) legL.current.rotation.x = lerp(legL.current.rotation.x, -1.45)
       if (legR.current) legR.current.rotation.x = lerp(legR.current.rotation.x, -1.45)
+    }
+    // ---- กิจกรรมในบ้าน ----
+    if (pose === 'shower') {
+      // อาบน้ำ: สองมือถูผม-ไหล่-แขนสลับกันช้า ๆ
+      const a = idle.current * 2.2
+      if (armL.current) {
+        armL.current.rotation.x = -2.3 + Math.sin(a) * 0.7
+        armL.current.rotation.z = -0.7 + Math.cos(a * 1.3) * 0.25
+      }
+      if (armR.current) {
+        armR.current.rotation.x = -2.3 + Math.sin(a + 2) * 0.7
+        armR.current.rotation.z = 0.7 - Math.cos(a * 1.1) * 0.25
+      }
+    } else if (pose === 'bathe') {
+      // ตักน้ำจากโอ่งด้วยขัน → ยกขึ้นราดไหล่ (วนรอบละ ~1.9 วิ)
+      const c = (idle.current % 1.9) / 1.9
+      const lift = c < 0.35 ? 0 : c < 0.6 ? (c - 0.35) / 0.25 : c < 0.8 ? 1 : 1 - (c - 0.8) / 0.2
+      if (armR.current) {
+        armR.current.rotation.x = -0.6 - lift * 2.2
+        armR.current.rotation.z = 0.15 + lift * 0.5
+      }
+      if (armL.current) {
+        armL.current.rotation.x = -0.3 - lift * 0.6
+        armL.current.rotation.z = -0.25
+      }
+      if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, c < 0.35 ? 0.5 : 0.05)
+    } else if (pose === 'cook') {
+      // ทำอาหาร: มือขวาจับตะหลิวผัดเป็นวง · มือซ้ายจับด้ามกระทะ เขย่าเป็นระยะ
+      const a = idle.current * 6.5
+      if (armR.current) {
+        armR.current.rotation.x = -1.15 + Math.sin(a) * 0.28
+        armR.current.rotation.z = 0.3 + Math.cos(a) * 0.2
+      }
+      if (armL.current) {
+        armL.current.rotation.x = -1.05 + Math.max(0, Math.sin(idle.current * 1.7)) * 0.2
+        armL.current.rotation.z = -0.2
+      }
     }
     if (m === 0 && pose === 'shake') {
       // เขย่ากระบอกเซียมซี: มือสองข้างโยกขึ้นลงเร็ว ๆ

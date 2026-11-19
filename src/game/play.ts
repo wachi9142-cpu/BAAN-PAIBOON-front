@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import { useGame, type Gesture } from './store'
 import { PLACES } from './content/village'
+import { activityPose, stopActivity, useActivity } from './houseLife'
 
 export type ToyKind = 'swing' | 'slide' | 'seesaw' | 'merry' | 'dome' | 'bars' | 'spring' | 'sandbox' | 'tunnel' | 'tires' | 'beam'
 
@@ -106,6 +107,8 @@ export function startPlay(id: string) {
 }
 
 export function stopPlay(finished = false) {
+  // กิจกรรมในบ้าน (อาบน้ำ นอน ทำอาหาร) ใช้ช่องทางเดียวกัน: เดินเพื่อหยุด
+  if (useActivity.getState().cur) stopActivity(false)
   const p = usePlay.getState().playing
   if (!p) return
   usePlay.setState({ playing: null })
@@ -122,6 +125,8 @@ export function stopPlay(finished = false) {
  * คืน null ถ้าไม่ได้เล่น
  */
 export function playPose(now: number): { x: number; y: number; z: number; heading: number; tilt: number } | null {
+  const act = activityPose(now)
+  if (act) return act
   const p = usePlay.getState().playing
   if (!p) return null
   const t = (now - p.t0) / 1000

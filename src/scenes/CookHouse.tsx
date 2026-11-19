@@ -103,7 +103,6 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
   const balusters: [number, number][] = []
   for (let bx = -2.35; bx <= 2.36; bx += 0.22) if (bx < STAIR_X - 0.55 || bx > STAIR_X + 0.55) balusters.push([bx, EDGE - 0.05])
   for (let bz = FRONT_WALL + 0.15; bz < EDGE - 0.1; bz += 0.22) {
-    balusters.push([-2.45, bz])
     balusters.push([2.45, bz])
   }
   // บันได: จากพื้น (z = EDGE + RUN) ขึ้นถึงชาน (z = EDGE)
@@ -177,6 +176,8 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
           <meshStandardMaterial map={plank} side={2} />
         </mesh>
       ))}
+      {/* ระเบียงข้างบ้าน (ด้านซ้าย −x) ยื่นออกไป 1.3 ม. ต่อจากชานหน้ายาวตลอดข้างบ้าน (ผู้สร้าง 19 พ.ย.) */}
+      <SideBalcony rail={rail} post={post} />
       {/* หลังคาเพิงสังกะสีคลุมชานหน้า (ลาดลงทาง +z) */}
       <mesh position={[0, FLOOR + 0.12 + WALL_H - 0.2, (FRONT_WALL + EDGE + 0.5) / 2]} rotation={[0.2, 0, 0]} castShadow receiveShadow>
         <boxGeometry args={[W + 0.5, 0.04, EDGE + 0.5 - FRONT_WALL + 0.2]} />
@@ -193,7 +194,6 @@ export function CookHouse({ x, z, rot = 0 }: { x: number; z: number; rot?: numbe
       {[
         [(-2.45 + STAIR_X - 0.55) / 2, EDGE - 0.05, STAIR_X - 0.55 + 2.45, 0],
         [(2.45 + STAIR_X + 0.55) / 2, EDGE - 0.05, 2.45 - STAIR_X - 0.55, 0],
-        [-2.45, (FRONT_WALL + EDGE) / 2, EDGE - FRONT_WALL, Math.PI / 2],
         [2.45, (FRONT_WALL + EDGE) / 2, EDGE - FRONT_WALL, Math.PI / 2],
       ].map(([px, pz, len, r], i) =>
         [0.15, 0.92].map((y) => (
@@ -625,6 +625,68 @@ function KitchenInterior() {
         <boxGeometry args={[0.25, 0.01, 0.15]} />
         <meshStandardMaterial color="#e8ddd4" />
       </mesh>
+    </group>
+  )
+}
+
+/** ระเบียงยื่นข้างบ้าน: พื้นไม้ต่อจากชาน เสาค้ำใต้ระเบียง ราวลูกกรงไม้กลึงรอบนอก */
+function SideBalcony({ rail, post }: { rail: string; post: string }) {
+  const X0 = -W / 2 // ชิดผนังข้าง
+  const X1 = -W / 2 - 1.3 // ขอบนอก
+  const Z0 = BACK
+  const Z1 = EDGE
+  const y = FLOOR + 0.12
+  const bal: [number, number][] = []
+  for (let z = Z0 + 0.1; z <= Z1 - 0.05; z += 0.22) bal.push([X1 + 0.05, z])
+  for (let x = X1 + 0.25; x < X0 - 0.1; x += 0.22) {
+    bal.push([x, Z0 + 0.05])
+    bal.push([x, Z1 - 0.05])
+  }
+  return (
+    <group>
+      <mesh position={[(X0 + X1) / 2, FLOOR + 0.06, (Z0 + Z1) / 2]} castShadow receiveShadow>
+        <boxGeometry args={[X0 - X1, 0.12, Z1 - Z0]} />
+        <meshStandardMaterial color="#7a5e42" roughness={0.85} />
+      </mesh>
+      {/* เสาค้ำใต้ระเบียง */}
+      {[Z0 + 0.1, (Z0 + Z1) / 2, Z1 - 0.1].map((pz) => (
+        <group key={pz} position={[X1 + 0.1, 0, pz]}>
+          <mesh position={[0, 0.08, 0]}>
+            <boxGeometry args={[0.28, 0.16, 0.28]} />
+            <meshStandardMaterial color="#9a958a" roughness={1} />
+          </mesh>
+          <mesh position={[0, FLOOR / 2 + 0.08, 0]} castShadow>
+            <boxGeometry args={[0.16, FLOOR, 0.16]} />
+            <meshStandardMaterial color={post} roughness={0.9} />
+          </mesh>
+        </group>
+      ))}
+      {/* ราวบน-ล่าง 3 ด้าน */}
+      {[
+        [X1 + 0.05, (Z0 + Z1) / 2, Z1 - Z0, Math.PI / 2],
+        [(X0 + X1) / 2, Z0 + 0.05, X0 - X1, 0],
+        [(X0 + X1) / 2, Z1 - 0.05, X0 - X1, 0],
+      ].flatMap(([px, pz, len, r], i) =>
+        [0.15, 0.92].map((h) => (
+          <mesh key={i + ':' + h} position={[px, y + h, pz]} rotation={[0, r, 0]}>
+            <boxGeometry args={[len, h > 0.5 ? 0.08 : 0.06, h > 0.5 ? 0.12 : 0.06]} />
+            <meshStandardMaterial color={rail} roughness={0.8} />
+          </mesh>
+        )),
+      )}
+      {bal.map(([bx, bz], i) => (
+        <mesh key={'sb' + i} position={[bx, y + 0.53, bz]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.72, 6]} />
+          <meshStandardMaterial color={rail} />
+        </mesh>
+      ))}
+      {/* เสาหัวมุมราว */}
+      {[Z0 + 0.05, Z1 - 0.05].map((pz) => (
+        <mesh key={'cp' + pz} position={[X1 + 0.05, y + 0.55, pz]}>
+          <boxGeometry args={[0.1, 1.1, 0.1]} />
+          <meshStandardMaterial color={post} />
+        </mesh>
+      ))}
     </group>
   )
 }

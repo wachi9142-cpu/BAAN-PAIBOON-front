@@ -53,11 +53,11 @@ export const HOME_GATE: [number, number] = [-6.5, -13]
 const BASE_SOLIDS: [number, number, number, number, string][] = [
   [-7.5, -6, 13, 9, 'main'], // บ้านไม้สองชั้น (ชั้นล่าง = ครัว)
   [-14.4, -3.9, 0.8, 4.1, 'bathroom'], // ห้องอาบน้ำยื่นออกจากผนังบ้านด้านตะวันตก
-  [10.6, -2.6, 3, 3, 'ricebarn4'], // แนวเดียวกับบ้านหลังที่สอง // ยุ้งข้าว (ประตู+บันไดหันไปทางตะวันตก 19 พ.ย.)
+  [13.2, -2.6, 3, 4.2, 'ricebarn5'], // ขยับไปทางตะวันออกอีกนิด (19 พ.ย.) // ยุ้งข้าว (ประตู+บันไดหันไปทางตะวันตก 19 พ.ย.)
   [10.6, 3.6, 4, 5, 'cookhouse3'], // หมุนด้านกว้างหันไปทางตะวันตก (เรือนใหญ่) // บ้านหลังที่สอง (ครัว) (ย้ายมาลานกลาง 19 พ.ย.)
   [10.7, 17, 3.2, 6.4, 'toilets3'], // ห้องน้ำนอกบ้าน (ส้วม + อ่างล้างหน้า + ห้องอาบน้ำ) ขนาดเท่าคอกควาย ประตูหันทางบ้านใหญ่ 19 พ.ย.
-  [18.5, 4.3, 4.6, 3.8, 'coop4'], // เล้าไก่ลานตาข่าย (ทำใหม่ 19 พ.ย.)
-  [18.5, 8.6, 4.6, 3.8, 'pigpen4'], // คอกหมูผนังไม้ + เพิง (ทำใหม่ 19 พ.ย.)
+  [18.5, 3.9, 3.8, 4.6, 'coop6'], // เล้าไก่ลานตาข่าย (แนวนอน หันหน้าไปทางบ้านใหญ่ 19 พ.ย.)
+  [23.4, 3.9, 3.8, 4.6, 'pigpen7'], // คอกหมู หลังเล้าไก่ เว้นระยะ (19 พ.ย.)
   [14.2, 10.5, 2, 3, 'strawbarn4'], // หลังคอกควาย (19 พ.ย.) // ยุ้งฟาง
   [6.3, -10.2, 3.2, 2.4, 'orchid4'],
   [-0.1, -6.9, 1.3, 1.3, 'jar-rain2'], // โอ่งรองน้ำฝน
@@ -141,14 +141,14 @@ export function GrandHome() {
         </group>
       </Editable>
       {/* 1 ยุ้งข้าว · 2 ต้นมะกรูด · 3 บ้านหลังที่สอง (ครัว) — ย้ายมาเรียงที่ลานกลางบ้าน (ผู้สร้าง 19 พ.ย.) */}
-      <Editable id="home:ricebarn4" name="ยุ้งข้าว" x={10.6} z={-2.6} origin={O}>
-        <RiceBarn x={10.6} z={-2.6} rot={-Math.PI / 2} />
+      <Editable id="home:ricebarn5" name="ยุ้งข้าว" x={13.2} z={-2.6} origin={O}>
+        <RiceBarn x={13.2} z={-2.6} rot={-Math.PI / 2} />
       </Editable>
       <Editable id="home:cookhouse3" name="บ้านหลังที่สอง (ครัว)" x={10.6} z={3.6} r={3} origin={O}>
         <CookHouse x={10.6} z={3.6} rot={-Math.PI / 2} />
       </Editable>
-      <Editable id="home:kaffir3" name="ต้นมะกรูด" x={7.4} z={-0.4} r={1.4} origin={O}>
-        <group position={[7.4, 0, -0.4]}>
+      <Editable id="home:kaffir4" name="ต้นมะกรูด" x={6.6} z={21} r={1.4} origin={O}>
+        <group position={[6.6, 0, 21]}>
           <Windy h={2.2} amp={0.14} flutter={1}>
             <KaffirLimeTree seed={3} s={1} />
           </Windy>
@@ -161,11 +161,11 @@ export function GrandHome() {
       <Editable id="home:buffalo5" name="คอกควาย" x={9.5} z={10.5} r={3.5} origin={O}>
         <BuffaloPen x={9.5} z={10.5} rot={Math.PI / 2} />{/* ด้านกว้างหันไปทางตะวันตก (ผู้สร้าง 19 พ.ย.) */}
       </Editable>
-      <Editable id="home:coop4" name="เล้าไก่" x={18.5} z={4.3} r={3} origin={O}>
-        <ChickenCoop x={18.5} z={4.3} />
+      <Editable id="home:coop6" name="เล้าไก่" x={18.5} z={3.9} r={3} origin={O}>
+        <ChickenCoop x={18.5} z={3.9} rot={-Math.PI / 2} />
       </Editable>
-      <Editable id="home:pigpen4" name="คอกหมู" x={18.5} z={8.6} r={3} origin={O}>
-        <PigPen x={18.5} z={8.6} />
+      <Editable id="home:pigpen7" name="คอกหมู" x={23.4} z={3.9} r={3} origin={O}>
+        <PigPen x={23.4} z={3.9} rot={-Math.PI / 2} />
       </Editable>
       <Editable id="home:strawbarn4" name="ยุ้งฟาง" x={14.2} z={10.5} origin={O}>
         <StrawBarn x={14.2} z={10.5} />
@@ -597,17 +597,30 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
     <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
-          <mesh key={`${sx}${sz}`} position={[sx * 1.2, 0.5, sz * 1.2]} castShadow>
-            <cylinderGeometry args={[0.12, 0.14, 1, 8]} />
+          <mesh key={`${sx}${sz}`} position={[sx * 1.85, 1.1, sz * 1.2]} castShadow>
+            <cylinderGeometry args={[0.13, 0.15, 2.2, 8]} />
             <meshStandardMaterial color="#5a3b26" />
           </mesh>
         )),
       )}
+      {/* ยกตัวยุ้งสูงขึ้น 1.2 ม. ให้สูงเท่าบ้านหลังที่สอง (ผู้สร้าง 19 พ.ย.) */}
+      <group position={[0, 1.2, 0]}>
       <mesh position={[0, 1.8, 0]} castShadow receiveShadow>
-        <RBox args={[3, 1.8, 3]} radius={0.12} />
+        <RBox args={[4.2, 1.8, 3]} radius={0.12} />
         <meshStandardMaterial color="#8a5a34" />
       </mesh>
-      <GableRoof width={3} depth={3} height={1.6} y={2.7} color="#6a4a2e" overhang={0.5} />
+      <GableRoof width={4.2} depth={3} height={1.6} y={2.7} color="#6a4a2e" overhang={0.5} />
+      {/* ระเบียงไม้ยื่นออกหน้ายุ้ง (ไม่มีราว) ไว้ตากข้าว/วางกระบุง */}
+      <mesh position={[0, 0.9, 2.0]} castShadow receiveShadow>
+        <boxGeometry args={[4.4, 0.1, 1.0]} />
+        <meshStandardMaterial color="#7a5234" roughness={0.85} />
+      </mesh>
+      {[-1.6, -0.8, 0, 0.8, 1.6].map((px) => (
+        <mesh key={px} position={[px, 0.83, 2.0]}>
+          <boxGeometry args={[0.08, 0.06, 1.0]} />
+          <meshStandardMaterial color="#5a3b26" />
+        </mesh>
+      ))}
       <group position={[0, 3.2, 1.55]}>
         <SignBoard lines={['ยุ้งข้าว']} width={1} height={0.3} />
       </group>
@@ -631,15 +644,25 @@ function RiceBarn({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
           <boxGeometry args={[0.04, 0.12, 0.04]} />
           <meshStandardMaterial color="#2a2a2a" metalness={0.5} />
         </mesh>
-        {/* บันไดไม้ 4 ขั้น พาดจากพื้นถึงธรณีประตู */}
-        <group position={[0, 0, 0.55]} rotation={[-0.42, 0, 0]}>
+        </group>
+      </group>
+      {/* เสาค้ำระเบียง */}
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[sx * 2.05, 1.05, 2.4]} castShadow>
+          <cylinderGeometry args={[0.1, 0.12, 2.1, 8]} />
+          <meshStandardMaterial color="#5a3b26" />
+        </mesh>
+      ))}
+      {/* บันไดไม้ 8 ขั้น พาดจากพื้นถึงขอบระเบียง */}
+      <group position={[0, 0, 2.46]}>
+        <group position={[0, 0, 0.95]} rotation={[-0.38, 0, 0]}>
           {[-0.32, 0.32].map((x) => (
-            <mesh key={x} position={[x, 0.55, 0]} castShadow>
-              <boxGeometry args={[0.07, 1.25, 0.07]} />
+            <mesh key={x} position={[x, 1.2, 0]} castShadow>
+              <boxGeometry args={[0.07, 2.45, 0.07]} />
               <meshStandardMaterial color="#6a4428" />
             </mesh>
           ))}
-          {[0.2, 0.48, 0.76, 1.04].map((y) => (
+          {[0.2, 0.48, 0.76, 1.04, 1.32, 1.6, 1.88, 2.16].map((y) => (
             <mesh key={y} position={[0, y, 0.02]}>
               <boxGeometry args={[0.66, 0.05, 0.16]} />
               <meshStandardMaterial color="#8a5a34" />
@@ -802,7 +825,7 @@ function ConcreteTrough({ w, d, h, fill }: { w: number; d: number; h: number; fi
  * บ้านไก่ไม้ยกพื้นเตี้ยมีทางลาดขึ้น หลังคาจั่ว · ชั้นรังไข่ไม้ 3×3 ช่องมีฟาง ไข่ และแม่ไก่กก · ถังน้ำสังกะสี · กาละมังฟาง
  * กว้าง 4.6 (x) × 3.8 (z)
  */
-function ChickenCoop({ x, z }: { x: number; z: number }) {
+function ChickenCoop({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
   const W = 4.6
   const D = 3.8
   const posts: [number, number][] = [
@@ -820,7 +843,7 @@ function ChickenCoop({ x, z }: { x: number; z: number }) {
   ]
   const wood = '#a8784a'
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       {/* พื้นกรวด */}
       <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[W, D]} />
@@ -991,7 +1014,7 @@ function ChickenCoop({ x, z }: { x: number; z: number }) {
  * ครึ่งหน้าเป็นคอกโปร่งราวไม้ ประตูไม้ พื้นฟาง/โคลน · หลอดไฟเหลืองใต้เพิง · หมู 2 ตัว
  * กว้าง 4.6 (x) × 3.8 (z)
  */
-function PigPen({ x, z }: { x: number; z: number }) {
+function PigPen({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
   const W = 4.6
   const D = 3.8
   const plank = '#7a6a5e'
@@ -1010,7 +1033,7 @@ function PigPen({ x, z }: { x: number; z: number }) {
     [W / 4 + 0.75, D / 2, W / 2 - 1.5, 0, false],
   ]
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
       <PigSounds />
       {/* พื้น: ฟางครึ่งหลัง · โคลนครึ่งหน้า */}
       <mesh position={[0, 0.03, -D / 4]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

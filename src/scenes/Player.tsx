@@ -6,6 +6,7 @@ import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
 import { FLOOR2, interiorCameraBox, interiorColliders, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
 import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
+import { bindPlayerNow, useActivity } from '../game/houseLife'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
 import { TextSprite } from './TextSprite'
@@ -204,6 +205,11 @@ export function Player() {
       jumpReq,
       game: useGame,
     }
+  }, [])
+
+  // ให้กิจกรรมในบ้านรู้ตำแหน่งเริ่มต้นของผู้เล่น (เดินเข้าตำแหน่งอย่างนุ่มนวล)
+  useEffect(() => {
+    bindPlayerNow(() => [pos.current[0], root.current?.position.y ?? 0, pos.current[1], heading.current])
   }, [])
 
   // เริ่มกล้องด้านหลังตัวละคร
@@ -415,7 +421,8 @@ export function Player() {
       const targetY = gy + rideY + wf.sink
       if (pp) {
         root.current.position.set(x, gy + pp.y, z)
-        root.current.rotation.order = 'XYZ'
+        // กิจกรรมในบ้าน (นอน): เอนตัวตามทิศที่หัน · เครื่องเล่น: เอียงตามแกนโลก
+        root.current.rotation.order = useActivity.getState().cur ? 'YXZ' : 'XYZ'
         root.current.rotation.set(pp.tilt, heading.current, 0)
       } else {
         baseY.current += (targetY - baseY.current) * Math.min(1, dt * 12)

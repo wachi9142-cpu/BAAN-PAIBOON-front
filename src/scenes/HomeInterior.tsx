@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
 import { RBox } from './models/RBox'
 import { SignBoard } from './SignBoard'
+import { HomeDoors } from './AutoDoors'
 import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
 import { useHomeTv } from '../game/homeActions'
 import { NpcInterior } from './NpcInterior'
@@ -32,6 +33,8 @@ function GrandInterior() {
         <meshStandardMaterial map={floorTex} />
       </mesh>
       <OuterWalls upper={upper} />
+      {/* ประตูห้องเปิด–ปิดได้ (ห้องน้ำ ห้องน้ารง ห้องนอนชั้นบน 3 ห้อง) */}
+      <HomeDoors />
       {/* พื้นชั้นสอง (เว้นช่องบันได) = เพดานชั้นล่าง — แสดงเฉพาะตอนอยู่ชั้นบน */}
       <mesh visible={upper} position={[(-IW / 2 + STAIRS.x0) / 2, FLOOR2 - 0.06, 0]} receiveShadow castShadow>
         <boxGeometry args={[STAIRS.x0 + IW / 2, 0.12, ID]} />

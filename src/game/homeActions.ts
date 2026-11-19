@@ -5,6 +5,7 @@ import { create } from 'zustand'
 import { useGame } from './store'
 import { INSIDE_DOOR, INTERIOR_ORIGIN, FLOOR2, NPC_INSIDE_DOOR, outsideDoor, toWorld, useInterior } from './interior'
 import { PLACES } from './content/village'
+import { actSpotById, findActSpot, startActivity, stopActivity, useActivity } from './houseLife'
 
 export const useHomeTv = create<{ on: boolean; on2: boolean }>(() => ({ on: false, on2: false }))
 
@@ -60,6 +61,9 @@ export function findHomeSpot(wx: number, wz: number, wy: number): string | null 
   const lx = wx - INTERIOR_ORIGIN[0]
   const lz = wz - INTERIOR_ORIGIN[1]
   const upper = wy > FLOOR2 * 0.5
+  // กิจกรรมในบ้าน (ห้องน้ำ เตียง ครัว โอ่ง) — ใช้ได้ทุกบ้านที่เข้าไป
+  const act = findActSpot(lx, lz, upper)
+  if (act) return 'act:' + act.id
   if (useInterior.getState().house !== 'home') return Math.hypot(NPC_INSIDE_DOOR[0] - lx, NPC_INSIDE_DOOR[1] - lz) < 1.4 ? 'exit' : null
   let best: string | null = null
   let bd = 1.4
@@ -76,6 +80,11 @@ export function findHomeSpot(wx: number, wz: number, wy: number): string | null 
 
 export function activateHomeSpot(id: string) {
   const g = useGame.getState()
+  if (id.startsWith('act:')) {
+    if (useActivity.getState().cur) stopActivity(false)
+    else startActivity(id.slice(4))
+    return
+  }
   switch (id) {
     case 'exit':
       exitHome()
@@ -102,4 +111,4 @@ export function activateHomeSpot(id: string) {
   }
 }
 
-export const homeSpotLabel = (id: string) => HOME_SPOTS.find((s) => s.id === id)?.label ?? ''
+export const homeSpotLabel = (id: string) => (id.startsWith('act:') ? actSpotById(id.slice(4))?.label ?? '' : HOME_SPOTS.find((s) => s.id === id)?.label ?? '')

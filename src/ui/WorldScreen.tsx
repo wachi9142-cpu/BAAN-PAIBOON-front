@@ -50,6 +50,7 @@ import { BookButton, GameBook, openBook } from './GameBook'
 import { StatIcon, type StatIconId } from './StatIcons'
 import { FriendsButton } from './FriendsWindow'
 import { CheckinButton, CheckinWindow } from './CheckinWindow'
+import { ActivityHud } from './ActivityHud'
 import { WaterLife } from '../scenes/WaterLife'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu, type Tab } from './GameMenu'
@@ -330,6 +331,7 @@ export function WorldScreen() {
       <NoticeBoardWindow />
       <WaterMenu />
       <CheckinWindow />
+      <ActivityHud />
       <TouchControls />
       <LayoutEditor />
       <HoldMenu />

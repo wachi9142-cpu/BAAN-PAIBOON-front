@@ -132,7 +132,7 @@ export interface CaughtAnimal {
 }
 
 /** ท่าทางชั่วคราวของผู้เล่น (ในวัด) */
-export type Gesture = 'wai' | 'prostrate' | 'shake' | 'offer' | 'whistle' | 'sit' | 'hang' | 'balance'
+export type Gesture = 'wai' | 'prostrate' | 'shake' | 'offer' | 'whistle' | 'sit' | 'hang' | 'balance' | 'lie' | 'shower' | 'cook' | 'bathe'
 
 export interface GatherTarget {
   kind: 'tree' | 'rock'
