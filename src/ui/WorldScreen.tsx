@@ -72,6 +72,12 @@ import { FortuneCard } from './FortuneCard'
 import { CUPS, STICKS_PER_CUP } from '../game/content/siamsi'
 import { ShopWindow } from './ShopWindow'
 import { FamilyLife } from '../scenes/FamilyLife'
+import { toggleWheel } from '../game/loadout'
+import { GearIcon, GearWheel } from './GearWheel'
+import { useHold } from '../scenes/HoldInteract'
+import { useLoadout } from '../game/loadout'
+import { gearById } from '../scenes/models/Gear'
+import { GrassField, WindDriver } from '../scenes/Wind'
 
 /** นับเวลาเล่นสะสม (ไม่บันทึกทุกเฟรม แค่เก็บในหน่วยความจำ) */
 function PlayClock() {
@@ -190,8 +196,11 @@ export function WorldScreen() {
         setMenu((m) => !m)
       }
       if (e.code === 'KeyP') setPauseOpen((p) => !p)
-      if (e.code === 'KeyR' && !e.repeat) toggleRide()
-      if (e.code === 'KeyQ' && !e.repeat) whistle()
+      // Q = วงล้ออาวุธ · R = วงล้อไอเทม · F = ขี่สัตว์ · G = ผิวปากเรียกสัตว์
+      if (e.code === 'KeyQ' && !e.repeat) toggleWheel('weapon')
+      if (e.code === 'KeyR' && !e.repeat && !useHold.getState().moving) toggleWheel('item')
+      if (e.code === 'KeyF' && !e.repeat) toggleRide()
+      if (e.code === 'KeyG' && !e.repeat) whistle()
       if (e.code === 'KeyV' && !e.repeat && (e.target as HTMLElement)?.tagName !== 'INPUT') {
         toggleFastWalk()
         useGame.getState().toast({ title: useMove.getState().fastWalk ? 'เดินเร็ว' : 'เดินช้า (ปกติ)', body: 'กด V สลับเดินช้า/เดินเร็ว · Shift ค้าง = วิ่ง', tone: 'info' })
@@ -292,6 +301,8 @@ export function WorldScreen() {
         <Festivals />
         <VillageLife />
         <FamilyLife />
+        <WindDriver />
+        <GrassField />
         <StreetLights />
         <SoftWorld />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
@@ -437,8 +448,8 @@ function StatusPanel() {
         ))}
       </div>
       <AnimalButton />
-      <button type="button" className="animal-btn whistle-btn" onClick={whistle} title="ผิวปากเรียกสัตว์ (Q)">
-        🎵 ผิวปากเรียกสัตว์ (Q)
+      <button type="button" className="animal-btn whistle-btn" onClick={whistle} title="ผิวปากเรียกสัตว์ (G)">
+        🎵 ผิวปากเรียกสัตว์ (G)
       </button>
       {pet && (
         <div className="pet-row">
@@ -776,7 +787,7 @@ function toggleRide() {
   }
   g.setRiding(true)
   if (g.save?.petLeashed) g.setPetLeashed(false)
-  g.toast({ title: `🐃 ขี่${pet.name}แล้ว`, body: 'เดินเร็วขึ้น · กด R อีกครั้งเพื่อลง', tone: 'success' })
+  g.toast({ title: `🐃 ขี่${pet.name}แล้ว`, body: 'เดินเร็วขึ้น · กด F อีกครั้งเพื่อลง', tone: 'success' })
 }
 
 /** บันทึกเกมทันที (Ctrl+S หรือกดป้าย "บันทึก" มุมบน) */
@@ -976,6 +987,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
         </div>
       )}
 
+      <GearWheel />
+      <HeldGear />
       <HelpButton />
       <PetPicker />
       <PetPartyWindow />
@@ -1030,5 +1043,26 @@ function PartyFollowers() {
         return <PetFollower key={k + o.pet.color + o.pet.name} pet={o.pet} start={save.position} slot={i} mood={moodOf(k, o.pet)} />
       })}
     </>
+  )
+}
+
+/** ป้ายเล็ก ๆ มุมขวาล่าง: กำลังถืออาวุธ/ไอเทมอะไรอยู่ */
+function HeldGear() {
+  const w = useLoadout((s) => s.weapon)
+  const it = useLoadout((s) => s.item)
+  if (!w && !it) return null
+  return (
+    <div className="gw-held">
+      {w && (
+        <div>
+          <GearIcon id={w} size={34} /> {gearById(w)?.name} <kbd>Q</kbd>
+        </div>
+      )}
+      {it && (
+        <div>
+          <GearIcon id={it} size={34} /> {gearById(it)?.name} <kbd>R</kbd>
+        </div>
+      )}
+    </div>
   )
 }

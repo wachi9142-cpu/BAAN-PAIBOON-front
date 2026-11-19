@@ -21,6 +21,7 @@ import { buildColliders, resolveMove } from '../game/collision'
 import { PLACES, PLOTS } from '../game/content/village'
 import { Character, JUMP_CROUCH, JUMP_LAND } from './models/Character'
 import { findGatherTarget } from '../game/inventory'
+import { useLoadout } from '../game/loadout'
 import { findBed, useGarden } from '../game/garden'
 import { insideTempleBox, TEMPLE, templeSpots, WORSHIP_SPOT, templeGroundY } from '../game/content/temple'
 import { autoShoes, leaveTemple, useMerit } from '../game/templeActions'
@@ -352,7 +353,7 @@ export function Player() {
       curSpeed.current = 0
     } else {
       // ปล่อยปุ่ม: ค่อย ๆ ชะลอแล้วหยุด (ไม่หยุดแข็งทื่อ)
-      curSpeed.current = Math.max(0, curSpeed.current - dt * 14)
+      curSpeed.current = Math.max(0, curSpeed.current - dt * 24)
     }
     if (curSpeed.current > 0.02) {
       const sp = curSpeed.current
@@ -367,7 +368,8 @@ export function Player() {
       motion.current = GAIT_MOTION[g]
       // เสียงฝีเท้าตามจังหวะก้าวและพื้น (ไม่ดังตอนลอยตัว ขี่สัตว์ หรืออยู่ในน้ำ)
       if (jumpT.current < 0 && !useGame.getState().riding && useWater.getState().mode === 'land') {
-        stepTick(Math.hypot(pos.current[0] - before[0], pos.current[1] - before[1]), g, surfaceAt(pos.current[0], pos.current[1], insideNow))
+        // ปล่อยปุ่มแล้ว (กำลังไถลหยุด) = ไม่มีเสียงก้าว
+        stepTick(Math.hypot(pos.current[0] - before[0], pos.current[1] - before[1]), len > 0 ? g : 'stand', surfaceAt(pos.current[0], pos.current[1], insideNow))
       }
     } else {
       curSpeed.current = 0
@@ -559,6 +561,8 @@ export function Player() {
     }
   }, [updatePosition])
 
+  const gearR = useLoadout((s) => s.weapon)
+  const gearL = useLoadout((s) => s.item)
   return (
     // ตำแหน่งตั้งทุกเฟรมใน useFrame (ไม่ผูกกับ prop ไม่งั้นตอนบันทึกตำแหน่งทุก 3 วิ ตัวจะกระตุกกลับพื้น)
     <group ref={root}>
@@ -568,6 +572,8 @@ export function Player() {
         barefoot={barefoot}
         tool={gesture === 'shake' ? 'siamsi' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
+        gear={riding || wPose || gesture ? null : gearR}
+        gearL={riding || wPose || gesture ? null : gearL}
         jump={jumpT}
         wandGem={wandGem}
         aim={wandCast}

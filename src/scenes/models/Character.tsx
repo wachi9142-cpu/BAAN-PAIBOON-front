@@ -32,6 +32,7 @@ import { SARONG_OUTFITS, sarongAccent, sarongTexture } from '../../game/content/
 import { Accessory } from './Accessory'
 import { RBox } from './RBox'
 import { handPain } from '../../game/handStrike'
+import { GearInHand } from './Gear'
 
 interface Props {
   appearance: Appearance
@@ -45,6 +46,9 @@ interface Props {
   barefoot?: boolean
   /** จังหวะเหวี่ยงขวาน/ทุบ 0→1 (-1 = ไม่ได้ทำ) */
   chop?: { current: number; kind?: 'tree' | 'rock' }
+  /** อาวุธ (มือขวา) / ไอเทม (มือซ้าย) จากวงล้อ Q/R */
+  gear?: string | null
+  gearL?: string | null
   /** สีอัญมณีบนคฑา */
   wandGem?: GemColor
   /** กำลังชี้คฑายิงลำแสง */
@@ -103,7 +107,7 @@ function bowAmount(t: number) {
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim, jump }: Props) {
+export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim, jump, gear, gearL }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -620,6 +624,8 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
           {i === 1 && bag === 'handbag' && <HandBag color={bagColor} />}
           {i === 1 && tool === 'wand' && <WandModel gem={wandGem ?? 'purple'} />}
           {i === 1 && tool && tool !== 'pole' && tool !== 'wand' && tool !== 'toolbelt' && <Tool kind={tool} />}
+          {i === 1 && gear && !tool && <GearInHand id={gear} />}
+          {i === 0 && gearL && cane === 'none' && <GearInHand id={gearL} left />}
           {i === 0 && cane !== 'none' && <Cane kind={cane} />}
           {i === 1 && elder && appearance.basket && !tool && bag !== 'handbag' && <Basket />}
           {i === 1 && kidItem !== 'none' && !tool && bag !== 'handbag' && (

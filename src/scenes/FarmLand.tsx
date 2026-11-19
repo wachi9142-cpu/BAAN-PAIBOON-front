@@ -3,6 +3,7 @@ import { RBox } from './models/RBox'
 import { GableRoof, PicketFence } from './models/House'
 import { Pet } from './models/Pet'
 import type { PetChoice } from '../game/content/pets'
+import { Windy } from './Wind'
 
 /** พื้นที่ส่วนบุคคลในซอย 2: กว้างมาก มีรั้วล้อม · คอกควาย · ยุ้งข้าว · กองฟาง · พื้นหญ้า (ไม่มีบ้านคน) */
 export function FarmLand({ w, d }: { w: number; d: number }) {
@@ -129,29 +130,31 @@ function ForageGrass({ w, d }: { w: number; d: number }) {
     [-h + 0.8, -dd + 0.8, 2.0],
   ]
   return (
+    <Windy h={1.0} amp={0.3} flutter={0.6}>
     <group>
-      {clumps.map(([x, z, ht, r], i) => (
-        <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
-          {[0, 1, 2].map((k) => (
-            <mesh key={k} position={[Math.cos(k * 2.1) * 0.15, ht / 2, Math.sin(k * 2.1) * 0.15]} rotation={[Math.cos(k * 2.1) * 0.25, 0, Math.sin(k * 2.1) * 0.25]}>
-              <coneGeometry args={[0.16, ht, 4]} />
-              <meshStandardMaterial color={k === 1 ? '#6f9a3a' : '#5d8a32'} flatShading />
+        {clumps.map(([x, z, ht, r], i) => (
+          <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
+            {[0, 1, 2].map((k) => (
+              <mesh key={k} position={[Math.cos(k * 2.1) * 0.15, ht / 2, Math.sin(k * 2.1) * 0.15]} rotation={[Math.cos(k * 2.1) * 0.25, 0, Math.sin(k * 2.1) * 0.25]}>
+                <coneGeometry args={[0.16, ht, 4]} />
+                <meshStandardMaterial color={k === 1 ? '#6f9a3a' : '#5d8a32'} flatShading />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        {trees.map(([x, z, ht], i) => (
+          <group key={'t' + i} position={[x, 0, z]}>
+            <mesh position={[0, ht / 2, 0]} castShadow>
+              <cylinderGeometry args={[0.12, 0.18, ht, 6]} />
+              <meshStandardMaterial color="#6b5440" />
             </mesh>
-          ))}
-        </group>
-      ))}
-      {trees.map(([x, z, ht], i) => (
-        <group key={'t' + i} position={[x, 0, z]}>
-          <mesh position={[0, ht / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.12, 0.18, ht, 6]} />
-            <meshStandardMaterial color="#6b5440" />
-          </mesh>
-          <mesh position={[0, ht + 0.5, 0]} castShadow>
-            <icosahedronGeometry args={[1.3, 0]} />
-            <meshStandardMaterial color="#4f7f38" flatShading />
-          </mesh>
-        </group>
-      ))}
-    </group>
+            <mesh position={[0, ht + 0.5, 0]} castShadow>
+              <icosahedronGeometry args={[1.3, 0]} />
+              <meshStandardMaterial color="#4f7f38" flatShading />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    </Windy>
   )
 }

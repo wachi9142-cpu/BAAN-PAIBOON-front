@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { ExtrudeGeometry, Shape } from 'three'
 import type { HouseDesign } from '../../game/content/houses'
 import { RBox } from './RBox'
+import { Windy } from '../Wind'
 
 /** หลังคาจั่ว: สองแผ่นเอียงเข้าหากัน สันหลังคาวางตามแกน x */
 export function GableRoof({
@@ -382,21 +383,23 @@ export function Bush({ x, z, s = 1, flowers = '#f29ab8' }: { x: number; z: numbe
     [0.05, 0.5, -0.12, 0.28],
   ]
   return (
+    <Windy h={0.9} amp={0.12} flutter={1.2}>
     <group position={[x, 0, z]} scale={s}>
-      {blobs.map(([bx, by, bz, r], i) => (
-        <mesh key={i} position={[bx, by, bz]} castShadow receiveShadow>
-          <icosahedronGeometry args={[r, 2]} />
-          <meshStandardMaterial color={i % 2 ? '#5e9a48' : '#4f8a3e'} roughness={0.95} />
-        </mesh>
-      ))}
-      {flowers &&
-        [0, 1, 2, 3, 4, 5].map((k) => (
-          <mesh key={'f' + k} position={[Math.cos(k * 1.1) * 0.38, 0.42 + (k % 3) * 0.1, Math.sin(k * 1.1) * 0.32]}>
-            <sphereGeometry args={[0.06, 10, 8]} />
-            <meshStandardMaterial color={k % 2 ? flowers : '#fff3c4'} roughness={0.6} />
+        {blobs.map(([bx, by, bz, r], i) => (
+          <mesh key={i} position={[bx, by, bz]} castShadow receiveShadow>
+            <icosahedronGeometry args={[r, 2]} />
+            <meshStandardMaterial color={i % 2 ? '#5e9a48' : '#4f8a3e'} roughness={0.95} />
           </mesh>
         ))}
-    </group>
+        {flowers &&
+          [0, 1, 2, 3, 4, 5].map((k) => (
+            <mesh key={'f' + k} position={[Math.cos(k * 1.1) * 0.38, 0.42 + (k % 3) * 0.1, Math.sin(k * 1.1) * 0.32]}>
+              <sphereGeometry args={[0.06, 10, 8]} />
+              <meshStandardMaterial color={k % 2 ? flowers : '#fff3c4'} roughness={0.6} />
+            </mesh>
+          ))}
+      </group>
+    </Windy>
   )
 }
 

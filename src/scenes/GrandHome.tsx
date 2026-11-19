@@ -10,6 +10,8 @@ import { Bush, GableRoof, OpenWindow, PicketFence } from './models/House'
 import { BananaTree } from './models/BananaTree'
 import { Pet } from './models/Pet'
 import { SignBoard } from './SignBoard'
+import { ArecaPalmTree, CoconutPalm } from './models/Palms'
+import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
 import type { PetChoice } from '../game/content/pets'
 
 /**
@@ -20,7 +22,7 @@ import type { PetChoice } from '../game/content/pets'
  * ขอบเขตรั้วบ้าน (พิกัดภายใน เทียบจุดกลางเดิม) — ขยายพื้นที่ไปทางตะวันออกและทางเหนือ (ผู้สร้าง 18 พ.ย. 2569: "บ้านฟ่างใหญ่กว่านี้")
  * ฝั่งตะวันตก (ติดซอย 2) และฝั่งใต้ (ติดถนนดินแดง/ประตู) อยู่ที่เดิม
  */
-export const HOME_BOX = { x0: -15, x1: 39, z0: -13, z1: 38 }
+export const HOME_BOX = { x0: -15, x1: 33, z0: -13, z1: 38 }
 /** ช่องทางเข้ารถยนต์ 1 คัน ที่รั้วฝั่งเหนือ (ติดถนนดินแดงแนวนอนหลังบ้าน): x กลางช่อง · ครึ่งความกว้าง */
 export const HOME_BACK_GATE = { x: 1.5, half: 4.5 }
 /** มุมรั้วด้านซอย 2 ฝั่งถนนหลังบ้าน (มุม x0, z1) ไม่มีรั้ว เป็นพื้นที่ว่างทางลัดเดินเข้าออก — เว้นกี่เมตรจากมุมทั้งสองด้าน */
@@ -37,6 +39,7 @@ export const HOME_GATE: [number, number] = [-6.5, -13]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] */
 const BASE_SOLIDS: [number, number, number, number, string][] = [
   [-7.5, -6, 13, 9, 'main'], // บ้านไม้สองชั้น (ชั้นล่าง = ครัว)
+  [-14.4, -3.9, 0.8, 4.1, 'bathroom'], // ห้องอาบน้ำยื่นออกจากผนังบ้านด้านตะวันตก
   [-12, 9, 3, 3, 'ricebarn'], // ยุ้งข้าว
   [-6.5, 9, 5, 4, 'cookhouse'], // บ้านหลังที่สอง (ครัว)
   [-2, 10.2, 3, 2, 'toilets'], // ห้องน้ำนอกบ้าน 2 ห้อง
@@ -44,7 +47,7 @@ const BASE_SOLIDS: [number, number, number, number, string][] = [
   [11, 10.5, 2.5, 2.5, 'pigpen'], // คอกหมู
   [13.5, 7, 2, 3, 'strawbarn'], // ยุ้งฟาง
   [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
-  [4, 17, 3.2, 3.2, 'watertower'], // หอถังน้ำ (เสา 4 ต้น)
+  [6.8, -11, 4.8, 3.8, 'watertower'], // หอถังน้ำ + เพิงปั๊ม (ย้ายมาหน้าบ้านฝั่งถนน 19 พ.ย.)
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
 export function homeSolids(): [number, number, number, number][] {
@@ -112,8 +115,8 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
-      <Editable id="home:watertower" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={4} z={17} r={2.6} origin={O}>
-        <group position={[4, 0, 17]}>
+      <Editable id="home:watertower" name="หอถังน้ำ + เพิงปั๊มน้ำ" x={6.8} z={-11} r={2.6} origin={O}>
+        <group position={[6.8, 0, -11]}>
           <WaterTower />
         </group>
       </Editable>
@@ -182,6 +185,8 @@ export const MAIN_HOUSE = { x: -7.5, z: -6, W: 13, D: 9 }
 /** ประตูน้ำเงิน: กลางประตู (x ภายในบ้าน) · ความกว้าง */
 const DOOR_X = 1.4
 const DOOR_W = 3
+/** ประตูไม้บานเดียว ด้าน −z (หันออกถนนหน้าบ้าน) */
+const FRONT_DOOR_X = 1.4
 function MainHouse() {
   const W = MAIN_HOUSE.W
   const D = MAIN_HOUSE.D
@@ -213,7 +218,42 @@ function MainHouse() {
         </mesh>
       ))}
       {/* มุ้งลวดสแตนเลสรอบบ้าน เฉพาะชั้น 1 (ครึ่งบนของผนัง) — ไม่ใช่หน้าต่างบานเดียว เป็นแนวยาวรอบบ้าน เว้นช่องประตู */}
-      <MeshBand W={W} D={D} y0={1.25} y1={2.75} doors={[{ side: 'S', at: DOOR_X, w: DOOR_W + 0.3 }, { side: 'E', at: 1.6, w: 1.3 }]} />
+      <MeshBand W={W} D={D} y0={1.25} y1={2.75} doors={[{ side: 'S', at: DOOR_X, w: DOOR_W + 0.3 }, { side: 'E', at: 1.6, w: 1.3 }, { side: 'N', at: FRONT_DOOR_X, w: 1.4 }, { side: 'W', at: 0, w: D }]} />
+      {/* หน้าต่างผนังตะวันตกชั้นล่าง (หันออก −x): ห้องน้ารงณ์ · ตรงเตียงตายาย */}
+      <group position={[-W / 2 - 0.04, 0.95, -3.1]} rotation={[0, -Math.PI / 2, 0]}>
+        <LaceWindow w={1.3} h={1.5} />
+      </group>
+      <group position={[-W / 2 - 0.04, 1.05, -0.9]} rotation={[0, -Math.PI / 2, 0]}>
+        <CurtainWindow w={1.05} h={1.3} />
+      </group>
+      {/* ห้องอาบน้ำ: ก่อปูนยื่นออกจากผนังด้านตะวันตก (−x) ชั้นล่าง · หน้าต่างบล็อกแก้วฝ้า · ชายคาเล็ก */}
+      <group position={[-W / 2 - 0.4, 0.2, 2.05]}>
+        <mesh position={[0, low / 2, 0]} castShadow receiveShadow>
+          <RBox args={[0.8, low, 4.1]} radius={0.04} />
+          <meshStandardMaterial color="#e6dac2" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.12, 0]}>
+          <boxGeometry args={[0.84, 0.24, 4.14]} />
+          <meshStandardMaterial color="#b8b0a0" />
+        </mesh>
+        {/* หน้าต่างบล็อกแก้วฝ้า (ห้องอาบน้ำ) */}
+        <group position={[-0.41, 1.0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          <GlassBlockWindow cols={3} rows={5} size={0.2} />
+        </group>
+        <mesh position={[-0.05, low + 0.06, 0]} rotation={[0, 0, 0.12]}>
+          <boxGeometry args={[1.05, 0.06, 4.4]} />
+          <meshStandardMaterial color="#8a5a34" />
+        </mesh>
+        {/* ท่อน้ำทิ้งลงพื้น */}
+        <mesh position={[-0.43, 0.25, -1.8]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.5, 8]} />
+          <meshStandardMaterial color="#9aa0a6" />
+        </mesh>
+      </group>
+      {/* ประตูไม้สักลูกฟัก 8 ช่อง ด้านหน้าบ้าน (−z หันออกถนน) */}
+      <group position={[FRONT_DOOR_X, 0.2, -D / 2 - 0.03]} rotation={[0, Math.PI, 0]}>
+        <WoodPanelDoor />
+      </group>
       {/* ประตูครัว (ด้านตะวันออก) */}
       <mesh position={[W / 2 + 0.03, 1.15, 1.6]} rotation={[0, Math.PI / 2, 0]}>
         <RBox args={[1, 1.9, 0.06]} radius={0.03} />
@@ -772,36 +812,16 @@ const TrunkTreeModel = ({ x, z, h = 2.2, r = 1.2, color = '#4f8640', trunk = '#6
   </group>
 )
 
-const PalmModel = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: number; areca?: boolean }) => (
-  <group position={[x, 0, z]}>
-    <mesh position={[0, h / 2, 0]} castShadow>
-      <cylinderGeometry args={[areca ? 0.07 : 0.13, areca ? 0.09 : 0.2, h, 8]} />
-      <meshStandardMaterial color={areca ? '#9a9a7a' : '#8a7058'} roughness={0.9} />
-    </mesh>
-    {Array.from({ length: areca ? 5 : 7 }).map((_, k) => (
-      <group key={k} position={[0, h, 0]} rotation={[0, (k / (areca ? 5 : 7)) * Math.PI * 2, 0]}>
-        <mesh position={[0, -0.2, areca ? 0.55 : 0.9]} rotation={[0.5, 0, 0]} scale={[areca ? 0.18 : 0.28, 0.04, areca ? 0.7 : 1.1]} castShadow>
-          <sphereGeometry args={[1, 12, 8]} />
-          <meshStandardMaterial color={k % 2 ? '#5a9a42' : '#4f8a3a'} />
-        </mesh>
-      </group>
-    ))}
-    {!areca &&
-      [0, 1, 2].map((k) => (
-        <mesh key={'c' + k} position={[Math.cos(k * 2.1) * 0.22, h - 0.25, Math.sin(k * 2.1) * 0.22]}>
-          <sphereGeometry args={[0.13, 10, 8]} />
-          <meshStandardMaterial color="#6a8a3a" />
-        </mesh>
-      ))}
-    {areca &&
-      [0, 1].map((k) => (
-        <mesh key={'a' + k} position={[0.1 * (k ? 1 : -1), h - 0.35, 0.05]}>
-          <sphereGeometry args={[0.07, 8, 6]} />
-          <meshStandardMaterial color="#e08a2e" />
-        </mesh>
-      ))}
-  </group>
-)
+const PalmModel = ({ x, z, h = 5, areca = false }: { x: number; z: number; h?: number; areca?: boolean }) =>
+  areca ? (
+    <group position={[x, 0, z]}>
+      <ArecaPalmTree h={h * 1.5} seed={x * 0.7 + z * 1.3} />
+    </group>
+  ) : (
+    <group position={[x, 0, z]}>
+      <CoconutPalm h={h * 2} seed={x * 0.37 + z * 0.61} />
+    </group>
+  )
 
 const BambooModel = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
@@ -840,12 +860,12 @@ function Orchard() {
   return (
     <group>
       {/* มะม่วงต้นใหญ่ 3 ต้น (ผูกเปล) */}
-      <TrunkTree x={8} z={-9} h={2.6} r={1.7} color="#3f6e33" fruit={6} fruitColor="#e8c040" fruitR={0.1} />
+      <TrunkTree x={9.6} z={-7.6} h={2.6} r={1.7} color="#3f6e33" fruit={6} fruitColor="#e8c040" fruitR={0.1} />
       <TrunkTree x={12.5} z={-9.5} h={2.6} r={1.6} color="#467a37" fruit={5} fruitColor="#e8c040" fruitR={0.1} />
       <TrunkTree x={12.5} z={-3} h={2.5} r={1.6} color="#3f6e33" />
       {/* เปลผูกระหว่างมะม่วง */}
-      <mesh position={[10.25, 1.2, -9.25]} rotation={[0, -0.11, 0]}>
-        <RBox args={[3.8, 0.06, 0.7]} radius={0.03} />
+      <mesh position={[11.05, 1.2, -8.55]} rotation={[0, 0.58, 0]}>
+        <RBox args={[3.2, 0.06, 0.7]} radius={0.03} />
         <meshStandardMaterial color="#d0503e" />
       </mesh>
       {/* มะม่วงแคระ 2 ต้น (ปีนเล่นได้) */}
@@ -864,7 +884,7 @@ function Orchard() {
       {[
         [5.5, 4],
         [7.5, 4.6],
-        [5, -11],
+        [1.2, -12.2],
       ].map(([x, z]) => (
         <TrunkTree key={'n' + x + z} x={x} z={z} h={1} r={0.75} color="#6a9a4a" fruit={4} fruitColor="#9ab86a" fruitR={0.09} />
       ))}
@@ -914,11 +934,20 @@ function Surroundings() {
   return (
     <group>
       {/* แนวมะพร้าวรอบบ้าน (หลังแนวมะพร้าวคือรั้วไม้) */}
-      {[-13, -9, -5, 8, 11, 15, 19, 23, 27, 31, 35].map((x, i) => (
+      {[-13, -9, -5, 8, 11, 14, 17, 20, 23, 26, 29].map((x, i) => (
         <Palm key={'cn' + x} x={x} z={d} h={5 + (i % 3) * 0.6} />
       ))}
       {[-8, -3, 2, 7, 12, 17, 21, 26, 31, 35].map((z, i) => (
-        <Palm key={'cw' + z} x={-h - 0.4} z={z} h={5.4 + (i % 2) * 0.5} />
+        // ต้นมะพร้าวที่ชิดตัวบ้าน (z −8, −3, 2) เปลี่ยนเป็นต้นมะม่วง (ผู้สร้าง 19 พ.ย.) · สองต้นแรกอยู่ติดผนังบ้าน ย้ายไปลานหน้าบ้านฝั่งถนน
+        z === -8 ? (
+          <TrunkTree key={'cw' + z} x={-12.3} z={-11.9} h={1.5} r={1.0} color="#467a37" fruit={4} fruitColor="#e8c040" fruitR={0.09} />
+        ) : z === -3 ? (
+          <TrunkTree key={'cw' + z} x={-8.5} z={-11.9} h={1.5} r={1.0} color="#3f6e33" fruit={4} fruitColor="#e8c040" fruitR={0.09} />
+        ) : z === 2 ? (
+          <TrunkTree key={'cw' + z} x={-13.3} z={2.6} h={2.4} r={1.4} color="#467a37" fruit={5} fruitColor="#e8c040" fruitR={0.1} />
+        ) : (
+          <Palm key={'cw' + z} x={-h - 0.4} z={z} h={5.4 + (i % 2) * 0.5} />
+        )
       ))}
       {[-6, 0, 6, 12, 18, 24, 30, 35].map((z, i) => (
         <Palm key={'ce' + z} x={east} z={z} h={5.2 + (i % 2) * 0.5} />
@@ -1055,6 +1084,8 @@ function groundHoles(W: number, D: number): Hole[] {
   const doors = [
     { side: 'S' as const, at: DOOR_X, w: DOOR_W + 0.3 },
     { side: 'E' as const, at: 1.6, w: 1.3 },
+    { side: 'N' as const, at: FRONT_DOOR_X, w: 1.4 },
+    { side: 'W' as const, at: 0, w: D },
   ]
   const out: Hole[] = []
   for (const [side, len] of [
@@ -1307,6 +1338,54 @@ function UpperRooms({ W, D, y, h }: { W: number; D: number; y: number; h: number
       <mesh position={[0, h - 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[W - 0.2, D - 0.2]} />
         <meshStandardMaterial color="#e8dcc4" side={2} />
+      </mesh>
+    </group>
+  )
+}
+
+/** ประตูไม้บานเดียวแบบลูกฟัก 2×4 ช่อง สีไม้สัก + ลูกบิดเงิน (ด้านหน้า = +z · ฐานประตูอยู่ที่ y=0) */
+function WoodPanelDoor() {
+  const W = 1.0
+  const H = 2.15
+  return (
+    <group>
+      {/* วงกบ */}
+      <mesh position={[0, H / 2 + 0.03, -0.01]} castShadow>
+        <boxGeometry args={[W + 0.14, H + 0.08, 0.1]} />
+        <meshStandardMaterial color="#5a3418" roughness={0.7} />
+      </mesh>
+      {/* บานประตู */}
+      <mesh position={[0, H / 2, 0.04]} castShadow>
+        <boxGeometry args={[W, H, 0.05]} />
+        <meshStandardMaterial color="#8a4e24" roughness={0.55} />
+      </mesh>
+      {/* ลูกฟัก 2 คอลัมน์ × 4 แถว (นูน มีขอบเข้ม) */}
+      {[-1, 1].flatMap((c) =>
+        [0, 1, 2, 3].map((r) => {
+          const x = c * 0.235
+          const y = 0.32 + r * 0.5
+          return (
+            <group key={c + ':' + r} position={[x, y, 0.07]}>
+              <mesh>
+                <boxGeometry args={[0.36, 0.42, 0.012]} />
+                <meshStandardMaterial color="#6a3a1a" roughness={0.6} />
+              </mesh>
+              <mesh position={[0, 0, 0.012]}>
+                <boxGeometry args={[0.29, 0.35, 0.014]} />
+                <meshStandardMaterial color={(c + r) % 2 ? '#9a5a2c' : '#94562a'} roughness={0.5} />
+              </mesh>
+            </group>
+          )
+        }),
+      )}
+      {/* ลูกบิดเงิน */}
+      <mesh position={[-0.4, 1.0, 0.1]}>
+        <sphereGeometry args={[0.04, 12, 10]} />
+        <meshStandardMaterial color="#d0d4d8" metalness={0.8} roughness={0.25} />
+      </mesh>
+      <mesh position={[-0.4, 1.0, 0.075]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.035, 0.035, 0.02, 12]} />
+        <meshStandardMaterial color="#d0d4d8" metalness={0.8} roughness={0.25} />
       </mesh>
     </group>
   )

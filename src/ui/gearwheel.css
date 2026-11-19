@@ -1,0 +1,160 @@
+/* วงล้อเลือกอาวุธ/ไอเทม — มุมขวาของจอ โทนไม้อุ่น ๆ เข้ากับเกม */
+.gw-wrap {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 340px;
+  z-index: 60;
+  pointer-events: auto;
+  animation: gw-in 0.16s ease-out;
+}
+@keyframes gw-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.92);
+  }
+}
+.gw-title {
+  margin: 0 auto 8px;
+  width: max-content;
+  max-width: 100%;
+  background: #5a4030;
+  color: #fff6e4;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(40, 24, 10, 0.3);
+}
+.gw-title kbd {
+  background: #f6e7c8;
+  color: #5a4030;
+  border-radius: 6px;
+  padding: 0 7px;
+  margin-right: 4px;
+  font-family: inherit;
+}
+.gw-sub {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+.gw-ring {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 240, 220, 0.94) 0 40%, rgba(232, 214, 182, 0.9) 41% 100%);
+  box-shadow: 0 10px 30px rgba(40, 24, 10, 0.35), inset 0 0 0 3px rgba(140, 104, 64, 0.35);
+}
+.gw-slot {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
+  border: 2px solid rgba(140, 104, 64, 0.35);
+  background: #fbf3e2;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.gw-slot img {
+  pointer-events: none;
+}
+.gw-slot.on {
+  transform: scale(1.18);
+  background: #fff8dc;
+  border-color: #d9a441;
+  box-shadow: 0 0 0 3px rgba(246, 196, 69, 0.55), 0 6px 14px rgba(40, 24, 10, 0.3);
+  z-index: 2;
+}
+.gw-slot.held::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4caf50;
+  box-shadow: 0 0 0 2px #fff;
+}
+.gw-slot.empty {
+  opacity: 0.45;
+  cursor: default;
+}
+.gw-num {
+  position: absolute;
+  bottom: -8px;
+  background: #5a4030;
+  color: #fff6e4;
+  font-size: 11px;
+  border-radius: 8px;
+  padding: 0 6px;
+  line-height: 16px;
+}
+.gw-plus,
+.gw-hand {
+  font-size: 11px;
+  color: #7a6040;
+}
+.gw-hand.big {
+  font-size: 16px;
+}
+.gw-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130px;
+  height: 130px;
+  margin: -65px 0 0 -65px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #4a3424;
+}
+.gw-center b {
+  font-size: 15px;
+}
+.gw-wait {
+  display: inline-block;
+  border-radius: 50%;
+  background: rgba(140, 104, 64, 0.12);
+}
+/* ป้ายของที่ถืออยู่ (มุมขวาล่าง เหนือแถบไอเทม) */
+.gw-held {
+  position: fixed;
+  right: 18px;
+  bottom: 96px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  pointer-events: none;
+}
+.gw-held > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(251, 243, 226, 0.92);
+  border-radius: 12px;
+  padding: 2px 10px 2px 2px;
+  box-shadow: 0 3px 10px rgba(40, 24, 10, 0.2);
+  color: #4a3424;
+  font-size: 12px;
+}
+.gw-held kbd {
+  background: #5a4030;
+  color: #fff6e4;
+  border-radius: 5px;
+  padding: 0 5px;
+  font-family: inherit;
+  font-size: 11px;
+}

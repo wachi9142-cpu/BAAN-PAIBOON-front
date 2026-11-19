@@ -1,5 +1,6 @@
 import { RBox } from './models/RBox'
 import { MulberryBush } from './Orchard'
+import { Windy } from './Wind'
 
 /** ต้นมัลเบอร์รี่ 3 ต้นปลูกติดกัน (หลังบ้านน้าโรจน์) */
 export function MulberryRow({ w, d }: { w: number; d: number }) {
@@ -15,7 +16,9 @@ export function MulberryRow({ w, d }: { w: number; d: number }) {
         [0, -0.75],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
-          <MulberryBush seed={i * 3 + 1} s={1 + i * 0.08} />
+          <Windy h={1.1} amp={0.18} flutter={1.4}>
+            <MulberryBush seed={i * 3 + 1} s={1 + i * 0.08} />
+          </Windy>
         </group>
       ))}
     </group>

@@ -17,6 +17,7 @@ export type PlaceKind =
   | 'mulberry'
   | 'outkitchen'
   | 'mangoorchard'
+  | 'arecagrove'
   | 'ricefield'
   | 'questboard'
   | 'shop'
@@ -95,7 +96,7 @@ export const ROADS: Road[] = [
   { from: [0, 3.5], to: [0, 52.25], width: 4.5 },
   { from: [0, -3.5], to: [0, -38], width: 4.5 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
-  { from: [30, 3.5], to: [30, 60], width: 4.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
+  { from: [30, 3.5], to: [30, 89], width: 4.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้ · ต่อขึ้นเหนือผ่านซอยบ้านใหม่ 5 หลัง (19 พ.ย.)
   // แยกจากซอย 1 ไปทางตะวันออก เลียบรั้วด้านหน้าบ้านแม่ฉัตร (ผู้สร้าง 19 พ.ย. 2569)
   { from: [32.25, 47.5], to: [80, 47.5], width: 4.5 },
   { from: [-37.5, 3.5], to: [-37.5, 115.25], width: 4.5 }, // ซอย 2 (ถนนดินแดง 2 เลน) · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
@@ -293,9 +294,17 @@ export const PLACES: Place[] = [
   { id: 'rot-park', name: 'ที่จอดรถบ้านน้าโรจน์', kind: 'parkpad', pos: [72.4, 54.95], size: [5.8, 8.9], solidRadius: 0 },
   { id: 'house-rot', name: 'บ้านน้าโรจน์', kind: 'npchouse', houseStyle: 'modern', pos: [72, 63.5], rotation: Math.PI, size: [11, 7], color: '#b98252', arriveText: 'บ้านชั้นเดียวสไตล์โมเดิร์นของน้าโรจน์ · ปีกฝั่งบ่อปลาเปิดเป็นร้านตัดผมชาย-หญิง ช่างโรจน์ · มีกำแพงอิฐกั้นสวนมะนาว และบ่อปลาคาร์ฟ', solidRadius: 4.6 },
   // หลังบ้านน้าโรจน์: ครัวนอก (มีโต๊ะกินข้าว) + ต้นมัลเบอร์รี่ 3 ต้นเรียงติดกัน
+  // ซอย 1 ช่วงเหนือ: บ้านใหม่ 5 หลัง สองฝั่งซอย ทุกหลังหันหน้าลงทางใต้ (ถนนเส้นหน้า) เว้นลานหน้าบ้าน ~4 ม. ไม่ชิดถนน (ผู้สร้าง 19 พ.ย. 2569)
+  { id: 'house-s1a', name: 'บ้านป้าบุญเรือน', kind: 'npchouse', houseStyle: 'stilt', pos: [21.2, 73], rotation: Math.PI, size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
+  { id: 'house-s1b', name: 'บ้านลุงทองดี', kind: 'npchouse', houseStyle: 'halfhalf', roof: '#a8483a', pos: [21.2, 82], rotation: Math.PI, size: [6, 5], color: '#d8c8a8', solidRadius: 4.2 },
+  { id: 'house-s1c', name: 'บ้านพี่แสงเดือน', kind: 'npchouse', houseStyle: 'concrete', roof: '#5a7a8a', pos: [37.5, 68], rotation: Math.PI, size: [6, 5], color: '#efe6d2', solidRadius: 4.2 },
+  { id: 'house-s1d', name: 'บ้านน้าคำมี', kind: 'npchouse', houseStyle: 'wood2', pos: [37.5, 77], rotation: Math.PI, size: [6, 5], color: '#9a7048', solidRadius: 4.2 },
+  { id: 'house-s1e', name: 'บ้านยายสมบูรณ์', kind: 'npchouse', houseStyle: 'stilt', pos: [37.5, 86], rotation: Math.PI, size: [6, 5], color: '#7a5434', solidRadius: 4.2 },
   { id: 'rot-kitchen', name: 'ครัวนอกบ้านน้าโรจน์', kind: 'outkitchen', pos: [71.8, 70.2], rotation: Math.PI, size: [4.6, 3.4], arriveText: 'ครัวนอกบ้าน มีเตาถ่านนึ่งข้าวเหนียว โอ่งน้ำ และโต๊ะกินข้าว', solidRadius: 0 },
   { id: 'rot-mulberry', name: 'ต้นมัลเบอร์รี่น้าโรจน์', kind: 'mulberry', pos: [65.2, 70.4], size: [4, 4], arriveText: 'ต้นมัลเบอร์รี่ (หม่อน) 3 ต้น ลูกสุกสีม่วงดำ กินได้', solidRadius: 0 },
   { id: 'rot-mango', name: 'สวนมะม่วงน้าโรจน์', kind: 'mangoorchard', pos: [73, 76.8], size: [20.5, 7], arriveText: 'สวนมะม่วงหลายพันธุ์ อาร์ทูอีทู น้ำดอกไม้สีม่วง มะม่วงยักษ์ เขียวใหญ่ เขียวเสวย น้ำดอกไม้สีทอง', solidRadius: 0 },
+  // หลังบ้านน้องเนย (ระหว่างบ้านคุณตามะไฟกับสวนมะม่วงน้าโรจน์): สวนหมากราว 30 ต้น (ผู้สร้าง 19 พ.ย. 2569)
+  { id: 'areca-grove', name: 'สวนหมาก', kind: 'arecagrove', pos: [51, 83], size: [17, 9], arriveText: 'สวนหมากราว 30 ต้น ลำต้นสูงเรียว ทะลายหมากสุกสีส้ม', solidRadius: 0 },
   { id: 'rot-koi', name: 'บ่อปลาคาร์ฟน้าโรจน์', kind: 'koipond', pos: [78.5, 54.8], size: [5, 7], arriveText: 'บ่อปลาคาร์ฟหลากสี 5 ตัว มีน้ำตกจำลองเล็ก ๆ ไหลลงบ่อ เสียงน้ำเย็นชื่นใจ', solidRadius: 2.3 },
   { id: 'lot-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'fencedlot', pos: [46.5, 57.1], rotation: Math.PI / 2, size: [14, 27], solidRadius: 0 },
   { id: 'house-noey', name: 'บ้านน้องเนย โน๊ต นิว', kind: 'npchouse', houseStyle: 'concrete', roof: '#7a8a96', pos: [52.5, 57.1], rotation: -Math.PI / 2, size: [9, 7.5], houseScale: 1.5, color: '#ece4d4', arriveText: 'บ้านปูนชั้นเดียวหลังใหญ่ ครอบครัวห้าคนของน้องเนย น้องโน๊ต น้องนิว · ลานจอดหน้าบ้านมีรถไถ กระบะ มอเตอร์ไซค์ จักรยาน', solidRadius: 5.2 },
@@ -315,8 +324,8 @@ export const PLACES: Place[] = [
   // ฝั่งตะวันตกของซอย 2 ช่วงที่ 2 (เดิมเป็นทุ่งนา): บ้านยายแดงตรงข้ามบ้านฟ่างพอดี · บ้านยายวานอยู่ลึกเข้าไป (ตรงที่เคยเป็นนา) หน้าบ้านเป็นลานกว้าง
   { id: 'house-daeng', name: 'บ้านยายแดง', kind: 'npchouse', pos: [-45, 66], rotation: Math.PI / 2, size: [6, 5], color: '#b0704a', arriveText: 'บ้านยายแดง ลูกสาวอี๊ดเอี๊ยง หลานน้องไม้วายุ · อยู่ตรงข้ามบ้านฟ่างพอดี', solidRadius: 4.2 },
   { id: 'house-wan', name: 'บ้านยายวาน', kind: 'npchouse', pos: [-72, 72], rotation: Math.PI / 2, size: [6, 5], color: '#8a6a48', arriveText: 'บ้านยายวานกับมินท์หลานสาว · หน้าบ้านเป็นลานกว้าง เด็ก ๆ วิ่งเล่นและจอดจักรยาน', solidRadius: 4.2, frontYard: 18 },
-  // ข้างบ้านฟ่างฝั่งตะวันออก (ไม่มีถนนคั่น): บ้านคุณตามะไฟ หันหน้าลงทางใต้ ปลายซอย 1
-  { id: 'house-mafai', name: 'บ้านคุณตามะไฟ', kind: 'npchouse', pos: [30.5, 67], rotation: Math.PI, size: [6, 5], color: '#9a7048', arriveText: 'บ้านคุณตามะไฟ เพื่อนบ้านติดกับบ้านฟ่างฝั่งตะวันออก', solidRadius: 4.2 },
+  // ข้างบ้านฟ่างฝั่งตะวันออก (ชิดรั้ว ไม่มีถนนคั่น): บ้านคุณตามะไฟ หันหน้าลงถนนเส้นหน้า (ทิศใต้)
+  { id: 'house-mafai', name: 'บ้านคุณตามะไฟ', kind: 'npchouse', pos: [21.2, 64], rotation: Math.PI, size: [6, 5], color: '#9a7048', arriveText: 'บ้านคุณตามะไฟ เพื่อนบ้านติดกับบ้านฟ่างฝั่งตะวันออก', solidRadius: 4.2 },
   { id: 'house-headman', name: 'บ้านผู้ใหญ่บ้าน', kind: 'npchouse', pos: [23.5, 40], rotation: Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
 ]
 
@@ -380,7 +389,7 @@ export function isBlockedForDecor(p: Vec2) {
     const lz = dx * Math.sin(r) + dz * Math.cos(r)
     if (Math.abs(lx) < 9 && lz > 2 && lz < 4.5 + pl.frontYard + 2) return true
   }
-  // บ้านฟ่างขยายแล้ว (รั้วไม่สมมาตรรอบจุดกลาง ดู HOME_BOX ใน GrandHome.tsx): x −33..21, z 58..109
+  // บ้านฟ่าง (ดู HOME_BOX ใน GrandHome.tsx): x −33..15, z 58..109 · ช่วง x 15..21 เป็นพื้นว่างนอกรั้ว (คงกรอบเดิมไว้ ไม่ให้ต้นไม้สุ่มทั้งหมู่บ้านเปลี่ยนที่)
   if (p[0] > -35 && p[0] < 26 && p[1] > 56 && p[1] < 118) return true
   if (PLOTS.some((pl) => inRect(p, pl.center, pl.size, 2))) return true
   if (Math.hypot(p[0] - SPAWN[0], p[1] - SPAWN[1]) < 6) return true

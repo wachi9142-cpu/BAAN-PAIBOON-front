@@ -4,7 +4,8 @@ import { CanvasTexture, RepeatWrapping, type Group, type Mesh } from 'three'
 import { RBox } from './models/RBox'
 import { Motorcycle } from './models/Motorcycle'
 import { Fastback, Hatchback } from './models/Vehicles'
-import { ROT_PATH, ROT_WALLS, WALL_T } from '../game/content/rotWalls'
+import { Windy } from './Wind'
+import { ROT_GATE, ROT_PATH, ROT_WALLS, WALL_T } from '../game/content/rotWalls'
 
 /* ───────── บ้านน้าโรจน์: บ่อปลาคาร์ฟ + น้ำตกจำลอง · ลานจอดรถ · สวนมะนาว ───────── */
 
@@ -196,7 +197,9 @@ export function LemonGarden({ w, d }: { w: number; d: number }) {
         <meshStandardMaterial color="#9c9a92" roughness={1} />
       </mesh>
       {trees.map(([x, z, s], i) => (
-        <LimeTree key={i} x={x} z={z} s={s} seed={i} />
+        <Windy key={i} h={1.6} amp={0.14} flutter={1}>
+          <LimeTree x={x} z={z} s={s} seed={i} />
+        </Windy>
       ))}
       {/* ป้ายไม้เล็ก ๆ หน้าสวน */}
       <group position={[0, 0, -d / 2 + 0.5]}>
@@ -390,11 +393,129 @@ export function RotWalls() {
           </group>
         )
       })}
+      <RoseArchGate />
       {/* ทางเดินแผ่นปูนข้างบ่อ */}
       {Array.from({ length: Math.floor((p.z1 - p.z0) / 0.9) }, (_, k) => (
         <mesh key={'s' + k} position={[(p.x0 + p.x1) / 2, 0.035, p.z0 + 0.45 + k * 0.9]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[p.x1 - p.x0 - 0.2, 0.75]} />
           <meshStandardMaterial color="#d2cdc2" roughness={0.95} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/** ใบประตูบานขาวหัวโค้ง (ระแนงตั้ง) · บานพับอยู่ที่ x=0 ตัวบานยื่นไปทาง +x */
+function GateLeaf({ w, flip }: { w: number; flip: number }) {
+  const n = 7
+  return (
+    <group scale={[flip, 1, 1]}>
+      {Array.from({ length: n }, (_, i) => {
+        const x = 0.08 + (i / (n - 1)) * (w - 0.16)
+        // หัวโค้งสูงขึ้นไปทางกลางประตู (ปลายบาน)
+        const h = 1.25 + Math.sin(((x / w) * Math.PI) / 2) * 0.35
+        return (
+          <mesh key={i} position={[x, h / 2 + 0.05, 0]} castShadow>
+            <boxGeometry args={[0.07, h, 0.04]} />
+            <meshStandardMaterial color="#f8f8f4" roughness={0.6} />
+          </mesh>
+        )
+      })}
+      {[0.3, 1.05].map((y) => (
+        <mesh key={y} position={[w / 2, y, 0.03]}>
+          <boxGeometry args={[w, 0.09, 0.04]} />
+          <meshStandardMaterial color="#f8f8f4" roughness={0.6} />
+        </mesh>
+      ))}
+      {/* กรอบข้างบาน + มือจับดำ */}
+      <mesh position={[0.03, 0.75, 0]}>
+        <boxGeometry args={[0.08, 1.45, 0.06]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.6} />
+      </mesh>
+      <mesh position={[w - 0.12, 0.95, 0.05]}>
+        <boxGeometry args={[0.03, 0.14, 0.03]} />
+        <meshStandardMaterial color="#222" metalness={0.5} roughness={0.4} />
+      </mesh>
+    </group>
+  )
+}
+
+/** ซุ้มประตูโค้งสีขาว กุหลาบเลื้อยคลุม (ขาว-ชมพู) + ประตูบานคู่สีขาวหัวโค้ง เปิดแง้มออกด้านนอก · ทางเดินอิฐ */
+function RoseArchGate() {
+  const g = ROT_GATE
+  const w = g.x1 - g.x0
+  const cx = (g.x0 + g.x1) / 2
+  const roses = useMemo(() => {
+    const out: [number, number, number, number][] = []
+    let s = 77
+    const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
+    // ตามแนวโค้ง
+    for (let i = 0; i < 46; i++) {
+      const a = r() * Math.PI
+      const R = w / 2 + 0.1 + (r() - 0.5) * 0.25
+      out.push([Math.cos(a) * R, 2.3 + Math.sin(a) * R * 0.55, (r() - 0.5) * 0.45, r() < 0.7 ? 0 : 1])
+    }
+    // ไหลลงตามเสา
+    for (let i = 0; i < 30; i++) {
+      const side = i % 2 ? 1 : -1
+      out.push([side * (w / 2 + 0.12 + (r() - 0.5) * 0.25), 0.4 + r() * 1.9, (r() - 0.5) * 0.4, r() < 0.65 ? 0 : 1])
+    }
+    return out
+  }, [w])
+  return (
+    <group position={[cx, 0, g.z]}>
+      {/* เสาซุ้ม 4 ต้น (หน้า-หลัง) */}
+      {[-1, 1].flatMap((sx) =>
+        [-0.2, 0.2].map((dz) => (
+          <mesh key={sx + ':' + dz} position={[sx * (w / 2 + 0.05), 1.15, dz]} castShadow>
+            <boxGeometry args={[0.16, 2.3, 0.16]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.6} />
+          </mesh>
+        )),
+      )}
+      {/* โค้งซุ้ม (สองแนว) + คานขวาง */}
+      {[-0.2, 0.2].map((dz) => (
+        <mesh key={dz} position={[0, 2.3, dz]} scale={[1, 0.55, 1]}>
+          <torusGeometry args={[w / 2 + 0.05, 0.07, 8, 28, Math.PI]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.6} />
+        </mesh>
+      ))}
+      {Array.from({ length: 7 }, (_, i) => {
+        const a = (i / 6) * Math.PI
+        return (
+          <mesh key={'c' + i} position={[Math.cos(a) * (w / 2 + 0.05), 2.3 + Math.sin(a) * (w / 2 + 0.05) * 0.55, 0]}>
+            <boxGeometry args={[0.07, 0.07, 0.5]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.6} />
+          </mesh>
+        )
+      })}
+      {/* ใบกุหลาบเลื้อย + ดอก */}
+      {roses.map(([x, y, z], i) =>
+        i % 2 === 0 ? (
+          <mesh key={'l' + i} position={[x * 0.98, y - 0.05, z]} scale={[1, 0.8, 1]}>
+            <icosahedronGeometry args={[0.16, 1]} />
+            <meshStandardMaterial color={i % 4 ? '#4f8a3c' : '#5e9a48'} roughness={0.9} />
+          </mesh>
+        ) : null,
+      )}
+      {roses.map(([x, y, z, c], i) => (
+        <mesh key={'r' + i} position={[x, y, z + 0.06]}>
+          <sphereGeometry args={[0.055, 10, 8]} />
+          <meshStandardMaterial color={c ? '#f2a0b8' : '#fbf6ec'} roughness={0.6} />
+        </mesh>
+      ))}
+      {/* ประตูบานคู่: บานพับที่เสาสองข้าง เปิดแง้มออกด้านนอก (+z) */}
+      <group position={[-w / 2 + 0.05, 0, 0]} rotation={[0, -0.95, 0]}>
+        <GateLeaf w={w / 2 - 0.05} flip={1} />
+      </group>
+      <group position={[w / 2 - 0.05, 0, 0]} rotation={[0, 0.95, 0]}>
+        <GateLeaf w={w / 2 - 0.05} flip={-1} />
+      </group>
+      {/* ทางเดินอิฐหน้าประตู */}
+      {Array.from({ length: 4 }, (_, i) => (
+        <mesh key={'p' + i} position={[0, 0.03, -1.2 + i * 0.8]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[w - 0.4, 0.7]} />
+          <meshStandardMaterial color={i % 2 ? '#c8a888' : '#bc9c7c'} roughness={0.95} />
         </mesh>
       ))}
     </group>

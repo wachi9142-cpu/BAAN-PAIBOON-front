@@ -36,6 +36,8 @@ import { Bicycle, Pickup, Tractor } from './models/Vehicles'
 import { KoiPond, LemonGarden, ParkPad, RotWalls } from './RotHome'
 import { MulberryRow, OutdoorKitchen } from './RotBackyard'
 import { MangoOrchard } from './Orchard'
+import { ArecaGrove } from './ArecaGrove'
+import { CoconutPalm } from './models/Palms'
 import { ModernHouse } from './ModernHouse'
 import { Motorcycle } from './models/Motorcycle'
 import { NOEY_VEHICLES } from '../game/content/noeyYard'
@@ -236,6 +238,10 @@ function PlaceMesh({ place }: { place: Place }) {
     case 'overgrown':
       labelY = 3
       body = <OvergrownLot w={w} d={d} />
+      break
+    case 'arecagrove':
+      labelY = 0
+      body = <ArecaGrove w={w} d={d} />
       break
     case 'mangoorchard':
       labelY = 4.5
@@ -603,25 +609,10 @@ export function Tree({ tree }: { tree: TreeSpot }) {
   const s = tree.scale
   switch (tree.kind) {
     case 'coconut':
-      // มะพร้าว: ลำต้นเรียว ใบโค้งเป็นทางยาว ปลายตกลง
+      // มะพร้าว: ลำต้นโค้งมีข้อ ทางใบยาวโค้งมีใบย่อยห้อย ทะลายมะพร้าวเขียวใต้ยอด
       return (
         <group position={[x, 0, z]} scale={s}>
-          <mesh position={[0, 3, 0]} rotation={[0, 0, 0.08]} castShadow>
-            <cylinderGeometry args={[0.14, 0.24, 6, 12]} />
-            <meshStandardMaterial color="#8a7058" roughness={0.9} />
-          </mesh>
-          {Array.from({ length: 7 }).map((_, k) => (
-            <group key={k} position={[0.24, 6, 0]} rotation={[0, (k / 7) * Math.PI * 2, 0]}>
-              <mesh position={[0, -0.35, 1.15]} rotation={[0.45, 0, 0]} scale={[0.32, 0.05, 1.35]} castShadow>
-                <sphereGeometry args={[1, 16, 10]} />
-                <meshStandardMaterial color={k % 2 ? '#5a9a42' : '#4f8a3a'} />
-              </mesh>
-            </group>
-          ))}
-          <mesh position={[0.24, 5.9, 0]}>
-            <sphereGeometry args={[0.32, 14, 10]} />
-            <meshStandardMaterial color="#6a8a3a" />
-          </mesh>
+          <CoconutPalm h={10} seed={x * 0.37 + z * 0.61} />
         </group>
       )
     case 'banana':

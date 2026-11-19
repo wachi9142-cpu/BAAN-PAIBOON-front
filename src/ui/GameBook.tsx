@@ -510,7 +510,8 @@ function TopPages({ id, close }: { id: TopTab; close: () => void }) {
             <li><kbd>B</kbd> โหมดสร้าง</li>
             <li><kbd>1–9</kbd> แถบไอเทม</li>
             <li><kbd>Z</kbd>/<kbd>X</kbd> เปลี่ยนสัตว์ตัวหลัก</li>
-            <li><kbd>Q</kbd> ผิวปากเรียกสัตว์</li>
+            <li><kbd>Q</kbd> วงล้ออาวุธ · <kbd>R</kbd> วงล้อไอเทม</li>
+            <li><kbd>G</kbd> ผิวปากเรียกสัตว์ · <kbd>F</kbd> ขี่สัตว์</li>
           </ul>
         </div>
       }

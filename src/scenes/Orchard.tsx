@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { NearLabel } from './NearLabel'
+import { Windy } from './Wind'
 import { Color, Object3D, SphereGeometry, type InstancedMesh } from 'three'
 
 /* ───────── ต้นมัลเบอร์รี่ (ปลูกลงดิน ไม่มีกระถาง) + สวนมะม่วงหลายพันธุ์ ───────── */
@@ -266,7 +267,9 @@ export function MangoOrchard({ w, d }: { w: number; d: number }) {
       </mesh>
       {ORCHARD_LAYOUT.map((t, i) => (
         <group key={i} position={[t.x, 0, t.z]} rotation={[0, i * 1.1, 0]}>
-          <MangoTree variety={t.v} seed={i * 1.7 + 0.5} />
+          <Windy h={3.6} amp={0.26} flutter={1}>
+            <MangoTree variety={t.v} seed={i * 1.7 + 0.5} />
+          </Windy>
           <NearLabel text={MANGO_NAMES[t.v]} y={4.2} r={2.4} height={0.5} />
         </group>
       ))}

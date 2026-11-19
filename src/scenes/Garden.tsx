@@ -5,6 +5,7 @@ import { useGame } from '../game/store'
 import { useClock } from '../game/clock'
 import { BED_SIZE, bedStage, GARDEN_BEDS, GARDEN_JAR, isWet, type BedState, type CropId } from '../game/content/garden'
 import { RBox } from './models/RBox'
+import { Windy } from './Wind'
 
 /** แปลงผักสวนครัวหน้าบ้านผู้เล่น — ดินแห้ง/ชื้น · ต้นผักโตตามระยะ · ดาวเล็ก ๆ ลอยเหนือแปลงที่เก็บได้ */
 export function Garden() {
@@ -58,7 +59,9 @@ function Bed({ x, z, bed, now }: { x: number; z: number; bed?: BedState; now: nu
       {bed?.crop &&
         OFFS.map(([ox, oz], k) => (
           <group key={k} position={[ox, 0.26, oz]} rotation={[0, k * 1.9, 0]}>
-            <Plant crop={bed.crop!} stage={stage as 0 | 1 | 2 | 3} />
+            <Windy h={0.8} amp={0.1} flutter={1.5}>
+              <Plant crop={bed.crop!} stage={stage as 0 | 1 | 2 | 3} />
+            </Windy>
           </group>
         ))}
       {stage === 3 && <ReadyStar />}

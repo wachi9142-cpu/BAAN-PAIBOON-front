@@ -6,6 +6,7 @@ import { useClock } from '../game/clock'
 import { saplingGrowth, treeFx, treePhase } from '../game/trees'
 import { TREES, type TreeSpot } from '../game/content/village'
 import { TREE_RULES } from '../game/content/trees'
+import { Windy } from './Wind'
 import type { GroundDrop, TreeState } from '../game/treeTypes'
 import type { ItemId } from '../game/content/items'
 
@@ -59,7 +60,10 @@ function OneTree({ index, tree, st, now, Tree }: { index: number; tree: TreeSpot
       <group position={[x, 0, z]}>
         <group ref={swayRef}>
           <group position={[-x, 0, -z]}>
-            <Tree tree={tree} />
+            {/* ไหวตามลม: ต้นเล็ก (scale น้อย) เอนมากกว่าต้นใหญ่ · กล้วย/มะพร้าวใบสั่นมาก */}
+            <Windy h={4.2 * tree.scale} amp={0.16 + 0.22 / tree.scale} flutter={tree.kind === 'mango' ? 0.8 : 1.6}>
+              <Tree tree={tree} />
+            </Windy>
           </group>
           {fresh && fresh.dmg > 0 && <ChopMarks st={fresh} tree={tree} />}
         </group>
