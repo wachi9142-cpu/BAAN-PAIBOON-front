@@ -38,8 +38,25 @@ export function LayoutDragger() {
       if (e.button !== 0) return
       sx = e.clientX
       sy = e.clientY
-      pending = true
       window.clearTimeout(timer)
+      // กดลงบนของ: จับทันที + ล็อกกล้อง (หน้าจอนิ่ง ของตามเมาส์)
+      const p0 = groundAt(sx, sy)
+      if (p0) {
+        let best0: string | null = null
+        let bd0 = Infinity
+        for (const it of editables.values()) {
+          const d = Math.hypot(it.wx - p0.x, it.wz - p0.z)
+          if (d < it.r && d - it.r < bd0) {
+            bd0 = d - it.r
+            best0 = it.id
+          }
+        }
+        if (best0) {
+          useLayoutEdit.setState({ selected: best0, dragging: true })
+          return
+        }
+      }
+      pending = true
       timer = window.setTimeout(() => {
         if (!pending) return
         pending = false

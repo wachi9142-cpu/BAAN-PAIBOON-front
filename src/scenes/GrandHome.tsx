@@ -1,10 +1,11 @@
 import { useMemo, useRef } from 'react'
+import { CanvasTexture, RepeatWrapping } from 'three'
 import { RBox } from './models/RBox'
 import { CashewTree } from './models/CashewTree'
 import { Editable } from './Editable'
-import { SAVED_LAYOUT } from '../game/layoutEdit'
+import { LIVE } from '../game/layoutEdit'
 import { PLACES } from '../game/content/village'
-import { Bush, GableRoof, PicketFence } from './models/House'
+import { Bush, GableRoof, OpenWindow, PicketFence } from './models/House'
 import { BananaTree } from './models/BananaTree'
 import { Pet } from './models/Pet'
 import { SignBoard } from './SignBoard'
@@ -42,12 +43,14 @@ const BASE_SOLIDS: [number, number, number, number, string][] = [
   [2.5, -9, 4, 3, 'orchid'], // เรือนกล้วยไม้
 ]
 /** ตำแหน่งสิ่งปลูกสร้างทึบ (ใช้ทำกล่องชน) — [x, z, กว้าง, ลึก] · ย้ายตามโหมด "ย้ายที่" (หมุน ~90° สลับกว้าง/ลึก) */
-export const HOME_SOLIDS: [number, number, number, number][] = BASE_SOLIDS.map(([x, z, w, d, id]) => {
-  const m = SAVED_LAYOUT['home:' + id]
-  if (!m) return [x, z, w, d]
-  const q = Math.abs(Math.sin(m.rot)) > 0.7
-  return [m.x, m.z, q ? d : w, q ? w : d]
-})
+export function homeSolids(): [number, number, number, number][] {
+  return BASE_SOLIDS.map(([x, z, w, d, id]) => {
+    const m = LIVE.map['home:' + id]
+    if (!m) return [x, z, w, d]
+    const q = Math.abs(Math.sin(m.rot)) > 0.7
+    return [m.x, m.z, q ? d : w, q ? w : d]
+  })
+}
 
 export function GrandHome() {
   const { x0, x1, z0, z1 } = HOME_BOX
@@ -65,7 +68,7 @@ export function GrandHome() {
         <planeGeometry args={[11, 5]} />
         <meshStandardMaterial color="#c9c3b5" />
       </mesh>
-      <Editable id="home:main" name="บ้านไม้สองชั้น (บ้านหลัก)" x={-7.5} z={-6} origin={O}>
+      <Editable id="home:main" name="บ้านไม้สองชั้น (บ้านหลัก)" x={-7.5} z={-6} r={6} origin={O}>
         <MainHouse />
       </Editable>
       {/* แคร่หน้าประตู = ที่นอนของน้องหมา + แคร่ใหญ่ 2 ตัวข้างครัว */}
@@ -105,7 +108,7 @@ export function GrandHome() {
           </mesh>
         </group>
       ))}
-      <Editable id="home:veggarden" name="สวนผักสวนดอกไม้" x={2.2} z={2.5} origin={O}>
+      <Editable id="home:veggarden" name="สวนผักสวนดอกไม้" x={2.2} z={2.5} r={3} origin={O}>
         <VegFlowerGarden x={2.2} z={2.5} />
       </Editable>
       <Editable id="home:orchid" name="เรือนกล้วยไม้" x={2.5} z={-9} origin={O}>
@@ -114,13 +117,13 @@ export function GrandHome() {
       <Editable id="home:ricebarn" name="ยุ้งข้าว" x={-12} z={9} origin={O}>
         <RiceBarn x={-12} z={9} />
       </Editable>
-      <Editable id="home:cookhouse" name="บ้านหลังที่สอง (ครัว)" x={-6.5} z={9} origin={O}>
+      <Editable id="home:cookhouse" name="บ้านหลังที่สอง (ครัว)" x={-6.5} z={9} r={3} origin={O}>
         <CookHouse x={-6.5} z={9} />
       </Editable>
       <Editable id="home:toilets" name="ห้องน้ำนอกบ้าน" x={-2} z={10.2} origin={O}>
         <OutdoorToilets x={-2} z={10.2} />
       </Editable>
-      <Editable id="home:buffalo" name="คอกควาย" x={3} z={8.8} origin={O}>
+      <Editable id="home:buffalo" name="คอกควาย" x={3} z={8.8} r={3.5} origin={O}>
         <BuffaloPen x={3} z={8.8} />
       </Editable>
       <Editable id="home:coop" name="เล้าไก่" x={8} z={10.5} origin={O}>
@@ -181,11 +184,9 @@ function MainHouse() {
         <RBox args={[W + 0.6, 0.2, D + 0.6]} radius={0.08} />
         <meshStandardMaterial color="#bdb7aa" />
       </mesh>
-      {/* ชั้น 1 ผนังปูนสีครีม */}
-      <mesh position={[0, 0.2 + low / 2, 0]} castShadow receiveShadow>
-        <RBox args={[W, low, D]} radius={0.25} />
-        <meshStandardMaterial color="#eadfc8" />
-      </mesh>
+      {/* ชั้น 1 ผนังปูนสีครีม: เว้นช่องมุ้งลวดรอบบ้าน มองทะลุเห็นครัวข้างใน */}
+      <HouseShell W={W} D={D} y0={0.2} y1={0.2 + low} t={0.16} color="#eadfc8" inner="#f2ead8" holes={groundHoles(W, D)} />
+      <KitchenInside W={W} D={D} y={0.2} h={low} />
       {/* ประตูบ้านสีน้ำเงินบานกว้าง (บานคู่) ด้าน +z หันเข้าลานในบ้าน */}
       <mesh position={[DOOR_X, 1.3, D / 2 + 0.03]}>
         <RBox args={[DOOR_W, 2.2, 0.08]} radius={0.04} />
@@ -213,11 +214,9 @@ function MainHouse() {
         <RBox args={[W + 0.6, 0.16, D + 1]} radius={0.06} />
         <meshStandardMaterial color="#8a5a34" />
       </mesh>
-      {/* ชั้น 2 ไม้ */}
-      <mesh position={[0, 0.36 + low + up / 2, 0]} castShadow receiveShadow>
-        <RBox args={[W - 0.3, up, D - 0.3]} radius={0.22} />
-        <meshStandardMaterial color="#8f5e38" />
-      </mesh>
+      {/* ชั้น 2 ไม้: เจาะช่องหน้าต่างจริง มองเห็น 3 ห้องข้างใน */}
+      <HouseShell W={W - 0.3} D={D - 0.3} y0={0.36 + low} y1={0.36 + low + up} t={0.12} color="#8f5e38" inner="#c9a070" holes={upperHoles(W - 0.3, D - 0.3, 0.36 + low + up * 0.52)} />
+      <UpperRooms W={W - 0.3} D={D - 0.3} y={0.36 + low} h={up} />
       {/* แนวตีไม้ฝา */}
       {Array.from({ length: 5 }).map((_, i) => (
         <mesh key={i} position={[0, 0.5 + low + i * 0.5, -(D - 0.3) / 2 - 0.02]}>
@@ -225,17 +224,95 @@ function MainHouse() {
           <meshBasicMaterial color="#6a4226" />
         </mesh>
       ))}
-      {/* หน้าต่างคู่ชั้นบน 8 บาน (ด้านซ้าย = หน้าบ้าน) */}
-      {Array.from({ length: 11 }).map((_, i) => (
-        <group key={i} position={[-W / 2 + 1.25 + i * 1.05, 0.36 + low + up * 0.55, -(D - 0.3) / 2 - 0.04]}>
-          {[-0.2, 0.2].map((dx) => (
-            <mesh key={dx} position={[dx, 0, 0]}>
-              <RBox args={[0.36, 0.9, 0.05]} radius={0.02} />
-              <meshStandardMaterial color="#c9a46c" />
-            </mesh>
-          ))}
-        </group>
+      {/* หน้าต่างชั้นบน ด้าน −z: 3 ห้อง ห้องละ 3 บาน เปิดออกทั้งหมด */}
+      {[-4.35, 0, 4.35].flatMap((cx) =>
+        [-1.05, 0, 1.05].map((dx) => (
+          <group key={'n' + cx + dx} position={[cx + dx, 0, -(D - 0.3) / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
+            <OpenWindow x={0} y={0.36 + low + up * 0.52} z={0} frame="#6a3a1c" w={0.8} h={1.05} see />
+          </group>
+        )),
+      )}
+      {/* หน้าต่างชั้นบนด้านประตูน้ำเงิน (+z): ซ้าย 3 บาน · กลาง 2 บานกว้าง · ขวา 2 บาน — เปิดออก */}
+      {(
+        [
+          [-4.4, 3, 0.62],
+          [0.4, 2, 0.95],
+          [4.5, 2, 0.62],
+        ] as [number, number, number][]
+      ).flatMap(([cx, n, pw]) =>
+        Array.from({ length: n }).map((_, k) => (
+          <OpenWindow key={'s' + cx + k} x={cx - ((n - 1) * pw) / 2 + k * pw} y={0.36 + low + up * 0.52} z={(D - 0.3) / 2 + 0.04} frame="#6a3a1c" w={pw - 0.18} h={1.05} see />
+        )),
+      )}
+      {/* ด้านจั่ว (+x): 3 ชุด ชุดละ 3 บาน (ห้องละชุด) — เปิดออก */}
+      {[-2.9, 0, 2.9].flatMap((cz) =>
+        [-0.68, 0, 0.68].map((dz) => (
+          <group key={'e' + cz + dz} position={[(W - 0.3) / 2 + 0.04, 0, cz + dz]} rotation={[0, Math.PI / 2, 0]}>
+            <OpenWindow x={0} y={0.36 + low + up * 0.52} z={0} frame="#6a3a1c" w={0.52} h={1.05} see />
+          </group>
+        )),
+      )}
+      {/* ด้านจั่วอีกฝั่ง (−x): 3 ชุด ชุดละ 3 บาน เหมือนกัน + เสากั้นห้อง */}
+      {[-2.9, 0, 2.9].flatMap((cz) =>
+        [-0.68, 0, 0.68].map((dz) => (
+          <group key={'w' + cz + dz} position={[-(W - 0.3) / 2 - 0.04, 0, cz + dz]} rotation={[0, -Math.PI / 2, 0]}>
+            <OpenWindow x={0} y={0.36 + low + up * 0.52} z={0} frame="#6a3a1c" w={0.52} h={1.05} see />
+          </group>
+        )),
+      )}
+      {[-1.45, 1.45].map((z) => (
+        <mesh key={'pw' + z} position={[-(W - 0.3) / 2 - 0.05, 0.36 + low + up / 2, z]}>
+          <RBox args={[0.1, up, 0.18]} radius={0.03} />
+          <meshStandardMaterial color="#4a2e1a" />
+        </mesh>
       ))}
+      {/* เสากั้นห้องชั้นบน 3 ห้อง (เห็นเป็นเสาไม้ตั้งที่ผนังด้านนอก) */}
+      {[-2.17, 2.17].flatMap((x) =>
+        [1, -1].map((sz) => (
+          <mesh key={'pz' + x + sz} position={[x, 0.36 + low + up / 2, sz * ((D - 0.3) / 2 + 0.05)]}>
+            <RBox args={[0.18, up, 0.1]} radius={0.03} />
+            <meshStandardMaterial color="#4a2e1a" />
+          </mesh>
+        )),
+      )}
+      {[-1.45, 1.45].map((z) => (
+        <mesh key={'pe' + z} position={[(W - 0.3) / 2 + 0.05, 0.36 + low + up / 2, z]}>
+          <RBox args={[0.1, up, 0.18]} radius={0.03} />
+          <meshStandardMaterial color="#4a2e1a" />
+        </mesh>
+      ))}
+      {/* เสาอากาศทีวีบนหลังคา */}
+      <group position={[W / 2 - 1.6, 0.36 + low + up + 2, 0]}>
+        <mesh position={[0, 1.2, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 2.6, 6]} />
+          <meshStandardMaterial color="#9aa0a6" metalness={0.7} roughness={0.35} />
+        </mesh>
+        {[0.6, 1.1, 1.6, 2.1].map((y, i) => (
+          <mesh key={y} position={[0, y + 0.2, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.015, 0.015, 1.6 - i * 0.25, 5]} />
+            <meshStandardMaterial color="#9aa0a6" metalness={0.7} roughness={0.35} />
+          </mesh>
+        ))}
+      </group>
+      {/* จานดาวเทียม (จานทีวี) สีแดง ติดผนังชั้นบนด้านจั่ว */}
+      <group position={[(W - 0.3) / 2 + 0.2, 0.36 + low + up - 0.3, -3.9]} rotation={[0, Math.PI / 2 + 0.4, 0]}>
+        <mesh position={[0, 0, 0.35]} rotation={[-Math.PI / 2 + 0.5, 0, 0]}>
+          <sphereGeometry args={[0.45, 18, 8, 0, Math.PI * 2, 0, 0.75]} />
+          <meshStandardMaterial color="#c8202a" side={2} roughness={0.5} />
+        </mesh>
+        <mesh position={[0, -0.15, 0.15]} rotation={[0.5, 0, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.5, 6]} />
+          <meshStandardMaterial color="#6a6a6a" />
+        </mesh>
+        <mesh position={[0, 0.12, 0.7]} rotation={[-0.9, 0, 0]}>
+          <cylinderGeometry args={[0.015, 0.015, 0.55, 5]} />
+          <meshStandardMaterial color="#6a6a6a" />
+        </mesh>
+        <mesh position={[0, 0.3, 0.88]}>
+          <boxGeometry args={[0.08, 0.08, 0.1]} />
+          <meshStandardMaterial color="#e8e8e8" />
+        </mesh>
+      </group>
       {/* บันไดขึ้นชั้นบนอยู่ในบ้าน (ดู HomeInterior) — ข้างนอกไม่มีบันได */}
       <GableRoof width={W} depth={D - 0.3} height={2} y={0.36 + low + up} color="#7a3a2a" overhang={0.7} />
       {/* เปลนั่งชมวิวของตารัง (ระเบียงข้างบ้าน) */}
@@ -875,13 +952,13 @@ function MeshBand({ W, D, y0, y1, doors }: { W: number; D: number; y0: number; y
       const len = s1 - s0
       const mid = (s0 + s1) / 2
       const [px, pz] = sd.pos(mid)
-      const n = Math.max(1, Math.round(len / 1))
+      const n = Math.max(1, Math.round(len / 1.3))
       out.push(
         <group key={sd.side + i} position={[px, yc, pz]} rotation={[0, sd.rot, 0]}>
-          {/* ตาข่าย */}
-          <mesh>
+          {/* ตาข่ายลวดสแตนเลสลายข้าวหลามตัด (แบบรั้วตาข่าย) */}
+          <mesh position={[0, 0, 0.005]}>
             <planeGeometry args={[len, h]} />
-            <meshStandardMaterial color="#7f8a90" metalness={0.5} roughness={0.5} transparent opacity={0.72} side={2} />
+            <meshStandardMaterial map={chainLinkTex(len, h)} transparent alphaTest={0.2} metalness={0.6} roughness={0.4} side={2} />
           </mesh>
           {/* กรอบบน-ล่าง */}
           {[h / 2, -h / 2].map((y) => (
@@ -902,4 +979,302 @@ function MeshBand({ W, D, y0, y1, doors }: { W: number; D: number; y0: number; y
     })
   }
   return <group>{out}</group>
+}
+
+// ---------- ลายตาข่ายลวด (ข้าวหลามตัด) — สร้างภาพครั้งเดียว ใช้ซ้ำ ----------
+let chainBase: CanvasTexture | null = null
+const chainCache = new Map<string, CanvasTexture>()
+function chainLinkTex(len: number, h: number) {
+  const key = len.toFixed(1) + 'x' + h.toFixed(1)
+  const hit = chainCache.get(key)
+  if (hit) return hit
+  if (!chainBase) {
+    const c = document.createElement('canvas')
+    c.width = 64
+    c.height = 64
+    const g = c.getContext('2d')!
+    g.clearRect(0, 0, 64, 64)
+    g.strokeStyle = '#d6dadc'
+    g.lineWidth = 2
+    g.beginPath()
+    // ลวดเฉียงสองทิศ ไขว้กันเป็นช่องข้าวหลามตัด
+    g.moveTo(0, 32); g.lineTo(32, 0); g.moveTo(32, 64); g.lineTo(64, 32)
+    g.moveTo(0, 32); g.lineTo(32, 64); g.moveTo(32, 0); g.lineTo(64, 32)
+    g.stroke()
+    chainBase = new CanvasTexture(c)
+  }
+  const t = chainBase.clone()
+  t.wrapS = RepeatWrapping
+  t.wrapT = RepeatWrapping
+  // ช่องตาข่ายกว้างราว 6 ซม.
+  t.repeat.set(len / 0.16, h / 0.16)
+  t.needsUpdate = true
+  chainCache.set(key, t)
+  return t
+}
+
+// ---------------------------------------------------------------------------
+// บ้านตามองทะลุได้: ผนังแบบเปลือกบาง เจาะช่อง + ของข้างใน
+type Hole = { side: 'N' | 'S' | 'E' | 'W'; u0: number; u1: number; v0: number; v1: number }
+
+/** ช่องมุ้งลวดชั้น 1 (ตรงกับ MeshBand) */
+function groundHoles(W: number, D: number): Hole[] {
+  const doors = [
+    { side: 'S' as const, at: DOOR_X, w: DOOR_W + 0.3 },
+    { side: 'E' as const, at: 1.6, w: 1.3 },
+  ]
+  const out: Hole[] = []
+  for (const [side, len] of [
+    ['S', W],
+    ['N', W],
+    ['E', D],
+    ['W', D],
+  ] as ['N' | 'S' | 'E' | 'W', number][]) {
+    let segs: [number, number][] = [[-len / 2 + 0.35, len / 2 - 0.35]]
+    for (const d of doors.filter((x) => x.side === side)) {
+      const a = d.at - d.w / 2
+      const b = d.at + d.w / 2
+      segs = segs.flatMap(([s0, s1]) => {
+        if (b <= s0 || a >= s1) return [[s0, s1] as [number, number]]
+        const r: [number, number][] = []
+        if (a - s0 > 0.4) r.push([s0, a])
+        if (s1 - b > 0.4) r.push([b, s1])
+        return r
+      })
+    }
+    for (const [u0, u1] of segs) out.push({ side, u0, u1, v0: 1.25, v1: 2.75 })
+  }
+  return out
+}
+
+/** ช่องหน้าต่างชั้น 2 (ตรงกับตำแหน่ง OpenWindow) */
+function upperHoles(W: number, D: number, cy: number): Hole[] {
+  const v0 = cy - 0.52
+  const v1 = cy + 0.52
+  const out: Hole[] = []
+  // ด้าน −z: ห้องละ 3 บาน (หันกลับด้าน: u ของผนังด้าน N วัดตามแกน x)
+  for (const cx of [-4.35, 0, 4.35]) out.push({ side: 'N', u0: cx - 1.05 - 0.4, u1: cx + 1.05 + 0.4, v0, v1 })
+  // ด้าน +z: ซ้าย 3 บาน · กลาง 2 บานกว้าง · ขวา 2 บาน
+  for (const [cx, n, pw] of [
+    [-4.4, 3, 0.62],
+    [0.4, 2, 0.95],
+    [4.5, 2, 0.62],
+  ] as [number, number, number][])
+    out.push({ side: 'S', u0: cx - (n * pw) / 2 + 0.05, u1: cx + (n * pw) / 2 - 0.05, v0, v1 })
+  // ด้านจั่วทั้งสอง: ห้องละ 3 บาน (u วัดตามแกน z)
+  for (const side of ['E', 'W'] as const) for (const cz of [-2.9, 0, 2.9]) out.push({ side, u0: cz - 0.68 - 0.27, u1: cz + 0.68 + 0.27, v0, v1 })
+  void W
+  void D
+  return out
+}
+
+/** ผนังบาง 4 ด้าน เว้นช่องตาม holes (ช่องในแต่ละผนังห้ามซ้อนกันตามแนวนอน) */
+function HouseShell({ W, D, y0, y1, t, color, inner, holes }: { W: number; D: number; y0: number; y1: number; t: number; color: string; inner: string; holes: Hole[] }) {
+  const walls: { side: 'N' | 'S' | 'E' | 'W'; len: number; pos: [number, number]; rot: number }[] = [
+    { side: 'S', len: W, pos: [0, D / 2 - t / 2], rot: 0 },
+    { side: 'N', len: W, pos: [0, -D / 2 + t / 2], rot: 0 },
+    { side: 'E', len: D - 2 * t, pos: [W / 2 - t / 2, 0], rot: Math.PI / 2 },
+    { side: 'W', len: D - 2 * t, pos: [-W / 2 + t / 2, 0], rot: Math.PI / 2 },
+  ]
+  const pieces: React.ReactNode[] = []
+  for (const w of walls) {
+    const hs = holes.filter((h) => h.side === w.side).map((h) => ({ ...h, u0: Math.max(-w.len / 2, h.u0), u1: Math.min(w.len / 2, h.u1) }))
+    // ด้าน E/W: u ตามแกน z แต่ผนังหมุน 90° → แกน x ภายในของผนัง = −z
+    const flip = w.rot !== 0
+    const edges = Array.from(new Set([-w.len / 2, w.len / 2, ...hs.flatMap((h) => [h.u0, h.u1])])).sort((a, b) => a - b)
+    for (let i = 0; i < edges.length - 1; i++) {
+      const a = edges[i]
+      const b = edges[i + 1]
+      if (b - a < 0.005) continue
+      const mid = (a + b) / 2
+      const hole = hs.find((h) => mid > h.u0 && mid < h.u1)
+      const parts: [number, number][] = hole ? [[y0, hole.v0], [hole.v1, y1]] : [[y0, y1]]
+      for (const [p0, p1] of parts) {
+        if (p1 - p0 < 0.01) continue
+        const lx = flip ? -mid : mid
+        pieces.push(
+          <group key={w.side + i + ':' + p0} position={[w.pos[0], 0, w.pos[1]]} rotation={[0, w.rot, 0]}>
+            <mesh position={[lx, (p0 + p1) / 2, 0]} castShadow receiveShadow>
+              <boxGeometry args={[b - a, p1 - p0, t]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+          </group>,
+        )
+      }
+    }
+  }
+  return (
+    <group>
+      {pieces}
+      {/* พื้นในบ้าน */}
+      <mesh position={[0, y0 + 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[W - 2 * t, D - 2 * t]} />
+        <meshStandardMaterial color={inner} />
+      </mesh>
+    </group>
+  )
+}
+
+/** ชั้นล่าง = ห้องครัว: เคาน์เตอร์ อ่างล้าง เตาแก๊ส ตู้กับข้าว ตู้เย็น โต๊ะกินข้าว พัดลมเพดาน */
+function KitchenInside({ W, D, y, h }: { W: number; D: number; y: number; h: number }) {
+  const wz = -D / 2 + 0.55
+  return (
+    <group position={[0, y, 0]}>
+      {/* เคาน์เตอร์ครัวยาวชิดผนัง −z */}
+      <mesh position={[-2, 0.43, wz]} castShadow>
+        <RBox args={[6, 0.86, 0.6]} radius={0.03} />
+        <meshStandardMaterial color="#f1ece2" />
+      </mesh>
+      <mesh position={[-2, 0.88, wz]}>
+        <boxGeometry args={[6.05, 0.05, 0.64]} />
+        <meshStandardMaterial color="#6a6a68" />
+      </mesh>
+      {/* อ่างล้างจาน + ก๊อก */}
+      <mesh position={[-3.6, 0.89, wz]}>
+        <boxGeometry args={[0.7, 0.04, 0.42]} />
+        <meshStandardMaterial color="#c9ced2" metalness={0.7} roughness={0.3} />
+      </mesh>
+      <mesh position={[-3.6, 1.05, wz - 0.22]} rotation={[0.5, 0, 0]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.3, 6]} />
+        <meshStandardMaterial color="#c9ced2" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* เตาแก๊ส 2 หัว + กระทะ */}
+      <mesh position={[-0.6, 0.94, wz]}>
+        <boxGeometry args={[0.7, 0.08, 0.4]} />
+        <meshStandardMaterial color="#2b2b2b" />
+      </mesh>
+      <mesh position={[-0.75, 1.0, wz]}>
+        <cylinderGeometry args={[0.2, 0.14, 0.07, 14]} />
+        <meshStandardMaterial color="#3a3a3a" metalness={0.5} />
+      </mesh>
+      {/* หม้อหุงข้าว */}
+      <mesh position={[0.6, 1.02, wz]}>
+        <cylinderGeometry args={[0.16, 0.16, 0.24, 14]} />
+        <meshStandardMaterial color="#f4f0e8" />
+      </mesh>
+      {/* ชั้นวางของ/ตู้แขวนเหนือเคาน์เตอร์ */}
+      <mesh position={[-2, 2.05, -D / 2 + 0.35]}>
+        <RBox args={[4.5, 0.6, 0.35]} radius={0.03} />
+        <meshStandardMaterial color="#a9784a" />
+      </mesh>
+      {/* ตู้กับข้าว (มุ้งลวด) + ตู้เย็น */}
+      <mesh position={[W / 2 - 0.6, 0.85, -D / 2 + 0.6]} castShadow>
+        <RBox args={[0.9, 1.7, 0.6]} radius={0.03} />
+        <meshStandardMaterial color="#8a5a34" />
+      </mesh>
+      <mesh position={[W / 2 - 1.8, 0.9, -D / 2 + 0.55]} castShadow>
+        <RBox args={[0.75, 1.8, 0.7]} radius={0.06} />
+        <meshStandardMaterial color="#e8eef0" />
+      </mesh>
+      {/* โต๊ะกินข้าว + เก้าอี้ 4 ตัว */}
+      <mesh position={[-1, 0.74, 0.6]} castShadow>
+        <RBox args={[2, 0.06, 1.1]} radius={0.02} />
+        <meshStandardMaterial color="#9a6a3e" />
+      </mesh>
+      {[-1.8, -0.2].flatMap((x) =>
+        [-0.35, 0.35].map((dz) => (
+          <mesh key={x + ':' + dz} position={[x - 1 + 1 + (x < -1 ? 0 : 0), 0.37, 0.6 + dz]}>
+            <boxGeometry args={[0.06, 0.74, 0.06]} />
+            <meshStandardMaterial color="#6e4a2e" />
+          </mesh>
+        )),
+      )}
+      {[-1.6, -0.4].flatMap((x) =>
+        [-0.85, 0.85].map((dz) => (
+          <mesh key={'ch' + x + dz} position={[x, 0.45, 0.6 + dz]} castShadow>
+            <RBox args={[0.42, 0.06, 0.42]} radius={0.02} />
+            <meshStandardMaterial color="#c0503a" />
+          </mesh>
+        )),
+      )}
+      {/* สำรับกับข้าวบนโต๊ะ */}
+      {[-1.4, -0.9, -0.5].map((x, i) => (
+        <mesh key={'d' + x} position={[x, 0.8, 0.6 + (i % 2 ? 0.2 : -0.15)]}>
+          <cylinderGeometry args={[0.13, 0.1, 0.06, 12]} />
+          <meshStandardMaterial color={['#f4f0e8', '#e8c86a', '#7aa05a'][i]} />
+        </mesh>
+      ))}
+      {/* พัดลมเพดาน */}
+      <group position={[-1, h - 0.25, 0.6]}>
+        <mesh>
+          <cylinderGeometry args={[0.08, 0.08, 0.12, 10]} />
+          <meshStandardMaterial color="#f4f0e8" />
+        </mesh>
+        {[0, 1, 2].map((k) => (
+          <mesh key={k} rotation={[0, (k * Math.PI * 2) / 3, 0]} position={[0, -0.04, 0]}>
+            <boxGeometry args={[1, 0.015, 0.12]} />
+            <meshStandardMaterial color="#d9c9a8" />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
+/** ชั้นบน 3 ห้อง (ผนังกั้นตามเสา x = ±2.17): ห้องนอนฟูก+มุ้ง · ห้องตู้เสื้อผ้า · ห้องเตียง+ทีวี */
+function UpperRooms({ W, D, y, h }: { W: number; D: number; y: number; h: number }) {
+  return (
+    <group position={[0, y, 0]}>
+      {[-2.17, 2.17].map((x) => (
+        <mesh key={x} position={[x, h / 2, 0]} castShadow>
+          <boxGeometry args={[0.1, h, D - 0.3]} />
+          <meshStandardMaterial color="#b88a58" />
+        </mesh>
+      ))}
+      {/* ห้อง 1: ฟูก หมอน มุ้งสีฟ้าอ่อน */}
+      <mesh position={[-4.4, 0.1, -0.6]}>
+        <RBox args={[1.6, 0.18, 2]} radius={0.06} />
+        <meshStandardMaterial color="#e8a6b4" />
+      </mesh>
+      <mesh position={[-4.4, 0.25, -1.4]}>
+        <RBox args={[0.9, 0.14, 0.35]} radius={0.06} />
+        <meshStandardMaterial color="#fff8ee" />
+      </mesh>
+      <mesh position={[-4.4, 0.95, -0.6]}>
+        <boxGeometry args={[1.7, 1.5, 2.1]} />
+        <meshStandardMaterial color="#cfe6f2" transparent opacity={0.28} depthWrite={false} side={2} />
+      </mesh>
+      {/* ห้อง 2: ตู้เสื้อผ้า เสื่อ พัดลมตั้งพื้น */}
+      <mesh position={[0, 0.95, -D / 2 + 0.45]} castShadow>
+        <RBox args={[1.6, 1.9, 0.55]} radius={0.04} />
+        <meshStandardMaterial color="#7a4e2c" />
+      </mesh>
+      <mesh position={[0, 0.02, 0.6]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.8, 1.4]} />
+        <meshStandardMaterial color="#d8b86a" />
+      </mesh>
+      <group position={[1.4, 0, 1.2]}>
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 1, 6]} />
+          <meshStandardMaterial color="#e8e8e8" />
+        </mesh>
+        <mesh position={[0, 1.05, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.08, 16]} />
+          <meshStandardMaterial color="#6aa8d8" transparent opacity={0.8} />
+        </mesh>
+      </group>
+      {/* ห้อง 3: เตียงไม้ ผ้าห่ม โต๊ะเล็ก ทีวี */}
+      <mesh position={[4.4, 0.25, -0.5]} castShadow>
+        <RBox args={[1.7, 0.4, 2.1]} radius={0.05} />
+        <meshStandardMaterial color="#8a5a34" />
+      </mesh>
+      <mesh position={[4.4, 0.5, -0.2]}>
+        <RBox args={[1.6, 0.12, 1.4]} radius={0.05} />
+        <meshStandardMaterial color="#7fb0d8" />
+      </mesh>
+      <mesh position={[4.4, 0.4, 1.7]} castShadow>
+        <RBox args={[1, 0.8, 0.45]} radius={0.03} />
+        <meshStandardMaterial color="#6e4a2e" />
+      </mesh>
+      <mesh position={[4.4, 1.05, 1.75]}>
+        <RBox args={[0.8, 0.5, 0.08]} radius={0.02} />
+        <meshStandardMaterial color="#1e1e22" />
+      </mesh>
+      {/* ฝ้าเพดานชั้นบน */}
+      <mesh position={[0, h - 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[W - 0.2, D - 0.2]} />
+        <meshStandardMaterial color="#e8dcc4" side={2} />
+      </mesh>
+    </group>
+  )
 }

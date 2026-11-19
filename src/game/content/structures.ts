@@ -4,7 +4,7 @@ import type { Cost } from './items'
 import type { Rect } from './temple'
 import { GARDEN_BEDS, GARDEN_JAR, BED_SIZE } from './garden'
 import { PLACES, PLOTS, type Vec2 } from './village'
-import { HOME_BOX, HOME_SOLIDS } from '../../scenes/GrandHome'
+import { HOME_BOX, homeSolids } from '../../scenes/GrandHome'
 
 export type StructureId = 'workbench' | 'chest' | 'fence' | 'scarecrow' | 'shed' | 'pen' | 'greenhouse'
 
@@ -122,7 +122,7 @@ export function blockedZones(): Rect[] {
   out.push({ minX: GARDEN_JAR[0] - 0.6, maxX: GARDEN_JAR[0] + 0.6, minZ: GARDEN_JAR[1] - 0.6, maxZ: GARDEN_JAR[1] + 0.6 })
   // บ้านตา: ตัวบ้าน ครัว ยุ้ง เล้า คอก (เผื่อทางเดินรอบ 0.6 ม.)
   const hp = PLACES.find((pl) => pl.id === 'home-tarang')
-  if (hp) for (const [x, z, w, d] of HOME_SOLIDS) out.push({ minX: hp.pos[0] + x - w / 2 - 0.6, maxX: hp.pos[0] + x + w / 2 + 0.6, minZ: hp.pos[1] + z - d / 2 - 0.6, maxZ: hp.pos[1] + z + d / 2 + 0.6 })
+  if (hp) for (const [x, z, w, d] of homeSolids()) out.push({ minX: hp.pos[0] + x - w / 2 - 0.6, maxX: hp.pos[0] + x + w / 2 + 0.6, minZ: hp.pos[1] + z - d / 2 - 0.6, maxZ: hp.pos[1] + z + d / 2 + 0.6 })
   for (const [bx, bz] of GARDEN_BEDS) {
     const h = BED_SIZE / 2 + 0.25
     out.push({ minX: bx - h, maxX: bx + h, minZ: bz - h, maxZ: bz + h })

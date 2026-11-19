@@ -17,8 +17,8 @@ import { activateWater, waterHint } from '../game/waterTick'
 import { playerPose } from '../game/playerPose'
 import { chestHint, openChest, useChests } from '../game/treasure'
 import { whistle } from '../game/whistle'
-import { ToolBar } from './ToolBar'
-import { equip, toolChoices } from '../game/trees'
+import { activateHotSlot, hotbarSlots, ToolBar } from './ToolBar'
+import { HelpButton } from './HelpOverlay'
 import { useBuild, toggleBuild, rotateTool } from '../game/building'
 import { BuildBar, ChestWindow } from './BuildBar'
 import { STRUCTURES } from '../game/content/structures'
@@ -132,10 +132,9 @@ export function WorldScreen() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return
-      // เลือกเครื่องมือในมือ: 1 มือเปล่า · 2 ขวาน · 3 ขวานเหล็ก
-      if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code) && !e.repeat) {
-        const t = toolChoices()[Number(e.code.slice(5)) - 1]
-        if (t) equip(t)
+      // แถบไอเทม: กด 1–9 เลือกช่อง (เครื่องมือ = ถือ · ของกิน = กิน)
+      if (/^Digit[1-9]$/.test(e.code) && !e.repeat) {
+        activateHotSlot(hotbarSlots(useGame.getState().save?.inventory)[Number(e.code.slice(5)) - 1])
       }
       // โหมดสร้าง: B เปิด/ปิด · R หมุน · Esc ออก
       if (e.code === 'KeyB' && !e.repeat) {
@@ -679,11 +678,6 @@ function quickSave() {
   g.toast(ok ? { title: '💾 บันทึกเกมแล้ว', tone: 'success' } : { title: 'บันทึกไม่สำเร็จ', body: 'ลองอีกครั้ง หรือดูที่ เมนู → บันทึก', tone: 'warn' })
 }
 
-/** ปุ่มบนแถบคำแนะนำ: กดได้เหมือนกดคีย์บอร์ด */
-function pressKey(code: string) {
-  window.dispatchEvent(new KeyboardEvent('keydown', { code }))
-}
-
 /** ถ่ายภาพฉากในเกม (เฉพาะภาพ 3D ไม่ติดแถบสถานะ) */
 function snapWorld() {
   const canvas = document.querySelector<HTMLCanvasElement>('.screen canvas')
@@ -718,6 +712,13 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
   const place = nearby && !nearby.startsWith('plot:') ? PLACES.find((p) => p.id === nearby) : null
   const plot = nearby?.startsWith('plot:') ? PLOTS.find((p) => 'plot:' + p.id === nearby) : null
   const locationName = place?.name ?? (plot ? `บ้านของ${save.player.name}` : 'หมู่บ้านไพบูลย์')
+  // การ์ดคำอธิบายสถานที่: โผล่ตอนเพิ่งมาถึง แล้วซ่อนเอง ให้หน้าจอเป็นของเกม
+  const [cardFresh, setCardFresh] = useState(true)
+  useEffect(() => {
+    setCardFresh(true)
+    const t = window.setTimeout(() => setCardFresh(false), 5000)
+    return () => window.clearTimeout(t)
+  }, [nearby])
 
   return (
     <div className="hud">
@@ -751,7 +752,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
         ))}
       </div>
 
-      {place && (
+      {place && cardFresh && (
         <div className="interact">
           <h3>{place.name}</h3>
           {place.arriveText && <p>{place.arriveText}</p>}
@@ -766,6 +767,11 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           ) : (
             place.comingSoon && <div className="soon">เร็ว ๆ นี้: {place.comingSoon}</div>
           )}
+        </div>
+      )}
+      {place && !cardFresh && (isShop(place.id) || isBoard(place.id)) && (
+        <div className="gather-hint">
+          <kbd>E</kbd> {isShop(place.id) ? `${SHOPS[place.id].icon} เข้าร้าน` : '📌 อ่านประกาศ'}
         </div>
       )}
       {nearWorship && (
@@ -843,7 +849,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
           <kbd>E</kbd> {gatherHint(gatherTarget).replace('กด E — ', '')}
         </div>
       )}
-      {plot && !building && (
+      {plot && !building && cardFresh && (
         <div className="interact">
           <h3>ที่ดินของคุณ</h3>
           <p>รั้วไม้ไผ่คือขอบเขตที่ดิน · แปลงผัก 8 แปลงหน้าบ้าน (กด E ที่แปลง) · กด <kbd>B</kbd> เพื่อสร้างโต๊ะประดิษฐ์ กล่องเก็บของ รั้ว โรงเก็บของ คอกสัตว์</p>
@@ -851,29 +857,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
         </div>
       )}
 
-      <div className="controls-help">
-        <kbd>W A S D</kbd> เดิน · <kbd>V</kbd> เดินช้า/เร็ว · <kbd>Shift</kbd> วิ่ง · <kbd>Enter</kbd> กระโดด · ลากเมาส์ หมุนกล้อง · ล้อเมาส์ ซูม ·{' '}
-        {(
-          [
-            ['KeyP', 'P', 'พัก'],
-            ['KeyL', 'L', 'จูงสัตว์'],
-            ['KeyE', 'E', 'เก็บของ/เข้าร้าน'],
-            ['KeyC', 'C', 'ถ่ายภาพ'],
-            ['KeyR', 'R', 'ขี่สัตว์'],
-            ['KeyB', 'B', 'สร้าง'],
-            ['KeyQ', 'Q', 'ผิวปาก'],
-            ['Digit1', '1–4', 'เครื่องมือ'],
-            ['Escape', 'Esc', 'เมนู'],
-          ] as const
-        ).map(([code, k, label]) => (
-          <button key={code} type="button" className="help-key" onClick={() => pressKey(code)}>
-            <kbd>{k}</kbd> {label}
-          </button>
-        ))}
-        <button type="button" className="help-key" onClick={quickSave}>
-          <kbd>Ctrl+S</kbd> บันทึก
-        </button>
-      </div>
+      <HelpButton />
     </div>
   )
 }

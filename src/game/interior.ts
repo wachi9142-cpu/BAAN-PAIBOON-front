@@ -1,4 +1,4 @@
-import { SAVED_LAYOUT } from './layoutEdit'
+import { LIVE } from './layoutEdit'
 /**
  * ภายในบ้านตารัง–ยายเลียน (เดินเข้าไปสำรวจได้)
  * ตัวบ้านภายในวางไว้ไกลจากหมู่บ้าน (z = +400) แล้ว "วาร์ป" ผู้เล่นตอนเปิดประตู — ฉากหมู่บ้านถูกหมอกบังหมด
@@ -30,7 +30,7 @@ export const useInterior = create<InteriorState>(() => ({ inside: false, near: n
 export function outsideDoor(): [number, number] {
   const hp = PLACES.find((p) => p.id === 'home-tarang')!
   // บ้านไม้สองชั้นอยู่ที่ (−8, −5) ภายในบริเวณบ้าน · ประตูสีน้ำเงินที่ x +1.4 ด้านเหนือ (+z) หันเข้าลานในบ้าน
-  const m = SAVED_LAYOUT['home:main'] ?? { x: -7.5, z: -6, rot: 0 }
+  const m = LIVE.map['home:main'] ?? { x: -7.5, z: -6, rot: 0 }
   // ประตูอยู่ที่ (+1.4, +5.6) จากกลางบ้าน (บ้านลึก 9 ม.) หมุนตามที่ย้าย
   const c = Math.cos(m.rot)
   const s = Math.sin(m.rot)

@@ -169,7 +169,9 @@ export function Player() {
   const camTarget = useMemo(() => new Vector3(), [])
   const camPos = useMemo(() => new Vector3(), [])
 
-  const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures])
+  const layoutVer = useLayoutEdit((s) => s.ver)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const colliders = useMemo(() => buildColliders(save.home.houseDesignId, save.structures), [save.home.houseDesignId, save.structures, layoutVer])
   const homeCol = useMemo(() => ({ low: interiorColliders(false), up: interiorColliders(true) }), [])
   // โหลดเซฟตอนอยู่ในบ้าน → อยู่ในบ้านต่อ
   useEffect(() => {
@@ -242,7 +244,10 @@ export function Player() {
       jumpReq.at = -1e9
       const wm = useWater.getState().mode
       const g0 = useGame.getState()
-      if ((wm === 'land' || wm === 'wade') && !g0.riding && !useInterior.getState().inside && !playPose(performance.now()) && !g0.gesture) {
+      if ((wm === 'land' || wm === 'wade') && !g0.riding && !useInterior.getState().inside) {
+        // กระโดดได้เสมอบนบก: ยกเลิกท่าทาง/เครื่องเล่นที่ค้างอยู่ก่อน
+        if (g0.gesture) useGame.setState({ gesture: null })
+        if (playPose(performance.now())) stopPlay()
         jumpT.current = 0
       }
     }

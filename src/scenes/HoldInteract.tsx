@@ -5,7 +5,7 @@ import { create } from 'zustand'
 import { moveProblem, moveStructure, rotateTool, snap, structureAt, useBuild } from '../game/building'
 import { inTerritory } from '../game/content/structures'
 import { PLACES } from '../game/content/village'
-import { useLayoutEdit } from '../game/layoutEdit'
+import { commitLayout, DEV_MOVE, editables, moveSelectedTo, nudgeSelected, useLayoutEdit } from '../game/layoutEdit'
 import { useGame } from '../game/store'
 
 /** สถานะการกดค้าง: เมนูที่เปิด · ของที่กำลังลาก */
@@ -37,6 +37,7 @@ export function HoldInteract() {
     let sx = 0
     let sy = 0
     let pending = false
+    let devDrag = false
     const groundAt = (cx: number, cy: number): [number, number] | null => {
       const rc = el.getBoundingClientRect()
       ndc.set(((cx - rc.left) / rc.width) * 2 - 1, -((cy - rc.top) / rc.height) * 2 + 1)
@@ -44,28 +45,92 @@ export function HoldInteract() {
       return ray.ray.intersectPlane(ground, hit) ? [hit.x, hit.z] : null
     }
     const busy = () => useLayoutEdit.getState().active || useGame.getState().paused
+    /** ล็อกกล้อง: หน้าจอนิ่ง ระหว่างจับ/ลากวัตถุ */
+    const lockCam = (on: boolean) => useLayoutEdit.setState({ dragging: on })
+    type Target = { kind: 'structure'; uid: string } | { kind: 'dev'; id: string }
+    let target: Target | null = null
+    /** ค่าเดิมก่อนลาก (ไว้คืนเมื่อยกเลิก) */
+    let devBefore: { id: string; m: { x: number; z: number; rot: number } | undefined } | null = null
+
+    /** หาวัตถุใต้เมาส์: สิ่งปลูกสร้างของเรา → (ผู้พัฒนา) บ้าน ร้าน ของในบ้านตา */
+    const findTarget = (p: [number, number]): Target | null => {
+      const st = structureAt(p[0], p[1])
+      if (st) return { kind: 'structure', uid: st.uid }
+      if (!DEV_MOVE) return null
+      let best: string | null = null
+      let bd = Infinity
+      for (const it of editables.values()) {
+        // ทั้งบริเวณบ้านตาไม่ลากทั้งก้อน · ย้ายได้ทีละหลัง/ทีละชิ้น
+        if (it.id === 'place:home-tarang') continue
+        const d = Math.hypot(it.wx - p[0], it.wz - p[1])
+        if (d < it.r && d - it.r < bd) {
+          bd = d - it.r
+          best = it.id
+        }
+      }
+      return best ? { kind: 'dev', id: best } : null
+    }
+    const beginDrag = () => {
+      if (!target || devDrag || useHold.getState().drag) return
+      pending = false
+      window.clearTimeout(timer)
+      if (target.kind === 'structure') {
+        const st = useGame.getState().save?.structures.find((t) => t.uid === (target as { uid: string }).uid)
+        if (!st) return
+        useHold.setState({ drag: { uid: st.uid, x: st.x, z: st.z, rot: st.rot, ok: true, why: null, moved: false, x0: st.x, z0: st.z } })
+      } else {
+        devBefore = { id: target.id, m: useLayoutEdit.getState().draft[target.id] }
+        useLayoutEdit.setState({ selected: target.id })
+        devDrag = true
+      }
+      lockCam(true)
+      if (navigator.vibrate) navigator.vibrate(20)
+    }
+    /** ยกเลิกการย้าย: ของกลับที่เดิม · ปลดล็อกกล้อง */
+    const cancelDrag = () => {
+      if (devDrag && devBefore) {
+        const d = { ...useLayoutEdit.getState().draft }
+        if (devBefore.m) d[devBefore.id] = devBefore.m
+        else delete d[devBefore.id]
+        useLayoutEdit.setState({ draft: d, selected: null })
+        devDrag = false
+        devBefore = null
+      }
+      if (useHold.getState().drag) useHold.setState({ drag: null })
+      target = null
+      pending = false
+      window.clearTimeout(timer)
+      lockCam(false)
+      toast('ยกเลิกการย้าย', 'ของกลับไปที่เดิมแล้ว', 'info')
+    }
+
     const down = (e: PointerEvent) => {
       if (e.button !== 0 || busy()) return
       if (useHold.getState().menu) useHold.setState({ menu: null })
       sx = e.clientX
       sy = e.clientY
-      pending = true
       window.clearTimeout(timer)
+      const p0 = groundAt(sx, sy)
+      // กำลังวางของจากเมนูอยู่: คลิกปกติเป็นการวาง
+      if (useBuild.getState().active) return
+      target = p0 ? findTarget(p0) : null
+      if (target) {
+        // กดลงบนวัตถุ: ล็อกกล้องทันที (หน้าจอไม่หมุนตามเมาส์) · ขยับเมาส์หรือค้างไว้ = ยกขึ้นลาก
+        lockCam(true)
+        pending = true
+        timer = window.setTimeout(() => {
+          if (pending) beginDrag()
+        }, 220)
+        return
+      }
+      // กดบนพื้นว่าง: กล้องหมุนได้ตามปกติ · ค้างไว้นิ่ง ๆ = เมนูสร้าง
+      pending = true
       timer = window.setTimeout(() => {
         if (!pending) return
         pending = false
         const p = groundAt(sx, sy)
         const save = useGame.getState().save
         if (!p || !save) return
-        // กำลังวางของจากเมนูอยู่: คลิกปกติเป็นการวาง ไม่เปิดเมนูซ้อน
-        if (useBuild.getState().active) return
-        const s = structureAt(p[0], p[1])
-        if (s) {
-          useHold.setState({ drag: { uid: s.uid, x: s.x, z: s.z, rot: s.rot, ok: true, why: null, moved: false, x0: s.x, z0: s.z } })
-          useLayoutEdit.setState({ dragging: true })
-          if (navigator.vibrate) navigator.vibrate(20)
-          return
-        }
         if (inTerritory(p[0], p[1], save.ownedPlotIds)) {
           useHold.setState({ menu: { kind: 'build', at: [snap(p[0]), snap(p[1])], sx, sy } })
           return
@@ -76,9 +141,16 @@ export function HoldInteract() {
       }, HOLD_MS)
     }
     const move = (e: PointerEvent) => {
-      if (pending && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) {
+      const far = Math.hypot(e.clientX - sx, e.clientY - sy) > 4
+      if (pending && target && far) beginDrag()
+      else if (pending && !target && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) {
         pending = false
         window.clearTimeout(timer)
+      }
+      if (devDrag) {
+        const q = groundAt(e.clientX, e.clientY)
+        if (q) moveSelectedTo(q[0], q[1])
+        return
       }
       const d = useHold.getState().drag
       if (!d) return
@@ -92,12 +164,36 @@ export function HoldInteract() {
     const up = (e: PointerEvent) => {
       pending = false
       window.clearTimeout(timer)
+      const hadTarget = target
+      target = null
+      if (devDrag) {
+        devDrag = false
+        devBefore = null
+        lockCam(false)
+        const id = useLayoutEdit.getState().selected
+        // ย้ายสถานที่ในหมู่บ้าน: อัปเดตข้อมูลสถานที่ทันที (ป้ายชื่อ ระยะใกล้ กล่องชน)
+        if (id?.startsWith('place:')) {
+          const m = useLayoutEdit.getState().draft[id]
+          const pl = PLACES.find((x) => 'place:' + x.id === id)
+          if (m && pl) {
+            pl.pos = [m.x, m.z]
+            pl.rotation = m.rot
+          }
+        }
+        commitLayout()
+        useLayoutEdit.setState({ selected: null })
+        return
+      }
       const d = useHold.getState().drag
-      if (!d) return
+      if (!d) {
+        // กดบนวัตถุแล้วปล่อยเร็ว ๆ (ไม่ได้ลาก): ปลดล็อกกล้อง
+        if (hadTarget) lockCam(false)
+        return
+      }
       useHold.setState({ drag: null })
-      useLayoutEdit.setState({ dragging: false })
+      lockCam(false)
       if (!d.moved) {
-        // กดค้างแล้วปล่อยเฉย ๆ = เปิดเมนูของชิ้นนี้
+        // จับแล้วปล่อยโดยไม่ลาก = เมนูของชิ้นนี้
         useHold.setState({ menu: { kind: 'item', uid: d.uid, sx: e.clientX, sy: e.clientY } })
         return
       }
@@ -105,6 +201,11 @@ export function HoldInteract() {
       if (why) toast('วางตรงนี้ไม่ได้', why + ' · ของกลับไปที่เดิม', 'warn')
     }
     const wheel = (e: WheelEvent) => {
+      if (devDrag) {
+        e.preventDefault()
+        nudgeSelected(0, 0, (e.deltaY > 0 ? 1 : -1) * (Math.PI / 12))
+        return
+      }
       const d = useHold.getState().drag
       if (d) {
         e.preventDefault()
@@ -119,12 +220,25 @@ export function HoldInteract() {
       }
     }
     const context = (e: MouseEvent) => {
+      // คลิกขวาระหว่างลาก = ยกเลิก คืนที่เดิม
+      if (devDrag || useHold.getState().drag) {
+        e.preventDefault()
+        cancelDrag()
+        return
+      }
       // คลิกขวา = ยกเลิกการวางจากเมนูกดค้าง
       if (useBuild.getState().active && useBuild.getState().once) {
         e.preventDefault()
         useBuild.setState({ active: false, tool: null, hover: null, once: false })
       }
     }
+    const key = (e: KeyboardEvent) => {
+      if (e.code === 'Escape' && (devDrag || useHold.getState().drag)) {
+        e.stopImmediatePropagation()
+        cancelDrag()
+      }
+    }
+    window.addEventListener('keydown', key, true)
     el.addEventListener('pointerdown', down)
     el.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -137,6 +251,7 @@ export function HoldInteract() {
       window.removeEventListener('pointerup', up)
       el.removeEventListener('wheel', wheel)
       el.removeEventListener('contextmenu', context)
+      window.removeEventListener('keydown', key, true)
     }
   }, [gl, camera])
   return null

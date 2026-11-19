@@ -105,8 +105,8 @@ function PlaceMesh({ place }: { place: Place }) {
   const [x, z] = live ? [live.x, live.z] : place.pos
   const rotY = live ? live.rot : (place.rotation ?? 0)
   useEffect(() => {
-    editables.set('place:' + place.id, { id: 'place:' + place.id, name: place.name, wx: x, wz: z, rot: rotY })
-  }, [place.id, place.name, x, z, rotY])
+    editables.set('place:' + place.id, { id: 'place:' + place.id, name: place.name, wx: x, wz: z, rot: rotY, r: Math.max(2, Math.min(place.size[0], place.size[1]) / 2) })
+  }, [place.id, place.name, x, z, rotY, place.size])
   const [w, d] = place.size
   let body: React.ReactNode = null
   let labelY = 5

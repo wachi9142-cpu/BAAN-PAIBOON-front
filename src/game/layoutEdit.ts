@@ -25,6 +25,10 @@ export function loadLayout(): LayoutMap {
 }
 /** ค่าที่โหลดตอนเปิดเกม (ใช้กับข้อมูลที่คำนวณครั้งเดียว เช่น ผังหมู่บ้าน/กล่องชน) */
 export const SAVED_LAYOUT: LayoutMap = loadLayout()
+/** ผังที่ใช้งานอยู่ตอนนี้ (อัปเดตทันทีเมื่อวางของ ไม่ต้องโหลดเกมใหม่) */
+export const LIVE = { map: SAVED_LAYOUT as LayoutMap }
+/** ผู้พัฒนา: กดค้างลากย้ายบ้าน/ร้าน/ของในบ้านตาได้ทันทีระหว่างเล่น (ปิดได้ภายหลังตอนปล่อยเกมจริง) */
+export const DEV_MOVE = true
 
 /** สิ่งที่ย้ายได้: ลงทะเบียนตอนแสดงผล (ตำแหน่งฐานในพิกัดโลก) */
 export interface EditableInfo {
@@ -36,6 +40,8 @@ export interface EditableInfo {
   rot: number
   /** ของในบ้านตา: จุดกลางบ้าน (แปลงโลก ↔ ภายใน) */
   origin?: [number, number]
+  /** รัศมีที่กดค้างแล้วจับได้ (ม.) */
+  r: number
 }
 export const editables = new Map<string, EditableInfo>()
 
@@ -47,8 +53,10 @@ interface EditUi {
   dirty: boolean
   /** กำลังกดค้างลากของอยู่ */
   dragging: boolean
+  /** เปลี่ยนทุกครั้งที่บันทึกผัง (ให้กล่องชนสร้างใหม่) */
+  ver: number
 }
-export const useLayoutEdit = create<EditUi>(() => ({ active: false, selected: null, draft: { ...SAVED_LAYOUT }, dirty: false, dragging: false }))
+export const useLayoutEdit = create<EditUi>(() => ({ active: false, selected: null, draft: { ...SAVED_LAYOUT }, dirty: false, dragging: false, ver: 0 }))
 
 export function toggleLayoutEdit() {
   useLayoutEdit.setState((s) => ({ active: !s.active, selected: s.active ? null : s.selected }))
@@ -103,4 +111,16 @@ export function layoutText() {
 export function layoutOf(id: string, base: { x: number; z: number; rot: number }, draft: LayoutMap) {
   const m = draft[id]
   return m ? { x: m.x, z: m.z, rot: m.rot } : base
+}
+
+/** บันทึกผังทันที (ไม่โหลดใหม่): เก็บลงเครื่อง + ใช้กับกล่องชน/ประตูทันที */
+export function commitLayout() {
+  const d = useLayoutEdit.getState().draft
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(d))
+  } catch {
+    /* เครื่องเต็ม */
+  }
+  LIVE.map = { ...d }
+  useLayoutEdit.setState((s) => ({ ver: s.ver + 1, dirty: false }))
 }

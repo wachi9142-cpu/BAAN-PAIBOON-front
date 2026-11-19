@@ -86,7 +86,9 @@ function Door({ x = 0, y, z, color = '#4a3020' }: { x?: number; y: number; z: nu
   )
 }
 
-function Window({ x, y, z, frame }: { x: number; y: number; z: number; frame: string }) {
+/** หน้าต่าง · open = บานไม้สองบานเปิดกางออกนอกบ้าน (ชั้น 2 ทุกบ้าน) */
+export function Window({ x, y, z, frame, open = false }: { x: number; y: number; z: number; frame: string; open?: boolean }) {
+  if (open) return <OpenWindow x={x} y={y} z={z} frame={frame} />
   return (
     <group position={[x, y, z]}>
       <mesh>
@@ -97,6 +99,92 @@ function Window({ x, y, z, frame }: { x: number; y: number; z: number; frame: st
         <RBox args={[0.8, 0.62, 0.06]} />
         <meshStandardMaterial color="#2f3d45" emissive="#ffcf7a" emissiveIntensity={0} />
       </mesh>
+    </group>
+  )
+}
+
+/**
+ * หน้าต่างไม้แบบบ้านไทย (ตามภาพตัวอย่างของผู้สร้าง): บานไม้สักลูกฟัก 2 ช่อง มีมือจับ เปิดกางออกนอกบ้าน
+ * เหนือบานมีช่องแสงกระจกฝ้าสีเทา · ใต้บานมีขอบธรณี · ด้านในมืด มีผ้าม่านขาวรวบข้าง
+ */
+export function OpenWindow({ x, y, z, frame, w = 0.84, h = 0.66, leaf = '#b5652e', see = false }: { x: number; y: number; z: number; frame: string; w?: number; h?: number; leaf?: string; see?: boolean }) {
+  const inset = '#9a5226'
+  const tr = Math.max(0.18, h * 0.24)
+  return (
+    <group position={[x, y, z]}>
+      {/* วงกบ */}
+      {see ? (
+        ([
+          [0, h / 2 + 0.03, w + 0.14, 0.06],
+          [0, -h / 2 - 0.03, w + 0.14, 0.06],
+          [w / 2 + 0.035, 0, 0.07, h],
+          [-w / 2 - 0.035, 0, 0.07, h],
+        ] as [number, number, number, number][]).map(([fx, fy, fw, fh], i) => (
+          <mesh key={'f' + i} position={[fx, fy, 0]}>
+            <boxGeometry args={[fw, fh, 0.14]} />
+            <meshStandardMaterial color={frame} />
+          </mesh>
+        ))
+      ) : (
+        <mesh>
+          <RBox args={[w + 0.14, h + 0.12, 0.08]} radius={0.02} />
+          <meshStandardMaterial color={frame} />
+        </mesh>
+      )}
+      {/* ช่องหน้าต่าง (ด้านในมืด) + ผ้าม่าน */}
+      {!see && (
+        <mesh position={[0, 0, 0.03]}>
+          <planeGeometry args={[w, h]} />
+          <meshStandardMaterial color="#2a2018" />
+        </mesh>
+      )}
+      {[-1, 1].map((sd) => (
+        <mesh key={'c' + sd} position={[sd * (w / 2 - 0.08), 0, 0.045]}>
+          <planeGeometry args={[0.13, h - 0.04]} />
+          <meshStandardMaterial color="#f4efe4" />
+        </mesh>
+      ))}
+      {/* ช่องแสงกระจกฝ้าเหนือบาน */}
+      <mesh position={[0, h / 2 + 0.06 + tr / 2, 0]}>
+        <RBox args={[w + 0.14, tr + 0.08, 0.08]} radius={0.02} />
+        <meshStandardMaterial color={frame} />
+      </mesh>
+      {[-1, 1].map((sd) => (
+        <mesh key={'t' + sd} position={[(sd * w) / 4, h / 2 + 0.06 + tr / 2, 0.045]}>
+          <planeGeometry args={[w / 2 - 0.06, tr - 0.04]} />
+          <meshStandardMaterial color="#b4b8ba" roughness={0.4} metalness={0.1} />
+        </mesh>
+      ))}
+      {/* ขอบธรณีใต้หน้าต่าง */}
+      <mesh position={[0, -h / 2 - 0.08, 0.06]}>
+        <RBox args={[w + 0.3, 0.06, 0.18]} radius={0.02} />
+        <meshStandardMaterial color={frame} />
+      </mesh>
+      {/* บานไม้ลูกฟัก กางออก */}
+      {[-1, 1].map((sd) => (
+        <group key={sd} position={[sd * (w / 2 + 0.03), 0, 0.05]} rotation={[0, sd * 1.95, 0]}>
+          <group position={[-sd * (w / 4), 0, 0]}>
+            <mesh castShadow>
+              <RBox args={[w / 2, h, 0.045]} radius={0.012} />
+              <meshStandardMaterial color={leaf} roughness={0.7} />
+            </mesh>
+            {/* ลูกฟัก 2 ช่อง ทั้งสองด้านของบาน */}
+            {[0.026, -0.026].flatMap((fz) =>
+              [h * 0.22, -h * 0.22].map((fy) => (
+                <mesh key={fz + ':' + fy} position={[0, fy, fz]}>
+                  <boxGeometry args={[w / 2 - 0.1, h * 0.36, 0.01]} />
+                  <meshStandardMaterial color={inset} roughness={0.75} />
+                </mesh>
+              )),
+            )}
+            {/* มือจับ */}
+            <mesh position={[sd * (w / 4 - 0.06), 0, 0.04]}>
+              <boxGeometry args={[0.025, 0.09, 0.025]} />
+              <meshStandardMaterial color="#c8c8c8" metalness={0.8} roughness={0.3} />
+            </mesh>
+          </group>
+        </group>
+      ))}
     </group>
   )
 }
@@ -222,8 +310,8 @@ export function House({ design }: { design: HouseDesign }) {
             <meshStandardMaterial color={shadeHex(design.wall, 0.86)} />
           </mesh>
           <Door x={1.6} y={0.32 + lowH + 1} z={(d - 0.2) / 2 + 0.03} color="#5a3b26" />
-          <Window x={-1.2} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} />
-          <Window x={-2.5} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} />
+          <Window x={-1.2} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} open />
+          <Window x={-2.5} y={0.32 + lowH + 1.3} z={(d - 0.2) / 2 + 0.03} frame={design.trim} open />
           {/* บันไดนอกบ้านขึ้นชั้นสอง (ด้านข้าง) */}
           {Array.from({ length: 7 }).map((_, i) => (
             <mesh key={'st' + i} position={[w / 2 + 0.55, 0.25 + i * 0.36, -1.4 + i * 0.4]} castShadow>
@@ -254,8 +342,8 @@ export function House({ design }: { design: HouseDesign }) {
           </mesh>
           <Door y={1.0} z={d / 2 + 0.03} color="#5a3b26" />
           <Window x={-1.8} y={1.5} z={d / 2 + 0.03} frame={design.trim} />
-          <Window x={-1.5} y={lowH + 1.4} z={(d - 0.2) / 2 + 0.03} frame="#e8dcc0" />
-          <Window x={1.5} y={lowH + 1.4} z={(d - 0.2) / 2 + 0.03} frame="#e8dcc0" />
+          <Window x={-1.5} y={lowH + 1.4} z={(d - 0.2) / 2 + 0.03} frame="#e8dcc0" open />
+          <Window x={1.5} y={lowH + 1.4} z={(d - 0.2) / 2 + 0.03} frame="#e8dcc0" open />
           <GableRoof width={w - 0.2} depth={d - 0.2} height={1.7} y={lowH + 0.16 + upH} color={design.roof} overhang={0.6} />
         </group>
       )

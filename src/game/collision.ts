@@ -1,4 +1,4 @@
-import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, HOME_SOLIDS } from '../scenes/GrandHome'
+import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, homeSolids } from '../scenes/GrandHome'
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
@@ -121,7 +121,7 @@ export function homeWalls(): Rect[] {
   const hp = PLACES.find((p) => p.id === 'home-tarang')
   if (!hp) return []
   const [cx, cz] = hp.pos
-  const out: Rect[] = HOME_SOLIDS.map(([x, z, w, d]) => ({ minX: cx + x - w / 2, maxX: cx + x + w / 2, minZ: cz + z - d / 2, maxZ: cz + z + d / 2 }))
+  const out: Rect[] = homeSolids().map(([x, z, w, d]) => ({ minX: cx + x - w / 2, maxX: cx + x + w / 2, minZ: cz + z - d / 2, maxZ: cz + z + d / 2 }))
   const { x0, x1, z0, z1 } = HOME_BOX
   const t = 0.2
   const gx = HOME_GATE[0]

@@ -2728,3 +2728,52 @@ button.save-ind:hover {
   background: rgba(230, 250, 230, 0.95); color: #2f5a2a; font: 14px 'Mitr', sans-serif; pointer-events: none;
 }
 .hold-drag-tip.bad { background: rgba(255, 228, 220, 0.95); color: #8a2a12; }
+
+/* ---------- แถบไอเทม (Hotbar) ล่างกลางจอ ---------- */
+.tool-bar { display: none; }
+.hotbar-wrap {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: 'Mitr', sans-serif;
+}
+.hotbar {
+  display: flex; gap: 5px; padding: 6px; border-radius: 16px;
+  background: rgba(40, 36, 30, 0.32); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.hot-slot {
+  position: relative; width: 52px; height: 52px; border-radius: 12px; cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(255, 252, 244, 0.55);
+  display: grid; place-items: center; padding: 0;
+}
+.hot-slot.empty { background: rgba(255, 252, 244, 0.18); cursor: default; }
+.hot-slot.on { border-color: #ffd23a; background: rgba(255, 244, 200, 0.85); box-shadow: 0 0 0 2px rgba(255, 210, 58, 0.45); }
+.hot-slot:not(.empty):hover { background: rgba(255, 252, 244, 0.8); }
+.hot-key { position: absolute; left: 4px; top: 1px; font-size: 10px; color: rgba(60, 50, 30, 0.75); }
+.hot-icon { font-size: 26px; line-height: 1; }
+.hot-icon.steel { filter: saturate(0.3) brightness(1.15); }
+.hot-qty {
+  position: absolute; right: 3px; bottom: 1px; font-size: 12px; font-weight: 600; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.hot-slot .tool-gem { position: absolute; right: 5px; top: 5px; width: 8px; height: 8px; border-radius: 50%; }
+.hot-tip {
+  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  padding: 4px 10px; border-radius: 8px; background: rgba(40, 36, 30, 0.85); color: #fff8ea; font-size: 12px;
+}
+.hotbar-wrap .gem-pick { position: static; }
+
+/* ---------- ปุ่ม ? วิธีควบคุม ---------- */
+.help-fab {
+  position: absolute; right: 18px; bottom: 18px; z-index: 30; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6); background: rgba(255, 250, 238, 0.7); backdrop-filter: blur(6px);
+  font: 700 18px 'Mitr', sans-serif; color: #3f5a2e; cursor: pointer;
+}
+.help-overlay { position: absolute; inset: 0; z-index: 70; display: grid; place-items: center; background: rgba(20, 18, 14, 0.35); }
+.help-card {
+  width: min(460px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; padding: 18px 20px; border-radius: 18px;
+  background: rgba(255, 250, 238, 0.96); font-family: 'Mitr', sans-serif; color: #3a3a2a;
+}
+.help-card h3 { margin: 0 0 10px; }
+.help-card ul { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+.help-card li { display: flex; gap: 10px; align-items: center; }
+.help-card kbd { min-width: 96px; text-align: center; }
