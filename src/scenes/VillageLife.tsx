@@ -391,7 +391,7 @@ function ChickenFamilies() {
   const home = PLACES.find((p) => p.id === 'home-tarang')
   const noi = PLACES.find((p) => p.id === 'house-noi')
   const fams: { coop: Vec2; r: number }[] = []
-  if (home) fams.push({ coop: [home.pos[0] + 18.5, home.pos[1] + 6.2], r: 6 })
+  if (home) fams.push({ coop: [home.pos[0] + 18.5, home.pos[1] + 4.3], r: 6 })
   if (noi) fams.push({ coop: [noi.pos[0] + 5.5, noi.pos[1] + 1], r: 4 })
   return (
     <group>
