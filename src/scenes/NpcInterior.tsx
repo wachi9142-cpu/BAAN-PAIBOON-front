@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
 import { ID, INTERIOR_ORIGIN, IW, NPC_WALLS, useInterior } from '../game/interior'
 import { HomeDoors } from './AutoDoors'
+import { onBedClick } from '../ui/bedWheel'
 import { RBox } from './models/RBox'
 
 /**
@@ -95,7 +96,7 @@ export function NpcInterior() {
       ))}
 
       {/* มุมนอน: ฟูก หมอน มุ้งขาว */}
-      <group position={[-6.2, 0, 4.05]}>
+      <group position={[-6.2, 0, 4.05]} onClick={onBedClick} onPointerOver={() => (document.body.style.cursor = 'pointer')} onPointerOut={() => (document.body.style.cursor = '')}>
         <mesh position={[0, 0.12, 0]} castShadow>
           <RBox args={[3, 0.24, 1.6]} radius={0.08} />
           <meshStandardMaterial color="#e8e2d0" />

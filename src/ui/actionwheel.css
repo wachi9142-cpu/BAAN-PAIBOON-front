@@ -1,0 +1,116 @@
+/* วงล้อคำสั่ง (Radial Menu) — Soft 3D Cartoon ตามภาพอ้างอิง: วงแหวนครีม ช่องโค้ง ช่องที่ชี้เป็นสีเหลืองอ่อน ตรงกลางวงกลมนูน */
+.aw-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}
+.aw-wrap {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  animation: aw-pop 0.18s cubic-bezier(0.2, 1.5, 0.4, 1);
+  user-select: none;
+}
+@keyframes aw-pop {
+  from {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+}
+.aw-svg {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 6px 10px rgba(70, 45, 20, 0.35));
+}
+.aw-seg {
+  stroke: #c8ae84;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: fill 0.1s;
+}
+.aw-seg.on {
+  stroke: #e0a83a;
+  stroke-width: 3;
+}
+.aw-seg.off {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.aw-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  pointer-events: none;
+  color: #5a3e26;
+  transition: transform 0.12s;
+}
+.aw-item.on {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+.aw-item.off {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+.aw-icon {
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 2px rgba(80, 50, 20, 0.35));
+}
+.aw-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255, 252, 244, 0.92);
+  box-shadow: 0 2px 0 #d8bf96;
+  white-space: nowrap;
+}
+.aw-num {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: #3a2a1e;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 0 #1e140c;
+}
+.aw-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 84px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 40% 35%, #e8c98e, #b8894e);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -4px 0 rgba(120, 80, 30, 0.35),
+    0 4px 10px rgba(70, 45, 20, 0.35);
+  pointer-events: none;
+}
+.aw-center span {
+  font-size: 40px;
+  filter: drop-shadow(0 2px 2px rgba(80, 50, 20, 0.4));
+}
+.aw-title {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  transform: translate(-50%, -100%);
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 248, 232, 0.96);
+  box-shadow: 0 3px 0 #d8bf96, 0 6px 12px rgba(60, 40, 20, 0.25);
+  color: #5a3e26;
+  font-weight: 800;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}

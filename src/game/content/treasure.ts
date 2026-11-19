@@ -90,4 +90,7 @@ export const CHEST_SPOTS: ChestSpot[] = [
   { id: 'ancient-1', kind: 'ancient', pos: [66, 26], rot: -1.6 },
   { id: 'secret-1', kind: 'secret', pos: [-86, 50], rot: 2.4 },
   { id: 'secret-2', kind: 'secret', pos: [74, -72], rot: -2.2 },
+  // ป่าดงลึก (นอกหมู่บ้าน): หีบไม้ในเพิงนายพราน · หีบลับในลานหิ่งห้อยหลังศาล (ต้องมีเครื่องรางเจ้าป่าถึงผ่านพุ่มหนามไปได้)
+  { id: 'wood-forest', kind: 'wood', pos: [-147.6, 37.4], rot: 1.4 },
+  { id: 'secret-glade', kind: 'secret', pos: [-190, 48.5], rot: 3.1 },
 ]

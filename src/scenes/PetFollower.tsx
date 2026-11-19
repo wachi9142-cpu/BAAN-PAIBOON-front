@@ -9,9 +9,16 @@ import { Pet, petScale } from './models/Pet'
 import { PET_ANCHORS } from './models/PetOutfit'
 import { playerPose } from '../game/playerPose'
 import { templeGroundY } from '../game/content/temple'
-import { MOODS, type Mood } from '../game/party'
+import { isBarky, MOODS, type Mood } from '../game/party'
 import { waterAt } from '../game/content/water'
-import { waterRt } from '../game/water'
+import { nearestShore, waterRt } from '../game/water'
+import { canFollowInWater } from '../game/content/animalTraits'
+import { carryPose, useCarry } from '../game/carry'
+import { atHome, isSleepTime } from '../game/petCycle'
+import { useClock } from '../game/clock'
+import { useInterior } from '../game/interior'
+import { openPetWheel } from '../ui/petWheel'
+import type { ThreeEvent } from '@react-three/fiber'
 
 /** รอนานเท่าไรถึงนั่ง / นอน (วินาที) */
 const SIT_AFTER = 2.5
@@ -32,7 +39,7 @@ const FORMATION: [number, number][] = [
   [0.5, -0.9],
   [1.5, 0],
 ]
-export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: PetChoice; start: [number, number]; slot?: number; mood?: Mood }) {
+export function PetFollower({ pet, start, slot = 0, mood = 'loyal', petKey }: { pet: PetChoice; start: [number, number]; slot?: number; mood?: Mood; petKey?: string }) {
   const M = MOODS[mood]
   const info = getSpecies(pet.species)
   const root = useRef<Group>(null)
@@ -49,6 +56,8 @@ export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: Pet
   const tmp = useMemo(() => ({ a: new Vector3(), b: new Vector3(), up: new Vector3(0, 1, 0), q: new Quaternion() }), [])
   const anchor = PET_ANCHORS[pet.species]
   const scale = petScale(pet)
+  const barky = isBarky(pet)
+  const waitShore = useRef(false)
 
   useFrame(({ clock }, rawDt) => {
     const g = useGame.getState()
@@ -57,11 +66,56 @@ export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: Pet
     if (g.paused) return
     const dt = Math.min(rawDt, 0.05)
     const { x: px, z: pz, heading: ph, motion: pm } = playerPose
+    // ถูกอุ้มอยู่: อยู่ในอ้อมแขนผู้เล่น โยกตามจังหวะเดิน · ถูกวางให้กิน/นอน: อยู่กับที่จนครบเวลาหรือผู้เล่นเดินห่างไปไกล
+    if (petKey) {
+      const now = performance.now()
+      const cp = carryPose(petKey, now, [pos.current[0], root.current?.position.y ?? 0, pos.current[1]])
+      if (cp) {
+        pos.current = [cp.x, cp.z]
+        heading.current = cp.heading
+        motion.current = 0
+        pose.current = 1
+        idle.current = 0
+        if (root.current) {
+          root.current.position.set(cp.x, cp.y, cp.z)
+          root.current.rotation.set(cp.sway, cp.heading, 0)
+        }
+        if (leash.current) leash.current.visible = false
+        return
+      }
+      const st = useCarry.getState().stays[petKey]
+      if (st) {
+        const far = Math.hypot(playerPose.x - st.x, playerPose.z - st.z) > 14
+        if (now < st.until && !far) {
+          pos.current = [st.x, st.z]
+          heading.current = st.heading
+          motion.current = 0
+          pose.current = st.pose
+          if (root.current) {
+            root.current.position.set(st.x, st.y + (st.eat ? Math.max(0, Math.sin(now / 220)) * -0.03 : 0), st.z)
+            root.current.rotation.set(st.eat ? 0.25 + Math.sin(now / 220) * 0.08 : 0, st.heading, 0)
+          }
+          if (leash.current) leash.current.visible = false
+          return
+        }
+        const ss = { ...useCarry.getState().stays }
+        delete ss[petKey]
+        useCarry.setState({ stays: ss })
+        if (root.current) root.current.rotation.x = 0
+      }
+    }
     const [fb, fs] = FORMATION[slot] ?? FORMATION[0]
     const back = leashed ? Math.min(info.followDistance, 1.1) : info.followDistance * M.follow + fb
     const side = leashed ? 0.5 : fs
     let tx = px - Math.sin(ph) * back + Math.cos(ph) * side
     let tz = pz - Math.cos(ph) * back - Math.sin(ph) * side
+    // น้ำลึก: สัตว์ที่ลงน้ำไม่ได้ (แมว สัตว์ตัวเล็ก) หรือเจ้าของดำน้ำลงไป (สัตว์ที่ดำไม่ได้) = รอริมฝั่ง นั่ง/นอนรอ
+    const pw = waterAt(tx, tz)
+    const ownerDiving = waterRt.dive > 0.35
+    if (pw.body && pw.depth > 0.55 && !canFollowInWater(pet.species, pet.size === 'small', ownerDiving) && !waterRt.rescue) {
+      ;[tx, tz] = nearestShore(px, pz, pw.body)
+      waitShore.current = true
+    } else waitShore.current = false
 
     let [x, z] = pos.current
     // เจ้าของหมดแรงกลางน้ำ: สัตว์ตัวใหญ่กระโดดลงไปว่ายเคียงข้าง แล้วลากเข้าฝั่งด้วยกัน
@@ -142,7 +196,11 @@ export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: Pet
       motion.current = 0
       idle.current += dt
       turnToward(Math.atan2(px - x, pz - z), dt * 0.5)
-      pose.current = idle.current > LIE_AFTER * M.sit ? 2 : idle.current > SIT_AFTER * M.sit ? 1 : 0
+      // สัตว์ร่วมเดินทาง: ออกนอกบ้าน = ไม่หลับเอง (นั่งรอได้) · อยู่บ้าน = นอนได้ และถ้าถึงเวลานอนของมันจะเอนลงนอนเร็ว
+      const home = atHome(px, pz) || (useInterior.getState().inside && useInterior.getState().house === 'home')
+      const sleepy = home && isSleepTime(pet, useClock.getState().minute)
+      const lie = home && (sleepy ? idle.current > SIT_AFTER * 1.5 : idle.current > LIE_AFTER * M.sit)
+      pose.current = lie ? 2 : idle.current > SIT_AFTER * M.sit ? 1 : 0
       // ถึงเวลาวิ่งเล่น (ยังไม่ง่วงนอน)
       if (pose.current < 2 && idle.current > play.current.next && !info.flies) {
         play.current.until = idle.current + 3 + Math.random() * 2.5
@@ -154,7 +212,8 @@ export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: Pet
       // เสียงร้องตอนรอ (ไม่ร้องตอนนอนหลับ)
       if (pose.current < 2 && idle.current > nextIdleSound.current) {
         playPetSound(pet, 0.6)
-        nextIdleSound.current = idle.current + 15 + Math.random() * 25
+        // เห่าเก่ง = ส่งเสียงบ่อยขึ้นมาก
+        nextIdleSound.current = idle.current + (barky ? 5 + Math.random() * 8 : 15 + Math.random() * 25)
       }
       if (pose.current === 2) nextIdleSound.current = Math.max(nextIdleSound.current, idle.current + 10)
     }
@@ -203,7 +262,17 @@ export function PetFollower({ pet, start, slot = 0, mood = 'loyal' }: { pet: Pet
 
   return (
     <>
-      <group ref={root}>
+      <group
+        ref={root}
+        onClick={(e: ThreeEvent<MouseEvent>) => {
+          // คลิกที่ตัวสัตว์ (ไม่นับการลากหมุนกล้อง) → วงล้อคำสั่ง
+          if (!petKey || e.delta > 6) return
+          e.stopPropagation()
+          openPetWheel(petKey, pet, e.nativeEvent.clientX, e.nativeEvent.clientY)
+        }}
+        onPointerOver={() => petKey && (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = '')}
+      >
         <Pet pet={pet} motion={motion} pose={pose} />
       </group>
       <mesh ref={leash} visible={false}>

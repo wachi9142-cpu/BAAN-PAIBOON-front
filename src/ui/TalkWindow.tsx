@@ -8,6 +8,9 @@ import {
   endTalk,
   finishQuest,
   greet,
+  hasLegends,
+  tellLegend,
+  useLegend,
   HAWKER_GOODS,
   questReady,
   questText,
@@ -18,6 +21,7 @@ import {
 export function TalkWindow() {
   const talking = useTalk((s) => s.talking)
   const line = useTalk((s) => s.line)
+  const legend = useLegend((s) => s.id)
   const reward = useTalk((s) => s.reward)
   const tab = useTalk((s) => s.tab)
   // อัปเดตเมื่อของในกระเป๋า/เงินเปลี่ยน (เช็กภารกิจพร้อมส่ง)
@@ -83,6 +87,11 @@ export function TalkWindow() {
           ) : (
             <button type="button" className="btn small ghost" onClick={askQuest}>
               📜 มีงานให้ช่วยไหม
+            </button>
+          )}
+          {talking && hasLegends(talking) && (
+            <button type="button" className="btn small" onClick={tellLegend}>
+              {legend ? '👂 ฟังต่อ…' : '📖 เล่าเรื่องเก่าให้ฟังหน่อย'}
             </button>
           )}
           {info.vendor && (

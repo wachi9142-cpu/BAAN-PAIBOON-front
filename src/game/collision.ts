@@ -2,6 +2,7 @@ import { HOME_BACK_GATE, HOME_BOX, HOME_CORNER_GAP, HOME_GATE, HOME_SIDE_GAP, ho
 import { CHEST_SPOTS } from './content/treasure'
 import { structureColliders, type PlacedStructure } from './content/structures'
 import { PLACES, PLOTS, ROCKS, WORLD_WALK_LIMIT, type Vec2 } from './content/village'
+import { FOREST, forestSolidsNear } from './content/forest'
 import { getHouse } from './content/houses'
 import { NOEY_VEHICLES } from './content/noeyYard'
 import { ROT_WALLS, WALL_T } from './content/rotWalls'
@@ -105,6 +106,23 @@ export function resolveMove(pos: Vec2, colliders: (Circle | Rect)[], clamp = tru
   }
   if (!clamp) return [x, z]
   const lim = WORLD_WALK_LIMIT - 1
+  // ป่าดงลึกนอกหมู่บ้าน (ฝั่งตะวันตก): เดินต่อเข้าไปได้ · ชนลำต้นไม้/ศาล/พุ่มหนาม
+  if (x < -lim + 12 && Math.abs(z) < FOREST.maxZ + 4) {
+    for (const c of forestSolidsNear(x, z)) {
+      const dx = x - c.x
+      const dz = z - c.z
+      const dist = Math.hypot(dx, dz)
+      const min = c.r + PLAYER_R
+      if (dist < min && dist > 1e-4) {
+        x = c.x + (dx / dist) * min
+        z = c.z + (dz / dist) * min
+      }
+    }
+  }
+  if (x < -lim) {
+    if (x < -lim - 0.6) return [Math.max(FOREST.minX + 1, x), Math.max(-FOREST.maxZ + 1, Math.min(FOREST.maxZ - 1, z))]
+    if (Math.abs(z) < FOREST.maxZ - 1) return [Math.max(FOREST.minX + 1, x), z]
+  }
   return [Math.max(-lim, Math.min(lim, x)), Math.max(-lim, Math.min(lim, z))]
 }
 

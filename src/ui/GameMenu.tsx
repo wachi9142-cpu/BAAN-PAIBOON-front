@@ -588,8 +588,12 @@ export function SettingsTab() {
         </div>
       )}
       <label className="setting" title="เงาฟุ้งตามซอกมุม แสงเรืองนุ่ม ขอบภาพนุ่ม — ปิดถ้าเกมกระตุก">
-        <span>เอฟเฟกต์ภาพสวย (เครื่องแรง)</span>
+        <span>เอฟเฟกต์ภาพสวย (แสงเรือง ขอบภาพนุ่ม)</span>
         <input type="checkbox" checked={settings.prettyFx ?? true} onChange={(e) => settings.set({ prettyFx: e.target.checked })} />
+      </label>
+      <label className="setting" title="เงาดำนุ่ม ๆ ตามซอกมุมและใต้ของ — สวยแต่กินเครื่องมาก ทำให้เกมอืด">
+        <span>เงาตามซอกมุม (เครื่องแรงมากเท่านั้น)</span>
+        <input type="checkbox" checked={settings.aoFx ?? false} onChange={(e) => settings.set({ aoFx: e.target.checked })} />
       </label>
       <label className="setting" title="ลดสีจัดและความตัดกันของภาพ ให้สบายตา">
         <span>โทนภาพนุ่มตา ({Math.round((settings.softLook ?? 0.7) * 100)}%)</span>

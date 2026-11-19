@@ -20,6 +20,10 @@ export type ItemId =
   | 'hardwood'
   | 'sapling'
   | 'oldkey'
+  | 'mushroom_wild'
+  | 'herb_wild'
+  | 'herb_rare'
+  | 'amulet_forest'
   | 'seed_morningglory'
   | 'morningglory'
   | 'seed_scallion'
@@ -56,6 +60,8 @@ export type ItemId =
   | 'egg'
   | 'sticky_rice'
   | 'mango_ripe'
+  // อุปกรณ์ดำน้ำ
+  | 'bubble_helmet'
 
 export type ItemKind = 'material' | 'tool' | 'seed' | 'food' | 'treasure' | 'weapon' | 'wear'
 
@@ -105,6 +111,10 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   leaf: { id: 'leaf', name: 'ใบไม้', icon: '🍂', kind: 'material', stack: 40, sell: 1, note: 'ใบไม้ ใบตอง ทางมะพร้าว — ทำปุ๋ยหมัก อาหารสัตว์บางชนิด (เร็ว ๆ นี้)' },
   hardwood: { id: 'hardwood', name: 'ไม้เนื้อแข็ง', icon: '🪵', kind: 'material', stack: 20, sell: 30, note: 'ได้จากการโค่นต้นไม้ใหญ่ด้วยขวาน ใช้ทำเครื่องเรือนระดับสูง' },
   sapling: { id: 'sapling', name: 'ต้นกล้าไม้', icon: '🌱', kind: 'material', stack: 20, sell: 3, note: 'ปลูกแทนที่ตอไม้ (เดินไปที่ตอไม้แล้วกด E) โตเป็นต้นไม้ใน 1 วัน' },
+  mushroom_wild: { id: 'mushroom_wild', name: 'เห็ดป่า', icon: '🍄', kind: 'food', stack: 20, sell: 12, note: 'เห็ดโคนป่าดอกใหญ่ เก็บได้ที่ป่าดงลึก (มีใหม่ทุกวัน) · ต้มหรือย่างกินอร่อย', food: 9 },
+  herb_wild: { id: 'herb_wild', name: 'สมุนไพรป่า', icon: '🌿', kind: 'material', stack: 30, sell: 15, note: 'ใบไม้ยาจากป่าดงลึก · ตำพอกแผล ต้มดื่มแก้เหนื่อย (ใช้ประดิษฐ์ยาในอนาคต)' },
+  herb_rare: { id: 'herb_rare', name: 'ว่านเรืองแสง', icon: '🌱', kind: 'treasure', stack: 10, sell: 180, note: 'ว่านหายากที่ขึ้นเฉพาะลานหิ่งห้อยหลังศาลเก่า ใบเรืองแสงจาง ๆ ตอนกลางคืน' },
+  amulet_forest: { id: 'amulet_forest', name: 'เครื่องรางเจ้าป่า', icon: '🧿', kind: 'treasure', stack: 1, sell: 0, note: 'ได้รับจากศาลเก่าในป่าดงลึก เมื่อดูแลศาลและถวายของด้วยใจ · พกไว้แล้วพุ่มหนามหลังศาลจะแหวกทางให้ (ในโลกเกม)' },
   oldkey: { id: 'oldkey', name: 'กุญแจโบราณ', icon: '🗝️', kind: 'material', stack: 5, sell: 0, note: 'ไขหีบโบราณได้หนึ่งใบ (ได้จากหีบลับที่ซ่อนอยู่ในป่า)' },
   rod: { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', kind: 'tool', stack: 1, sell: 30, note: 'คันเบ็ดไม้ไผ่ ตกปลาที่บ่อปลาลุงเขียว (เดินไปริมบ่อแล้วกด E)' },
   krathong: { id: 'krathong', name: 'กระทงใบตอง', icon: '🌸', kind: 'material', stack: 5, sell: 10, note: 'ทำจากใบไม้ + ดอกบัว · นำไปลอยที่ท่าน้ำบ่อปลาช่วงลอยกระทง' },
@@ -127,6 +137,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   egg: { id: 'egg', name: 'ไข่ไก่', icon: '🥚', kind: 'food', stack: 20, sell: 5, note: 'ไข่ไก่สด ทอดหรือต้มก็อร่อย', food: 8 },
   sticky_rice: { id: 'sticky_rice', name: 'ข้าวเหนียว', icon: '🍙', kind: 'food', stack: 20, sell: 10, note: 'ข้าวเหนียวนึ่งร้อน ๆ ในกระติบ อิ่มท้อง', food: 15 },
   mango_ripe: { id: 'mango_ripe', name: 'มะม่วงสุก', icon: '🥭', kind: 'food', stack: 20, sell: 15, note: 'มะม่วงน้ำดอกไม้สุกหอมหวาน', food: 10 },
+  bubble_helmet: { id: 'bubble_helmet', name: 'หมวกฟองอากาศ', icon: '🥽', kind: 'tool', stack: 1, sell: 90, note: 'สวมครอบศีรษะเป็นฟองอากาศใส หายใจใต้น้ำได้ ~2 นาที (ไม่มี = กลั้นได้ ~12 วิ) · ขึ้นผิวน้ำแล้วอากาศเติมเอง · ดำน้ำ: กด C ค้าง · ขึ้น: Space' },
   wand: { id: 'wand', name: 'ไม้คฑา', icon: '🪄', kind: 'tool', stack: 1, sell: 120, note: 'ยิงลำแสงนุ่ม ๆ ดึงสัตว์เข้ามาหา ใช้กับสัตว์ระดับปานกลางขึ้นไป' },
 }
 
@@ -164,6 +175,7 @@ export const RECIPES: Recipe[] = [
   { id: 'machete', name: 'มีดพร้า', icon: '🗡️', needs: { log: 1, stone: 3, vine: 1 }, gives: { item: 'machete', qty: 1 } },
   { id: 'saw', name: 'เลื่อย', icon: '🪚', needs: { log: 2, stone: 4 }, tool: 'hammer', gives: { item: 'saw', qty: 1 } },
   { id: 'plank', name: 'ไม้กระดาน ×2', icon: '🟫', needs: { log: 1 }, tool: 'saw', gives: { item: 'plank', qty: 2 } },
+  { id: 'bubble_helmet', name: 'หมวกฟองอากาศ (ดำน้ำ)', icon: '🥽', needs: { pearl: 1, vine: 3, plank: 1 }, tool: 'hammer', gives: { item: 'bubble_helmet', qty: 1 } },
   { id: 'feed', name: 'อาหารสัตว์ ×4', icon: '🌾', needs: { branch: 1, vine: 1 }, gives: { item: 'feed', qty: 4 } },
   { id: 'rod', name: 'เบ็ดตกปลา', icon: '🎣', needs: { branch: 2, vine: 2 }, gives: { item: 'rod', qty: 1 } },
   { id: 'wand', name: 'ไม้คฑา', icon: '🪄', needs: { plank: 2, stone: 5, vine: 3 }, tool: 'hammer', gives: { item: 'wand', qty: 1 } },

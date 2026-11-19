@@ -55,6 +55,8 @@ interface Props {
   aim?: { aiming: boolean }
   /** จังหวะกระโดด 0→1 (-1 = ไม่ได้กระโดด) */
   jump?: { current: number }
+  /** อุ้มสัตว์: แนบอก (ตัวเล็ก) / สองมือประคองข้างหน้า (ตัวใหญ่) · bend = ก้มตัวตอนอุ้มขึ้น/วางลง (0–1) */
+  carry?: { hold: 'chest' | 'arms' | null; bend: () => number }
 }
 
 /** ช่วงของการกระโดด (สัดส่วน 0–1): ย่อตัวก่อนกระโดด · เริ่มลงพื้น */
@@ -112,7 +114,7 @@ function bowAmount(t: number) {
 const OPEN_FRONT = ['varsity', 'cardigan', 'jacket']
 
 /** ตัวละครแบบ low-poly ประกอบจากรูปทรงพื้นฐาน สูงประมาณ 1.7 ม. */
-export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim, jump, gear, gearL }: Props) {
+export function Character({ appearance, motion, action, tool, barefoot, chop, wandGem, aim, jump, gear, gearL, carry }: Props) {
   const skin = byId(SKIN_TONES, appearance.skin).color
   const hair = hairColorValue(appearance.hairColor)
   const outfit = byId(OUTFITS, appearance.outfit)
@@ -433,9 +435,24 @@ export function Character({ appearance, motion, action, tool, barefoot, chop, wa
       if (armL.current) armL.current.rotation.x = -0.95 + sh
       if (armR.current) armR.current.rotation.x = -0.95 + sh
     }
+    // ---- อุ้มสัตว์: แขนโอบแนบอก / สองมือยกประคองข้างหน้า (เดินได้ แขนไม่แกว่ง) ----
+    let carryBend = 0
+    if (carry?.hold) {
+      carryBend = carry.bend()
+      const chest = carry.hold === 'chest'
+      const [alx, alz, arx, arz] = chest ? [-1.3, -0.55, -0.95, 0.8] : [-1.0 - carryBend * 0.6, -0.22, -1.0 - carryBend * 0.6, 0.22]
+      if (armL.current) {
+        armL.current.rotation.x = lerp(armL.current.rotation.x, alx)
+        armL.current.rotation.z = lerp(armL.current.rotation.z, alz)
+      }
+      if (armR.current) {
+        armR.current.rotation.x = lerp(armR.current.rotation.x, arx)
+        armR.current.rotation.z = lerp(armR.current.rotation.z, arz)
+      }
+    }
     // วิ่ง = โน้มตัวไปข้างหน้า · เดินเร็ว = โน้มเล็กน้อย
     const lean = pose === 'ride' || pose === 'swim' || pose === 'paddle' ? 0 : m >= 2 ? 0.16 : m >= 1.5 ? 0.06 : 0
-    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + lean + (kneel ? bow * 1.15 : 0) + punchBow)
+    if (upper.current) upper.current.rotation.x = lerp(upper.current.rotation.x, age.hunch + lean + (kneel ? bow * 1.15 : 0) + punchBow + carryBend)
     if (body.current) {
       const down = kneel ? -0.62 * age.legScale : (pose === 'sit' && m === 0) || pose === 'paddle' ? -0.42 * age.legScale : 0
       body.current.position.y = m > 0 && pose !== 'ride' && pose !== 'swim' && pose !== 'paddle' && pose !== 'struggle' ? Math.abs(Math.cos(phase.current)) * (m >= 2 ? 0.09 : m >= 1.5 ? 0.06 : 0.035) : lerp(body.current.position.y, down)

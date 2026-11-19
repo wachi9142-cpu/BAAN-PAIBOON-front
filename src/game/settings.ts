@@ -9,6 +9,8 @@ interface Settings {
   softLook?: number
   /** เอฟเฟกต์ภาพสวย (เงาฟุ้ง แสงเรือง) — ปิดถ้าเครื่องไม่แรง */
   prettyFx?: boolean
+  /** เงานุ่มตามซอกมุม (AO) — กินการ์ดจอมาก ปิดเป็นค่าเริ่มต้น (แก้เกมอืด 19 พ.ย.) */
+  aoFx?: boolean
   showLabels: boolean
   autoSave: boolean
   /** บันทึกอัตโนมัติทุกกี่นาที */
@@ -45,6 +47,7 @@ export const useSettings = create<Settings>()(
       mouseSensitivity: 1,
       softLook: 0.7,
       prettyFx: true,
+      aoFx: false,
       showLabels: true,
       autoSave: true,
       autoSaveMinutes: 2,

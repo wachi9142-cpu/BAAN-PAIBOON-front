@@ -22,6 +22,28 @@ import {
   waterRt,
 } from './water'
 import { useGame } from './store'
+import { diveKeys } from './water'
+import { countOf } from './inventory'
+import { MOUNTS, useMount } from './mounts'
+
+/** ลมหายใจใต้น้ำ (วินาที): ไม่มีอุปกรณ์ = กลั้นหายใจสั้น ๆ · หมวกฟองอากาศ = หายใจได้นาน */
+const BREATH_HOLD = 12
+const BREATH_HELMET = 120
+/** ดำน้ำ: ตั้งค่าความลึก/ลมหายใจลง store เฉพาะตอนเลขเปลี่ยน (UI ไม่ render ทุกเฟรม) */
+function syncDive() {
+  const st = useWater.getState()
+  const d = Math.round(waterRt.dive * 10) / 10
+  const b = Math.round(waterRt.breath)
+  const helmet = countOf('bubble_helmet') > 0
+  if (st.dive !== d || st.breath !== b || st.helmet !== helmet) useWater.setState({ dive: d, breath: b, helmet })
+}
+function resetDive() {
+  if (waterRt.dive > 0 || waterRt.breath < 100) {
+    waterRt.dive = 0
+    waterRt.breath = Math.min(100, waterRt.breath + 100)
+    syncDive()
+  }
+}
 
 const toast = (title: string, body?: string, tone: 'info' | 'success' | 'warn' = 'info') => useGame.getState().toast({ title, body, tone })
 
@@ -63,6 +85,7 @@ export function waterTick(pos: [number, number], prev: [number, number], dt: num
     return LAND
   }
   const now = performance.now()
+  if (st.mode !== 'swim' && (waterRt.dive > 0 || waterRt.breath < 100)) resetDive()
   if (moving && st.fishing) {
     useWater.setState({ fishing: null })
     toast('เก็บเบ็ดแล้ว', 'เลิกตกปลา', 'info')
@@ -153,7 +176,7 @@ export function waterTick(pos: [number, number], prev: [number, number], dt: num
     return { sink: -w.depth * 0.8, tilt: 0, speedK: 1 - w.depth * 0.55, canRun: w.depth < 0.4 }
   }
 
-  // ---- ว่ายน้ำ ----
+  // ---- ว่ายน้ำ (+ ดำน้ำ) ----
   if (st.mode !== 'swim') {
     setMode('swim')
     playSplash(st.mode === 'land' ? 1 : 0.5)
@@ -162,13 +185,52 @@ export function waterTick(pos: [number, number], prev: [number, number], dt: num
     waterRt.stepT = 0.8
     playStroke()
   }
-  if (st.vest) s += 3 * dt
-  else s -= (moving ? 4.5 : 1.8) * dt
+  // ดำน้ำ: C ค้าง = ดำลง · Space ค้าง = ขึ้น · ปล่อย = ลอยขึ้นช้า ๆ (ใส่เสื้อชูชีพดำไม่ได้)
+  // ขี่มังกรน้ำ/พญานาค: ดำเร็วตามชนิดสัตว์ · อยู่ใต้น้ำได้ตามเวลาของสัตว์ แล้วสัตว์พาโผล่ขึ้น
+  const mount = useMount.getState().riding ? MOUNTS[useMount.getState().riding!] : null
+  const wd = waterAt(pos[0], pos[1])
+  const floor = Math.max(0, wd.depth - (mount ? 1.1 : 0.7))
+  const mountTired = !!mount && useMount.getState().underT > mount.diveSeconds
+  if (diveKeys.down && (!st.vest || mount) && !mountTired) waterRt.dive = Math.min(floor, waterRt.dive + (mount ? mount.diveRate : 1.3) * dt)
+  else if (diveKeys.up || mountTired) waterRt.dive = Math.max(0, waterRt.dive - (mount ? 2.4 : 1.8) * dt)
+  else waterRt.dive = Math.max(0, waterRt.dive - 0.25 * dt)
+  waterRt.dive = Math.min(waterRt.dive, floor)
+  const under = waterRt.dive > 0.35
+  if (mount) {
+    const u = useMount.getState().underT
+    const nu = under ? u + dt : Math.max(0, u - dt * 3)
+    if (u <= mount.diveSeconds && nu > mount.diveSeconds) toast(`${mount.icon} ${mount.name}ต้องขึ้นไปหายใจแล้ว`, 'พาโผล่ขึ้นผิวน้ำ — พักสักครู่แล้วดำต่อได้', 'info')
+    useMount.setState({ underT: nu })
+  }
+  const helmet = countOf('bubble_helmet') > 0
+  if (under) {
+    waterRt.breath -= (100 / (helmet ? BREATH_HELMET : BREATH_HOLD)) * dt
+    if (waterRt.breath <= 0) {
+      // หายใจไม่ทัน: ถูกดันขึ้นผิวน้ำ สำลัก หมดแรง (สัตว์ตัวใหญ่ที่ผูกพันมากพอจะมาช่วยลากเข้าฝั่ง)
+      waterRt.breath = 0
+      waterRt.dive = 0
+      useGame.getState().changeStats({ health: -10 })
+      toast(helmet ? 'อากาศในฟองหมดแล้ว!' : 'กลั้นหายใจไม่ไหวแล้ว!', 'ถูกดันขึ้นผิวน้ำ สำลักน้ำ — ครั้งหน้ากด Space ขึ้นมาหายใจก่อนลมหมด', 'warn')
+      s = 0
+    }
+  } else waterRt.breath = Math.min(100, waterRt.breath + 35 * dt)
+  syncDive()
+  if (st.vest || mount) s += 3 * dt
+  else s -= (moving ? 4.5 : 1.8) * dt * (under ? 0.5 : 1)
   if (s <= 0) {
     setStamina(0)
+    waterRt.dive = 0
     startRescue(pos[0], pos[1])
   } else setStamina(s)
   const float = st.vest ? 0.22 : 0
+  if (mount) {
+    // นั่งบนหลังสัตว์: ตัวพ้นน้ำ เร็วตามชนิดสัตว์ (ใต้น้ำ = ดิ่งลงพร้อมสัตว์)
+    return { sink: 0.3 - waterRt.dive, tilt: 0, speedK: 0.55 * mount.speed, canRun: false }
+  }
+  if (waterRt.dive > 0.05) {
+    // ใต้น้ำ: ตัวนอนขนานพื้นตอนว่าย · ลอยตั้งตรงตอนหยุด
+    return { sink: (-1.12 + float) * bodyK - waterRt.dive, tilt: moving ? 1.35 : 0.5, speedK: 0.6, canRun: false }
+  }
   return moving ? { sink: (-0.42 + float) * bodyK, tilt: 1.2, speedK: 0.55, canRun: false } : { sink: (-1.12 + float) * bodyK, tilt: 0.12, speedK: 0.55, canRun: false }
 }
 

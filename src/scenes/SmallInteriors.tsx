@@ -3,6 +3,7 @@ import { F, KitchenInterior, KitchenRoom, useCookTextures } from './CookHouse'
 import { Bathhouse, YellowBulb } from './Bathhouse'
 import { BATH_DOORS, HomeDoors } from './AutoDoors'
 import { ShopInterior } from './BarberShop'
+import { onBedClick } from '../ui/bedWheel'
 
 /** ฉากภายในบ้านหลังที่สอง (ครัวบนเรือน): ผนังไม้กระดาน ครัวตามภาพอ้างอิง + เสื่อนอนเล่นกับหมอน */
 export function CookInterior() {
@@ -24,7 +25,7 @@ export function CookInterior() {
         <KitchenInterior />
       </group>
       {/* เสื่อกกลายสาน + หมอน (ผู้สร้างชอบมานอนที่นี่) */}
-      <mesh position={[-1.35, 0.01, -0.25]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[-1.35, 0.01, -0.25]} rotation={[-Math.PI / 2, 0, 0]} onClick={onBedClick}>
         <planeGeometry args={[1.9, 0.8]} />
         <meshStandardMaterial color="#d8b878" roughness={1} />
       </mesh>
@@ -32,7 +33,7 @@ export function CookInterior() {
         <sphereGeometry args={[0.2, 12, 8]} />
         <meshStandardMaterial color="#f0ece2" roughness={1} />
       </mesh>
-      <YellowBulb pos={[0, 2.15, -0.75]} glow intensity={3} distance={6} />
+      <YellowBulb pos={[0, 2.15, -0.75]} glow inLight intensity={3} distance={6} />
       <pointLight position={[0, 2.4, 0.5]} intensity={4} distance={8} color="#fff1d0" />
     </group>
   )

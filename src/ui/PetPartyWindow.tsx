@@ -1,6 +1,6 @@
 import { useGame } from '../game/store'
 import { getSpecies } from '../game/content/pets'
-import { activeKeys, makeLead, MAX_ACTIVE, moodOf, MOODS, ownedPets, PARTY_SIZE, partySlots, petOf, setPartySlot, toggleActive, usePartyUi } from '../game/party'
+import { activeKeys, makeLead, MAX_ACTIVE, moodOf, MOODS, ownedPets, PARTY_SIZE, partySlots, petOf, setPartySlot, toggleActive, usePartyUi , traitText, isGreedy } from '../game/party'
 import { PetLivePreview, PetPortraitImg, PortraitStudio } from './PetPortrait'
 import { openPetCard } from './PetCard'
 
@@ -92,7 +92,7 @@ export function PetPartyWindow() {
                 </p>
                 {mood && (
                   <p className="party-mood">
-                    นิสัย: <b>{mood.label}</b> — {mood.note}
+                    นิสัย: <b>{traitText(cur!.key, cur!.pet)}</b> — {mood.note}{isGreedy(cur!.pet) ? ' · กินเก่ง หิวไว' : ''}
                   </p>
                 )}
                 <p className={`party-state${curActive ? ' on' : ''}`}>

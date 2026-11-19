@@ -112,16 +112,33 @@ export function makeLead(key: string) {
 }
 
 // ---------- บุคลิก (ทำให้แต่ละตัวเดินตามไม่เหมือนกัน) ----------
-export type Mood = 'playful' | 'shy' | 'lazy' | 'loyal' | 'curious'
+export type Mood = 'playful' | 'shy' | 'lazy' | 'loyal' | 'curious' | 'fierce'
 export const MOODS: Record<Mood, { label: string; note: string; follow: number; play: number; speed: number; sit: number }> = {
   playful: { label: 'ขี้เล่น', note: 'ชอบวิ่งเล่นรอบตัว ไม่ค่อยอยู่นิ่ง', follow: 1, play: 0.45, speed: 1.1, sit: 1.5 },
   shy: { label: 'ขี้อาย', note: 'เดินตามห่าง ๆ ระวังตัว', follow: 1.6, play: 2, speed: 0.95, sit: 1 },
   lazy: { label: 'ขี้เกียจ', note: 'ชอบนั่งชอบนอน เดินช้า', follow: 1.2, play: 3, speed: 0.8, sit: 0.4 },
   loyal: { label: 'ซื่อสัตย์', note: 'เดินชิดเจ้าของเสมอ', follow: 0.75, play: 1.5, speed: 1.05, sit: 1 },
   curious: { label: 'อยากรู้อยากเห็น', note: 'ชอบเดินสำรวจ ดมโน่นนี่', follow: 1.3, play: 0.7, speed: 1, sit: 1.2 },
+  fierce: { label: 'ดุ', note: 'หวงเจ้าของ เดินนำหน้า ใครเข้าใกล้ก็เห่า', follow: 0.85, play: 1.2, speed: 1.1, sit: 1.3 },
 }
+/** สัตว์ของผู้สร้างที่บอกนิสัยไว้แล้ว (ชื่อ → นิสัยหลัก + นิสัยเสริม) — ผู้สร้าง 19 พ.ย.: โด่ง = ดุ เห่าเก่ง ตะกละ */
+export const KNOWN_TRAITS: Record<string, { mood: Mood; extra: ('barky' | 'greedy')[] }> = {
+  โด่ง: { mood: 'fierce', extra: ['barky', 'greedy'] },
+}
+const knownOf = (pet: PetChoice) => KNOWN_TRAITS[pet.name.trim()]
+/** ข้อความนิสัยเต็ม เช่น "ดุ · เห่าเก่ง · ตะกละ" */
+export function traitText(key: string, pet: PetChoice) {
+  const k = knownOf(pet)
+  const base = MOODS[moodOf(key, pet)].label
+  if (!k) return base
+  return [base, ...k.extra.map((e) => (e === 'barky' ? 'เห่าเก่ง' : 'ตะกละ'))].join(' · ')
+}
+export const isBarky = (pet: PetChoice) => !!knownOf(pet)?.extra.includes('barky')
+export const isGreedy = (pet: PetChoice) => !!knownOf(pet)?.extra.includes('greedy')
 const MOOD_ORDER: Mood[] = ['playful', 'shy', 'lazy', 'loyal', 'curious']
 export function moodOf(key: string, pet: PetChoice): Mood {
+  const k = knownOf(pet)
+  if (k) return k.mood
   if (pet.mood) return pet.mood
   let h = 0
   for (const c of key + pet.name + pet.species) h = (h * 31 + c.charCodeAt(0)) >>> 0

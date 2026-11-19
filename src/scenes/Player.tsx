@@ -5,9 +5,12 @@ import { useWater, waterRt } from '../game/water'
 import { findWaterSpot, waterTick, type WaterFx } from '../game/waterTick'
 import { collidersFor, FLOOR2, interiorCameraBox, interiorGround, INTERIOR_ORIGIN, isInterior, npcDoorOf, outsideDoor, useInterior } from '../game/interior'
 import { nearSmallDoor } from '../game/smallHouses'
+import { clampCave, inCave, nearCaveDoor, nearCaveMouth } from '../game/cave'
+import { findMount, useMount } from '../game/mounts'
 import { findHomeSpot, warp } from '../game/homeActions'
 import { findToy, playPose, stopPlay, usePlay } from '../game/play'
 import { bindPlayerNow, useActivity } from '../game/houseLife'
+import { carryBend, findCarrySpot, useCarry } from '../game/carry'
 import { findChest, useChests } from '../game/treasure'
 import { wandCast } from '../game/wand'
 import { TextSprite } from './TextSprite'
@@ -168,6 +171,11 @@ export function Player() {
   const equipped = useTools((s) => s.equipped)
   const wandGem = useGame((s) => s.save?.wandGem) ?? 'purple'
   const gesture = useGame((s) => s.gesture)
+  const threeGet = useThree((s) => s.get)
+  const carryKey = useCarry((s) => s.key)
+  const mountRide = useMount((s) => s.riding)
+  const helmetOn = useWater((s) => s.helmet && s.dive > 0.3)
+  const carryHold = useCarry((s) => s.hold)
   const wMode = useWater((s) => s.mode)
   const vest = useWater((s) => s.vest)
   const wPose = wMode === 'swim' || wMode === 'rescue' ? 'swim' : wMode === 'struggle' ? 'struggle' : wMode === 'boat' ? 'paddle' : null
@@ -212,6 +220,7 @@ export function Player() {
       game: useGame,
       move: useMove,
       steps: stepRt,
+      three: threeGet,
     }
   }, [])
 
@@ -374,7 +383,7 @@ export function Player() {
       const insideNow = useInterior.getState().inside
       const upperNow = (root.current?.position.y ?? 0) > FLOOR2 * 0.5
       const before = pos.current
-      pos.current = resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? collidersFor(useInterior.getState().house, upperNow) : colliders, !insideNow, airborne && !insideTempleBox(pos.current[0], pos.current[1]))
+      pos.current = clampCave(resolveMove([pos.current[0] + moveDir.current[0] * sp * dt, pos.current[1] + moveDir.current[1] * sp * dt], insideNow ? collidersFor(useInterior.getState().house, upperNow) : inCave(pos.current[0], pos.current[1]) ? [] : colliders, !insideNow && !inCave(pos.current[0], pos.current[1]), airborne && !insideTempleBox(pos.current[0], pos.current[1])))
       // ท่าตามความเร็วจริง (ตอนชะลอจะเปลี่ยนจากวิ่ง → เดินเร็ว → เดินช้า → หยุด)
       const ageK = AGE_RULES[save.player.appearance.age ?? 'adult'].walkSpeed
       // ความเร็วจริงหลังชนสิ่งกีดขวาง: เดินชนกำแพง/ติดมุม = ยืนนิ่ง (ไม่ย่ำเท้า ไม่มีเสียงเดินค้าง)
@@ -447,6 +456,7 @@ export function Player() {
     playerPose.z = z
     playerPose.heading = heading.current
     playerPose.motion = motion.current
+    playerPose.y = root.current?.position.y ?? 0
 
     // กล้องตาม
     const { pitch, dist } = orbit.current
@@ -471,6 +481,13 @@ export function Player() {
       camPos.x = Math.max(ib.minX, Math.min(ib.maxX, camPos.x))
       camPos.z = Math.max(ib.minZ, Math.min(ib.maxZ, camPos.z))
       camPos.y = Math.min(camPos.y, ib.maxY)
+    }
+    // ในถ้ำ: กล้องอยู่ในโถงถ้ำเสมอ (ไม่ทะลุผนังหิน/เพดาน)
+    if (inCave(x, z)) {
+      const c = clampCave([camPos.x, camPos.z], 0.82)
+      camPos.x = c[0]
+      camPos.z = c[1]
+      camPos.y = Math.min(camPos.y, 7.2)
     }
     state.camera.position.lerp(camPos, 1 - Math.exp(-dt * 10))
     state.camera.lookAt(camTarget)
@@ -503,7 +520,9 @@ export function Player() {
       else {
         const [dx, dz] = outsideDoor()
         const sm = nearSmallDoor(x, z)
-        if (Math.hypot(dx - x, dz - z) < 1.8) hn = 'enter'
+        if (nearCaveMouth(x, z)) hn = 'cave-in'
+        else if (nearCaveDoor(x, z)) hn = 'cave-out'
+        else if (Math.hypot(dx - x, dz - z) < 1.8) hn = 'enter'
         else if (sm) hn = 'enter:' + sm
         else {
           // ประตูบ้านชาวบ้านทุกหลัง: เข้าไปดูในบ้านได้
@@ -528,6 +547,12 @@ export function Player() {
       if (useChests.getState().near !== chest) useChests.setState({ near: chest })
       const bed = findBed(x, z)
       if (useGarden.getState().near !== bed) useGarden.setState({ near: bed })
+      // สัตว์ขี่ในน้ำ (มังกรน้ำ/พญานาค) ที่อยู่ใกล้
+      const mn = inCave(x, z) ? findMount(x, z) : null
+      if (useMount.getState().near !== mn) useMount.setState({ near: mn })
+      // อุ้มสัตว์อยู่: จุดวางที่ใกล้ (ชามอาหาร ฟูก เตียง บ้านสัตว์)
+      const cs = useCarry.getState().key ? findCarrySpot(x, z) : null
+      if (useCarry.getState().near?.label !== cs?.label || (useCarry.getState().near === null) !== (cs === null)) useCarry.setState({ near: cs })
       const usable = findUsable(x, z)
       if (useBuild.getState().near !== usable) useBuild.setState({ near: usable })
       setNearWorship(Math.hypot(x - WORSHIP_SPOT[0], z - WORSHIP_SPOT[1]) < 2.6)
@@ -587,13 +612,14 @@ export function Player() {
     // ตำแหน่งตั้งทุกเฟรมใน useFrame (ไม่ผูกกับ prop ไม่งั้นตอนบันทึกตำแหน่งทุก 3 วิ ตัวจะกระตุกกลับพื้น)
     <group ref={root}>
       <Character
-        appearance={riding ? { ...save.player.appearance, pose: 'ride' } : wPose ? { ...save.player.appearance, pose: wPose } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
+        appearance={riding || mountRide ? { ...save.player.appearance, pose: 'ride' } : wPose ? { ...save.player.appearance, pose: wPose } : gesture ? { ...save.player.appearance, pose: gesture } : save.player.appearance}
         motion={motion}
         barefoot={barefoot}
         tool={gesture === 'shake' ? 'siamsi' : riding || wPose || gesture || equipped === 'hand' ? undefined : equipped}
         chop={swing}
-        gear={riding || wPose || gesture ? null : gearR}
-        gearL={riding || wPose || gesture ? null : gearL}
+        gear={riding || wPose || gesture || carryKey ? null : gearR}
+        gearL={riding || wPose || gesture || carryKey ? null : gearL}
+        carry={{ hold: carryKey && !riding && !wPose ? carryHold : null, bend: () => carryBend(performance.now()) }}
         jump={jumpT}
         wandGem={wandGem}
         aim={wandCast}
@@ -601,6 +627,19 @@ export function Player() {
       <Aura />
       {vest && <LifeVest k={AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale} />}
       {gesture === 'whistle' && <WhistleNotes />}
+      {/* หมวกฟองอากาศ: ฟองใสครอบศีรษะตอนดำน้ำ (มีขอบเรืองแสงสีชมพู) */}
+      {helmetOn && (
+        <group position={[0, 1.52 * AGE_RULES[save.player.appearance.age ?? 'adult'].bodyScale, 0.02]}>
+          <mesh>
+            <sphereGeometry args={[0.3, 20, 16]} />
+            <meshStandardMaterial color="#cfefff" transparent opacity={0.28} roughness={0.05} metalness={0.1} depthWrite={false} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2 - 0.2, 0, 0]}>
+            <torusGeometry args={[0.29, 0.012, 6, 32]} />
+            <meshStandardMaterial color="#ff7ae0" emissive="#ff40c0" emissiveIntensity={1.2} />
+          </mesh>
+        </group>
+      )}
     </group>
   )
 }

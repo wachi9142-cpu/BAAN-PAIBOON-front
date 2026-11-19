@@ -3,7 +3,7 @@
  * ค่าลด/ฟื้นตามเวลาที่เล่นจริง (คำนวณย้อนหลังจาก playSeconds ไม่ต้องอัปเดตทุกเฟรม)
  */
 import { MAX_PET_HEARTS, useGame } from './store'
-import { activeKeys, moodOf, MOODS, petOf, toggleActive } from './party'
+import { activeKeys, moodOf, MOODS, petOf, toggleActive , isGreedy } from './party'
 import { getSpecies, type PetChoice, type PetSpecies } from './content/pets'
 import { playPetSound } from './audio/petSounds'
 import { whistleState } from './whistle'
@@ -53,8 +53,12 @@ function writeCare(key: string, c: PetCare) {
 }
 
 /** เพศ (ไม่ได้เลือกไว้ = สุ่มแบบคงที่จากชื่อ) */
+/** สัตว์ของผู้สร้างที่บอกเพศไว้แล้ว (ชื่อ → เพศ) — ผู้สร้าง 19 พ.ย.: โด่ง = ตัวผู้ */
+const KNOWN_SEX: Record<string, 'm' | 'f'> = { โด่ง: 'm', ประยุทธ: 'm' }
 export function sexOf(key: string, pet: PetChoice): 'ผู้' | 'เมีย' {
   if (pet.sex) return pet.sex === 'm' ? 'ผู้' : 'เมีย'
+  const known = KNOWN_SEX[pet.name.trim()]
+  if (known) return known === 'm' ? 'ผู้' : 'เมีย'
   let h = 7
   for (const c of key + pet.name) h = (h * 33 + c.charCodeAt(0)) >>> 0
   return h % 2 ? 'ผู้' : 'เมีย'
@@ -210,7 +214,9 @@ export function feedPet(key: string) {
   useGame.setState({ save: { ...g.save, inventory: next }, dirty: true })
   writeCare(key, { ...c, full: clamp(c.full + (food === 'feed' ? 35 : 20)), happy: clamp(c.happy + 5) })
   playPetSound(o.pet, 0.5)
-  g.toast({ title: `🍚 ${o.pet.name} กินอิ่มแล้ว`, body: `ใช้${ITEMS[food].name} 1 ชิ้น`, tone: 'success' })
+  // ตะกละ: กินเกลี้ยงแล้วยังขออีก (ดีใจมากกว่าปกติ)
+  if (isGreedy(o.pet)) writeCare(key, { ...careOf(key), happy: clamp(careOf(key).happy + 8) })
+  g.toast({ title: isGreedy(o.pet) ? `🍚 ${o.pet.name} กินเกลี้ยงชาม แล้วยังมองหาอีก!` : `🍚 ${o.pet.name} กินอิ่มแล้ว`, body: `ใช้${ITEMS[food].name} 1 ชิ้น${isGreedy(o.pet) ? ' · ตะกละมาก ดีใจสุด ๆ' : ''}`, tone: 'success' })
 }
 
 /** อายุ (วันที่อยู่ด้วยกัน) */

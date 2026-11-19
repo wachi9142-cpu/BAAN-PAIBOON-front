@@ -8,6 +8,7 @@ import { addItem, countOf } from './inventory'
 import { nowMinute } from './garden'
 import { useSettings } from './settings'
 import { getSpecies } from './content/pets'
+import { traitsOf } from './content/animalTraits'
 import { playPetSound } from './audio/petSounds'
 import { LOTUS, WATER, waterAt, type WaterBody } from './content/water'
 import { warp } from './homeActions'
@@ -24,8 +25,32 @@ interface WaterUi {
   /** ยืนใกล้จุดอะไร: 'shore:<id>' · 'lotus:<id>' · 'dock:<id>' */
   near: string | null
   fishing: { until: number } | null
+  /** ดำน้ำ: ลึกจากผิวน้ำ (ม.) · ลมหายใจ 0–100 · มีหมวกฟองอากาศไหม */
+  dive: number
+  breath: number
+  helmet: boolean
 }
-export const useWater = create<WaterUi>(() => ({ mode: 'land', stamina: 100, vest: false, menu: null, near: null, fishing: null }))
+export const useWater = create<WaterUi>(() => ({ mode: 'land', stamina: 100, vest: false, menu: null, near: null, fishing: null, dive: 0, breath: 100, helmet: false }))
+
+/** ปุ่มดำน้ำ: กด C ค้าง = ดำลง · Space ค้าง = ว่ายขึ้น (ผู้สร้าง 19 พ.ย.) */
+export const diveKeys = { down: false, up: false }
+if (typeof window !== 'undefined') {
+  const set = (e: KeyboardEvent, v: boolean) => {
+    const tag = (e.target as HTMLElement)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    if (e.code === 'KeyC') diveKeys.down = v
+    if (e.code === 'Space') {
+      diveKeys.up = v
+      if (v && useWater.getState().mode === 'swim') e.preventDefault()
+    }
+  }
+  window.addEventListener('keydown', (e) => set(e, true))
+  window.addEventListener('keyup', (e) => set(e, false))
+  window.addEventListener('blur', () => {
+    diveKeys.down = false
+    diveKeys.up = false
+  })
+}
 
 /** ค่าที่ Player ใช้ทุกเฟรม */
 export const waterRt = {
@@ -34,6 +59,9 @@ export const waterRt = {
   /** เรือ: แหล่งน้ำที่พายอยู่ */
   boatBody: null as WaterBody | null,
   rescue: null as null | { t0: number; shore: [number, number]; byPet: boolean },
+  /** ความลึกที่ดำลงไป (ละเอียด) + ลมหายใจละเอียด */
+  dive: 0,
+  breath: 100,
   slipCooldown: 0,
   stepT: 0,
 }
@@ -64,12 +92,15 @@ export function startRescue(x: number, z: number) {
   const g = useGame.getState()
   const body = waterRt.body ?? WATER[0]
   const pet = g.save?.player.pet
-  const big = !!pet && (['dog', 'buffalo', 'cow'] as string[]).includes(pet.species) && pet.size !== 'small'
+  // ช่วยลากขึ้นฝั่งได้: สัตว์ตัวใหญ่ที่ว่ายเก่ง (ประเภทสัตว์) + ผูกพันกับเจ้าของมากพอ (≥ 3 หัวใจ) — ผู้สร้าง 19 พ.ย.
+  const bond = g.save?.petHearts ?? 0
+  const able = !!pet && !!traitsOf(pet.species).rescuer && pet.size !== 'small'
+  const big = able && bond >= 3
   waterRt.rescue = { t0: performance.now(), shore: nearestShore(x, z, body), byPet: big }
   setMode('struggle')
   playCry()
   if (pet) window.setTimeout(() => playPetSound(pet, 0.9), 400)
-  toast('🆘 ช่วยด้วย! ว่ายไม่ไหวแล้ว', big ? `${pet!.name}กระโดดลงน้ำมาช่วย!` : pet ? `${pet.name}ตัวเล็กเกินไป ได้แต่เห่าเรียกคนมาช่วย…` : 'ร้องเรียกให้คนแถวนั้นมาช่วย…', 'warn')
+  toast('🆘 ช่วยด้วย! ว่ายไม่ไหวแล้ว', big ? `${pet!.name}กระโดดลงน้ำมาช่วย!` : able ? `${pet!.name}ยังไม่ผูกพันมากพอจะกล้าลงมาช่วย (ต้อง 3 หัวใจ) — เห่าเรียกคนมาช่วยแทน` : pet ? `${pet.name}ลงน้ำมาช่วยไม่ได้ ได้แต่ส่งเสียงเรียกคนมาช่วย…` : 'ร้องเรียกให้คนแถวนั้นมาช่วย…', 'warn')
 }
 
 export function finishRescue() {

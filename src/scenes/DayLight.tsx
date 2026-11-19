@@ -7,6 +7,12 @@ import { PLACES } from '../game/content/village'
 import { TEMPLE } from '../game/content/temple'
 import { weatherRt } from '../game/weather'
 import { skyAt } from './SoftWorld'
+import { playerPose } from '../game/playerPose'
+
+/** จำนวนไฟตะเกียงที่ส่องจริงพร้อมกัน (ย้ายไปจุดตะเกียงที่ใกล้ผู้เล่นที่สุด) — ไฟจำนวนคงที่ = เชดเดอร์ไม่ต้องคำนวณแสงทีละหลายสิบดวง (แก้เกมอืด 19 พ.ย.) */
+const LAMP_POOL = 6
+/** เงาดวงอาทิตย์: ครอบเฉพาะรอบผู้เล่น (เดิมครอบทั้งแผนที่ 200×200 ม.) */
+const SHADOW_HALF = 48
 const skyTop = new Color()
 const skyBottom = new Color()
 
@@ -39,6 +45,8 @@ export function DayLight() {
   const ambRef = useRef<AmbientLight>(null!)
   const skyRef = useRef<Mesh>(null!)
   const lampRefs = useRef<(PointLight | null)[]>([])
+  const nearest = useRef<number[]>([])
+  const lastPick = useRef(0)
   const scene = useThree((s) => s.scene)
   const fog = useMemo(() => {
     const f = new Fog('#e8ead8', 60, 320)
@@ -81,8 +89,35 @@ export function DayLight() {
     skyAt(m, skyTop, skyBottom)
     fog.color.lerp(skyBottom, 0.75)
     fog.color.lerp(tmpB.set('#9aa2a8'), Math.min(0.75, cl * 0.6 + weatherRt.fog * 0.4))
-    // ไฟตะเกียงยามค่ำ
-    for (const l of lampRefs.current) if (l) l.intensity = s.lamps * 7
+    // ไฟตะเกียงยามค่ำ: ย้ายไฟ 6 ดวงไปตะเกียงที่ใกล้ผู้เล่นที่สุด (เลือกใหม่ทุก ~0.5 วิ)
+    const now = performance.now()
+    if (now - lastPick.current > 500) {
+      lastPick.current = now
+      const px = playerPose.x
+      const pz = playerPose.z
+      nearest.current = lampSpots
+        .map((p, i) => [i, (p[0] - px) ** 2 + (p[2] - pz) ** 2] as const)
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, LAMP_POOL)
+        .map((x) => x[0])
+    }
+    lampRefs.current.forEach((l, k) => {
+      if (!l) return
+      const idx = nearest.current[k]
+      if (idx === undefined) {
+        l.intensity = 0
+        return
+      }
+      const [x, y, z] = lampSpots[idx]
+      l.position.set(x, y, z)
+      l.intensity = s.lamps * 7
+    })
+    // เงาตามผู้เล่น: ขยับกล้องเงาของดวงอาทิตย์ให้ครอบรอบตัวผู้เล่น (วัตถุไกล ๆ ไม่ต้องวาดเงา)
+    const px = Math.round(playerPose.x / 4) * 4
+    const pz = Math.round(playerPose.z / 4) * 4
+    sunRef.current.position.set(px + sx * 0.6, sy * 0.6, pz + 18)
+    sunRef.current.target.position.set(px, 0, pz)
+    sunRef.current.target.updateMatrixWorld()
   })
 
   return (
@@ -100,14 +135,14 @@ export function DayLight() {
         shadow-normalBias={0.06}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
-        shadow-camera-far={250}
+        shadow-camera-left={-SHADOW_HALF}
+        shadow-camera-right={SHADOW_HALF}
+        shadow-camera-top={SHADOW_HALF}
+        shadow-camera-bottom={-SHADOW_HALF}
+        shadow-camera-far={220}
       />
-      {lampSpots.map(([x, y, z], i) => (
-        <pointLight key={i} ref={(el) => void (lampRefs.current[i] = el)} position={[x, y, z]} color="#ffc070" intensity={0} distance={16} decay={1.5} />
+      {Array.from({ length: LAMP_POOL }, (_, i) => (
+        <pointLight key={i} ref={(el) => void (lampRefs.current[i] = el)} position={[0, -50, 0]} color="#ffc070" intensity={0} distance={16} decay={1.5} />
       ))}
     </>
   )

@@ -3,6 +3,7 @@ import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three'
 import { RBox } from './models/RBox'
 import { SignBoard } from './SignBoard'
 import { HomeDoors } from './AutoDoors'
+import { onBedClick } from '../ui/bedWheel'
 import { BarberInterior, BathInterior, CookInterior } from './SmallInteriors'
 import { FLOOR2, ID, INTERIOR_ORIGIN, IW, STAIRS, WALLS_GROUND, WALLS_UPPER, useInterior } from '../game/interior'
 import { useHomeTv } from '../game/homeActions'
@@ -18,6 +19,9 @@ import { NpcInterior } from './NpcInterior'
  */
 export function HomeInterior() {
   const house = useInterior((s) => s.house)
+  // ฉากภายในวาดเฉพาะตอนอยู่ในบ้าน (ลดภาระเครื่อง — แก้เกมอืด 19 พ.ย.)
+  const inside = useInterior((s) => s.inside)
+  if (!inside) return null
   if (house === 'cookhouse') return <CookInterior />
   if (house === 'bathhouse') return <BathInterior />
   if (house === 'barber') return <BarberInterior />
@@ -450,7 +454,7 @@ function Box({ p, s, c, shiny }: { p: [number, number, number]; s: [number, numb
 /** เตียง + มุ้ง (มุ้ง = ผู้พัฒนาเสนอเพิ่ม) */
 function Bed({ x, z, w, d, sheet, net, rot }: { x: number; z: number; w: number; d: number; sheet: string; net?: boolean; rot?: boolean }) {
   return (
-    <group position={[x, 0, z]} rotation={[0, rot ? Math.PI / 2 : 0, 0]}>
+    <group position={[x, 0, z]} rotation={[0, rot ? Math.PI / 2 : 0, 0]} onClick={onBedClick} onPointerOver={() => (document.body.style.cursor = 'pointer')} onPointerOut={() => (document.body.style.cursor = '')}>
       <Box p={[0, 0.2, 0]} s={[w, 0.4, d]} c="#7a5234" />
       <Box p={[0, 0.48, 0]} s={[w - 0.1, 0.16, d - 0.1]} c={sheet} />
       <Box p={[0, 0.62, d / 2 - 0.35]} s={[w * 0.6, 0.12, 0.4]} c="#ffffff" />

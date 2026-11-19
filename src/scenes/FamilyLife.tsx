@@ -3,8 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import { Character, type CharacterAction, type ToolId } from './models/Character'
 import { Motorcycle, type MotoKind } from './models/Motorcycle'
-import { RBox } from './models/RBox'
 import { TalkMark } from './Villagers'
+import { RepairShop } from './RepairShop'
 import { PLACES, type Vec2 } from '../game/content/village'
 import type { Appearance, PoseId } from '../game/content/appearance'
 import { exactMinute } from '../game/clock'
@@ -160,65 +160,24 @@ const useForce = () => useReducer((x: number) => x + 1, 0)
 
 /* ───────── ที่จอดมอเตอร์ไซค์ + มุมช่าง (พิกัดภายในบ้านตา) ───────── */
 export const MOTO_BIKES: [number, number, string, MotoKind][] = [
-  [-14.0, 2.4, '#3f86c8', 'scooter'],
-  [-12.9, 2.4, '#c0322a', 'family'],
-  [-11.8, 2.4, '#2a2a2e', 'sport'],
+  [-11.3, 14.4, '#3f86c8', 'scooter'],
+  [-11.3, 16.6, '#c0322a', 'family'],
+  [-11.3, 18.8, '#2a2a2e', 'sport'],
 ]
 
+/** อู่ซ่อมรถมอเตอร์ไซค์ (ตามภาพอ้างอิง) หันหน้าไปทางตะวันออก หลังร้านชิดรั้วตะวันตก · รถรอซ่อม 3 คันจอดหน้าร้าน */
+export const SHOP_AT: [number, number] = [-14.6, 16.6]
 function MotoYard({ o }: { o: Vec2 }) {
   return (
     <group position={[o[0], 0, o[1]]}>
-      {/* ลานปูนจอดมอเตอร์ไซค์ ถัดจากที่จอดรถยนต์ */}
-      <mesh position={[-12.9, 0.031, 2.6]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[3.6, 3]} />
-        <meshStandardMaterial color="#cfc9bb" roughness={0.95} />
-      </mesh>
+      <group position={[SHOP_AT[0], 0, SHOP_AT[1]]} rotation={[0, Math.PI / 2, 0]}>
+        <RepairShop />
+      </group>
       {MOTO_BIKES.map(([x, z, c, k], i) => (
-        <group key={i} position={[x, 0, z]}>
+        <group key={i} position={[x, 0, z]} rotation={[0, 0.25 - i * 0.2, 0]}>
           <Motorcycle color={c} kind={k} lean={0.09} />
         </group>
       ))}
-      {/* โต๊ะเครื่องมือ + ตู้เครื่องมือสีแดง + ยางอะไหล่ + กระป๋องน้ำมันเครื่อง */}
-      <group position={[-12.6, 0, 5.3]}>
-        <mesh position={[0, 0.7, 0]} castShadow>
-          <RBox args={[1.4, 0.06, 0.6]} radius={0.02} />
-          <meshStandardMaterial color="#8a5a34" />
-        </mesh>
-        {[-0.6, 0.6].map((x) =>
-          [-0.24, 0.24].map((z) => (
-            <mesh key={x + ':' + z} position={[x, 0.35, z]}>
-              <boxGeometry args={[0.06, 0.7, 0.06]} />
-              <meshStandardMaterial color="#6b4428" />
-            </mesh>
-          )),
-        )}
-        {[-0.4, -0.1, 0.25].map((x, i) => (
-          <mesh key={i} position={[x, 0.75, 0.05 * i]} rotation={[0, i, 0]}>
-            <boxGeometry args={[0.28, 0.025, 0.05]} />
-            <meshStandardMaterial color={['#c8ccd0', '#d83a2a', '#e8b63a'][i]} metalness={0.4} roughness={0.4} />
-          </mesh>
-        ))}
-        <mesh position={[0.5, 0.82, -0.1]}>
-          <cylinderGeometry args={[0.06, 0.06, 0.18, 10]} />
-          <meshStandardMaterial color="#3a6ac9" />
-        </mesh>
-      </group>
-      <group position={[-11.0, 0, 5.3]}>
-        <mesh position={[0, 0.32, 0]} castShadow>
-          <RBox args={[0.7, 0.64, 0.42]} radius={0.04} />
-          <meshStandardMaterial color="#c0322a" roughness={0.5} />
-        </mesh>
-        {[0.15, 0.32, 0.49].map((y) => (
-          <mesh key={y} position={[0, y, 0.215]}>
-            <boxGeometry args={[0.62, 0.012, 0.01]} />
-            <meshStandardMaterial color="#8a1e18" />
-          </mesh>
-        ))}
-      </group>
-      <mesh position={[-14.3, 0.32, 4.6]} rotation={[0, 0.4, 0]} castShadow>
-        <torusGeometry args={[0.27, 0.08, 10, 20]} />
-        <meshStandardMaterial color="#1e1e20" roughness={0.9} />
-      </mesh>
     </group>
   )
 }
@@ -230,7 +189,7 @@ export function FamilyLife() {
     const L = (x: number, z: number): Vec2 => [o[0] + x, o[1] + z]
     const bike = (i: number): Station => ({
       id: 'bike' + i,
-      path: [L(MOTO_BIKES[i][0] + 0.55, 4.0), L(MOTO_BIKES[i][0] + 0.55, 2.2)],
+      path: [L(MOTO_BIKES[i][0] + 1.4, MOTO_BIKES[i][1]), L(MOTO_BIKES[i][0] + 0.7, MOTO_BIKES[i][1])],
       face: -Math.PI / 2,
       action: 'repair',
       dur: [14, 32],
@@ -240,16 +199,16 @@ export function FamilyLife() {
       id: 'rong',
       appearance: { gender: 'male', skin: 'tan', hairStyle: 'short', hairColor: 'black', outfit: 'mohom', topColor: '#2b3a5a', bottomColor: '#4a4c50', shoes: 'boots' } as Appearance,
       tool: 'toolbelt',
-      hub: L(-10.8, 4.2),
+      hub: L(-10.2, 16.6),
       home: 'door',
       stations: [
         bike(2),
         bike(0),
         bike(1),
-        { id: 'tools', path: [L(-11.0, 4.6)], face: 0, action: 'inspect', dur: [4, 9], weight: 2 },
-        { id: 'bench', path: [L(-12.6, 4.6)], face: 0, action: 'talk', dur: [5, 10], weight: 1.5 },
-        { id: 'rest', path: [L(-7.6, 4.2), L(-3.9, 1.4), L(-3.9, 0.7)], face: 0, pose: 'sit', dur: [12, 25], weight: 1 },
-        { id: 'door', path: [L(-7.6, 4.2), L(-6.1, 0.4)], face: Math.PI, dur: [3, 6], weight: 0.6 },
+        { id: 'tools', path: [L(-12.4, 18.2), L(-15.3, 18.2)], face: -Math.PI / 2, action: 'inspect', dur: [4, 9], weight: 2 },
+        { id: 'bench', path: [L(-12.4, 16.2), L(-13.6, 16.2)], face: -Math.PI / 2, action: 'talk', dur: [5, 10], weight: 1.5 },
+        { id: 'rest', path: [L(-9.6, 12.0), L(-9.4, 6.0), L(-7.6, 4.2), L(-3.9, 1.4), L(-3.9, 0.7)], face: 0, pose: 'sit', dur: [12, 25], weight: 1 },
+        { id: 'door', path: [L(-9.6, 12.0), L(-9.4, 6.0), L(-7.6, 4.2), L(-6.1, 0.4)], face: Math.PI, dur: [3, 6], weight: 0.6 },
       ],
     }
     const yot: Routine = {

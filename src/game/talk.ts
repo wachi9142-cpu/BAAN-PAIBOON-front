@@ -8,6 +8,7 @@ import { addItem, countOf } from './inventory'
 import { ITEMS, type ItemId } from './content/items'
 import { NPC_INFO } from './content/villagers'
 import { getSpecies, PET_SPECIES } from './content/pets'
+import { ELDER_LEGENDS, LEGENDS } from './content/legends'
 
 interface TalkState {
   /** NPC ที่อยู่ใกล้พอจะคุย */
@@ -34,7 +35,10 @@ export function startTalk(id: string) {
   if (!info) return
   useTalk.setState({ talking: id, line: pick(info.greet), reward: null, tab: 'main' })
 }
-export const endTalk = () => useTalk.setState({ talking: null, reward: null })
+export const endTalk = () => {
+  useTalk.setState({ talking: null, reward: null })
+  useLegend.setState({ id: null, i: 0 })
+}
 
 /** ทักทาย: ไหว้ + ได้ความสนุกเล็กน้อย */
 export function greet() {
@@ -201,3 +205,39 @@ export function buyFood(f: FoodEntry) {
 }
 
 export const ALL_SPECIES = PET_SPECIES
+
+// ---------- ตำนานจากผู้เฒ่า ----------
+
+/** ตำนานที่กำลังฟังอยู่ (ท่อนที่เท่าไร) */
+export const useLegend = create<{ id: string | null; i: number }>(() => ({ id: null, i: 0 }))
+export const hasLegends = (npc: string) => !!ELDER_LEGENDS[npc]
+
+export function tellLegend() {
+  const npc = useTalk.getState().talking
+  if (!npc || !ELDER_LEGENDS[npc]) return
+  const g = useGame.getState()
+  const cur = useLegend.getState()
+  if (cur.id) {
+    const lg = LEGENDS[cur.id]
+    const i = cur.i + 1
+    if (i < lg.lines.length) {
+      useLegend.setState({ i })
+      useTalk.setState({ line: lg.lines[i] })
+      return
+    }
+    // ฟังจบ: จดว่าได้ยินแล้ว + บอกทาง
+    const heard = g.save?.forest?.legends ?? []
+    if (g.save && !heard.includes(lg.id)) {
+      useGame.setState({ save: { ...g.save, forest: { ...(g.save.forest ?? {}), legends: [...heard, lg.id] } }, dirty: true })
+      toast(`📜 ได้ฟังตำนาน: ${lg.title}`, lg.hint, 'discover')
+    }
+    useLegend.setState({ id: null, i: 0 })
+    useTalk.setState({ line: 'เรื่องเก่า ๆ ก็มีเท่านี้แหละหลาน เข้าป่าอย่าลืมบอกกล่าวเจ้าที่เจ้าทางนะ' })
+    return
+  }
+  const heard = g.save?.forest?.legends ?? []
+  const list = ELDER_LEGENDS[npc]
+  const id = list.find((l) => !heard.includes(l)) ?? pick(list)
+  useLegend.setState({ id, i: 0 })
+  useTalk.setState({ line: LEGENDS[id].lines[0] })
+}

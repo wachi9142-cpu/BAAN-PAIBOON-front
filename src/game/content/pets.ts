@@ -137,7 +137,7 @@ export interface PetChoice {
   /** เพศประจำตัว (m = ผู้ · f = เมีย) — ไม่มีผลต่อความเก่ง · ไม่ได้กำหนด = สุ่มแบบคงที่ */
   sex?: 'm' | 'f'
   /** นิสัยที่จดไว้ (กันนิสัยเปลี่ยนเมื่อเปลี่ยนชื่อ) */
-  mood?: 'playful' | 'shy' | 'lazy' | 'loyal' | 'curious'
+  mood?: 'playful' | 'shy' | 'lazy' | 'loyal' | 'curious' | 'fierce'
 }
 
 export const getSpecies = (id: PetSpecies) => PET_SPECIES.find((s) => s.id === id) ?? PET_SPECIES[0]

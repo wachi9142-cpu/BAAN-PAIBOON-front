@@ -90,6 +90,10 @@ export interface SaveData {
   lotusPicked?: Record<string, number>
   /** อ่านประกาศบนบอร์ดแต่ละจุดล่าสุดวันที่ */
   boardSeen?: Record<string, number>
+  /** ป่าดงลึก + ศาลเก่า + ตำนานที่ฟังแล้ว — ดู game/forest.ts */
+  forest?: import('./forest').ForestSave
+  /** อานสัตว์ที่สร้างแล้ว (id) — ดู game/saddles.ts */
+  saddles?: string[]
   /** เช็กอินรายวัน (ตามวันจริงของเครื่อง) — ดู game/checkin.ts */
   checkin?: import('./checkin').CheckinSave
   /** เซียมซี: วันที่เสี่ยงล่าสุด · เลขที่ได้แต่ยังไม่ได้หยิบใบ · ประวัติทั้งหมด */

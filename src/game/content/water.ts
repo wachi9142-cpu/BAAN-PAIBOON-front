@@ -1,5 +1,6 @@
 // แหล่งน้ำที่ลงไปได้: ความลึก · กิจกรรมของแต่ละแหล่ง · จุดดอกบัว — ข้อมูลล้วน (ตำแหน่งอ้างอิงจากสถานที่ในหมู่บ้าน)
 import { PLACES, type Vec2 } from './village'
+import { CAVE_POOL } from '../cave'
 
 export type WaterActivity = 'fish' | 'swim' | 'vest' | 'boat' | 'lotus'
 
@@ -73,6 +74,8 @@ export function waterBodies(): WaterBody[] {
         { at: [0.15, 0.82] },
       ],
     })
+  // สระน้ำลึกในถ้ำ (ผู้สร้าง 19 พ.ย.) — ว่ายและดำน้ำได้ ลึก 6 ม.
+  out.push({ id: 'cave-pool', name: 'สระน้ำในถ้ำ', shape: 'ellipse', pos: CAVE_POOL.pos, size: CAVE_POOL.size, maxDepth: CAVE_POOL.maxDepth, activities: ['swim', 'vest'], dock: [CAVE_POOL.pos[0] - CAVE_POOL.size[0] / 2 - 0.8, CAVE_POOL.pos[1]], lotus: [] })
   return out
 }
 export const WATER = waterBodies()

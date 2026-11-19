@@ -23,6 +23,11 @@ import { KaffirLimeTree } from './models/KaffirLime'
 import { JackfruitTree } from './models/Jackfruit'
 import { CookHouse } from './CookHouse'
 import { ClothesRack } from './models/ClothesRack'
+import { PenAnimal, type PenSpots } from './PenAnimal'
+import { isNocturnal, lifePhase } from '../game/petCycle'
+import { activeKeys, partySlots, petOf } from '../game/party'
+import { useGame } from '../game/store'
+import { useClock } from '../game/clock'
 import { Bathhouse, YellowBulb } from './Bathhouse'
 import { callSound } from './VillageLife'
 import { CurtainWindow, GlassBlockWindow, LaceWindow } from './models/Windows'
@@ -148,6 +153,9 @@ export function GrandHome() {
       <Editable id="home:cookhouse3" name="บ้านหลังที่สอง (ครัว)" x={10.6} z={3.6} r={3} origin={O}>
         <CookHouse x={10.6} z={3.6} rot={-Math.PI / 2} />
       </Editable>
+      {/* มุมสัตว์เลี้ยงหน้าบ้าน: ชามข้าว · ฟูกนอน · บ้านหมาไม้ (จุดวางสัตว์ที่อุ้มมา — game/carry.ts HOME_PET_SPOTS) */}
+      <PetCorner />
+      <StayHomePets />
       {/* สุ่มไก่ไม้ไผ่สาน 3 ใบ เรียงหน้าคอกควาย มีไก่ชนอยู่ข้างใน (ผู้สร้าง 19 พ.ย.) */}
       {[7.2, 9.0, 10.8].map((bz, i) => (
         <Editable key={"basket" + i} id={"home:basket:" + i} name="สุ่มไก่" x={5.3} z={bz} r={0.9} origin={O}>
@@ -454,11 +462,88 @@ function HousePets({ only }: { only?: 'dog' | 'cat' }) {
   return (
     <group>
       {HOME_PETS.filter((p) => !only || p.pet.species === only).map((p, i) => (
-        <RestingPet key={i} pet={p.pet} pos={p.pos} rot={p.rot} />
+        <LivingPet key={i} pet={p.pet} pos={p.pos} rot={p.rot} />
       ))}
     </group>
   )
 }
+
+/**
+ * สัตว์ที่อยู่บ้าน ใช้ชีวิตตามวงจรของตัวเอง (game/petCycle.ts):
+ * ตื่น = ลุกเดินเล่นรอบ ๆ ที่นอน นั่งพักบ้าง (สัตว์กลางคืนตอนค่ำเดินหากินไกลขึ้น) · ใกล้เวลานอน = เดินกลับที่นอน
+ * หลับ = ขดตัวนอน หายใจช้า ๆ · ตื่นใหม่ = นั่งบิดขี้เกียจก่อนลุก · แต่ละตัวเวลาไม่ตรงกัน
+ */
+function LivingPet({ pet, pos, rot }: { pet: PetChoice; pos: [number, number, number]; rot: number }) {
+  const g = useRef<Group>(null)
+  const motion = useRef(0)
+  const pose = useRef(2)
+  const st = useRef({ x: pos[0], z: pos[2], y: pos[1], h: rot, tx: pos[0], tz: pos[2], next: Math.random() * 4, t: 0 })
+  useFrame((_, rawDt) => {
+    const dt = Math.min(rawDt, 0.05)
+    const s = st.current
+    s.t += dt
+    const phase = lifePhase(pet, useClock.getState().minute)
+    const roam = isNocturnal(pet.species) && phase === 'awake' && useClock.getState().minute > 18 * 60 ? 3.2 : 1.7
+    if (phase === 'awake') {
+      s.next -= dt
+      if (s.next <= 0) {
+        // เลือกที่เดินเล่นใหม่รอบที่นอน (บางทีนั่งพักเฉย ๆ)
+        const a = Math.random() * Math.PI * 2
+        const r = 0.6 + Math.random() * roam
+        s.tx = pos[0] + Math.cos(a) * r
+        s.tz = pos[2] + Math.sin(a) * r
+        s.next = 4 + Math.random() * 6
+      }
+    } else {
+      // ใกล้เวลานอน/หลับ/เพิ่งตื่น = อยู่ที่นอน
+      s.tx = pos[0]
+      s.tz = pos[2]
+    }
+    const dx = s.tx - s.x
+    const dz = s.tz - s.z
+    const d = Math.hypot(dx, dz)
+    const sp = phase === 'seek' ? 1.1 : 0.75
+    if (d > 0.08) {
+      const k = Math.min(1, (sp * dt) / d)
+      s.x += dx * k
+      s.z += dz * k
+      let dh = Math.atan2(dx, dz) - s.h
+      dh = Math.atan2(Math.sin(dh), Math.cos(dh))
+      s.h += dh * Math.min(1, dt * 6)
+      motion.current = 1
+      pose.current = 0
+    } else {
+      motion.current = 0
+      pose.current = phase === 'sleep' ? 2 : phase === 'wake' || phase === 'seek' ? 1 : s.next > 5 ? 1 : 0
+      if (phase !== 'awake') {
+        let dh = rot - s.h
+        dh = Math.atan2(Math.sin(dh), Math.cos(dh))
+        s.h += dh * Math.min(1, dt * 2)
+      }
+    }
+    // อยู่ที่นอน (แคร่) = สูงเท่าแคร่ · เดินลงพื้น = ระดับดิน
+    const onBed = Math.hypot(s.x - pos[0], s.z - pos[2]) < 0.35
+    s.y += ((onBed ? pos[1] : 0) - s.y) * Math.min(1, dt * 6)
+    if (g.current) {
+      g.current.position.set(s.x, s.y, s.z)
+      g.current.rotation.y = s.h
+      // หายใจช้า ๆ ตอนหลับ
+      g.current.scale.y = phase === 'sleep' ? 1 + Math.sin(s.t * 1.4) * 0.025 : 1
+    }
+  })
+  return (
+    <group ref={g} position={pos} rotation={[0, rot, 0]}>
+      <Pet pet={pet} motion={motion} pose={pose} />
+    </group>
+  )
+}
+
+/** จุดในคอกควาย (พิกัดคอกก่อนหมุน): รางน้ำ x −1.45 / รางหญ้า x 1.45 ชิดราวหลัง z 1.95 · มุมนอนข้างกองฟาง */
+const BUFFALO_SPOTS: PenSpots = { bounds: [-2.5, 2.5, -2.0, 1.25], water: [-1.45, 1.05, 0, 1.8], food: [1.45, 1.05, 0, 1.8], rest: [-1.6, -1.3] }
+/** คอกหมู: อ่างน้ำ (−0.4, −1.45) · รางผัก (−1.6, −1.5) · เพิงนอน (0.9, −1.25) */
+const PIG_SPOTS: PenSpots = { bounds: [-2.0, 2.0, -1.6, 1.6], water: [-0.4, -0.95, Math.PI, 0.4], food: [-1.6, -1.05, Math.PI, 0.5], rest: [0.9, -1.2] }
+/** สุ่มไก่: เดินวนเล็ก ๆ จิกพื้นกลางสุ่ม */
+const BASKET_SPOTS: PenSpots = { bounds: [-0.25, 0.25, -0.25, 0.25], food: [0, 0, 0, 0.3], rest: [0, 0] }
 
 function RestingPet({ pet, pos, rot }: { pet: PetChoice; pos: [number, number, number]; rot: number }) {
   const motion = useRef(0)
@@ -810,10 +895,9 @@ function BuffaloPen({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
         <sphereGeometry args={[0.55, 10, 8]} />
         <meshStandardMaterial color="#c8a858" roughness={1} />
       </mesh>
+      {/* ควายใช้ชีวิตเองในคอก: เดิน กินน้ำที่รางน้ำ กินฟางที่รางหญ้า ลงนอน (กลางคืนนอนหลับ) */}
       {herd.map((b, i) => (
-        <group key={i} position={[b.p[0], 0, b.p[1]]} rotation={[0, b.r, 0]} scale={b.s * 0.8}>
-          <RestingPet pet={b.pet} pos={[0, 0, 0]} rot={0} />
-        </group>
+        <PenAnimal key={i} pet={b.pet} s={b.s * 0.8} start={[b.p[0], b.p[1], b.r]} pen="buffalo" idx={i} speed={0.5} spots={BUFFALO_SPOTS} />
       ))}
     </group>
   )
@@ -1201,12 +1285,8 @@ function PigPen({ x, z, rot = 0 }: { x: number; z: number; rot?: number }) {
         </mesh>
       </group>
       {/* หมู 2 ตัว */}
-      <group position={[-0.9, 0, -0.75]} rotation={[0, 0.6, 0]} scale={0.75}>
-        <RestingPet pet={pigs[0]} pos={[0, 0, 0]} rot={0} />
-      </group>
-      <group position={[0.8, 0, 0.9]} rotation={[0, -2.2, 0]} scale={0.7}>
-        <RestingPet pet={pigs[1]} pos={[0, 0, 0]} rot={0} />
-      </group>
+      <PenAnimal pet={pigs[0]} s={0.75} start={[-0.9, -0.75, 0.6]} pen="pig" idx={0} speed={0.55} spots={PIG_SPOTS} />
+      <PenAnimal pet={pigs[1]} s={0.7} start={[0.8, 0.9, -2.2]} pen="pig" idx={1} speed={0.55} spots={PIG_SPOTS} />
       {/* หลอดไฟเหลืองใต้เพิง (ไล่ยุง/แมลง) */}
       <YellowBulb pos={[0, 1.75, -0.9]} glow intensity={1.6} distance={5} />
     </group>
@@ -1435,11 +1515,11 @@ function Surroundings() {
         <PineappleBed points={PINEAPPLE_SPOTS} ripeEvery={4} />
       </Windy>
       {/* ไผ่กอใหญ่ */}
-      <Bamboo x={-14} z={12} />
+      <Bamboo x={-14.3} z={28.1} />{/* ย้ายไปรวมกับแนวกอไผ่ทางใต้ (ผู้สร้าง 19 พ.ย.) */}
       {/* แนวกอไผ่ริมรั้วตะวันตก ถัดจากมะม่วงหิมพานต์ (ผู้สร้าง 19 พ.ย.) */}
       <Bamboo x={-14.4} z={30.6} />
       <Bamboo x={-14.2} z={33.2} />
-      <Bamboo x={-14.4} z={14.8} />{/* ย้ายไปรวมกับกอไผ่ริมรั้วตะวันตก (ผู้สร้าง 19 พ.ย.) */}
+      <Bamboo x={-14.3} z={35.7} />{/* ย้ายไปรวมกับแนวกอไผ่ทางใต้ (ผู้สร้าง 19 พ.ย.) */}
       {/* ลำไย: กลางรั้วบ้าน 1 ต้น + หลังห้องน้ำ 2 ต้น (ย้ายตามห้องน้ำไปข้างคอกควาย 19 พ.ย.) */}
       <TrunkTree x={29} z={-3} h={1.8} r={1.3} color="#3f6e33" fruit={8} fruitColor="#c8a468" fruitR={0.07} />
       <TrunkTree x={14.2} z={15.2} h={1.8} r={1.1} color="#3f6e33" fruit={6} fruitColor="#c8a468" fruitR={0.07} />
@@ -1947,9 +2027,87 @@ function ChickenBasket({ seed }: { seed: number }) {
         <torusGeometry args={[0.12, 0.022, 6, 16]} />
         <meshStandardMaterial color="#c8a868" />
       </mesh>
-      <group scale={0.55} rotation={[0, seed * 1.3, 0]}>
-        <RestingPet pet={ROOSTERS[seed % 3]} pos={[0, 0, 0]} rot={0} />
+      {/* ไก่ชนในสุ่ม: เดินวนในสุ่ม จิกกิน นั่งพัก */}
+      <PenAnimal pet={ROOSTERS[seed % 3]} s={0.55} start={[0, 0, seed * 1.3]} pen={'basket' + seed} idx={0} speed={0.25} spots={BASKET_SPOTS} />
+    </group>
+  )
+}
+
+/** มุมสัตว์เลี้ยง: ตำแหน่งตรงกับ HOME_PET_SPOTS ใน game/carry.ts */
+function PetCorner() {
+  return (
+    <group>
+      {/* ชามข้าว + ชามน้ำ (สแตนเลส) */}
+      <group position={[-4.6, 0, 0.6]}>
+        {[-0.22, 0.22].map((x, i) => (
+          <group key={x} position={[x, 0, 0]}>
+            <mesh position={[0, 0.05, 0]}>
+              <cylinderGeometry args={[0.16, 0.12, 0.1, 18, 1, true]} />
+              <meshStandardMaterial color="#c8ccd0" metalness={0.35} roughness={0.3} side={DoubleSide} />
+            </mesh>
+            <mesh position={[0, 0.07, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[0.14, 16]} />
+              <meshStandardMaterial color={i ? '#6aa8c0' : '#c89a5a'} roughness={i ? 0.1 : 1} />
+            </mesh>
+          </group>
+        ))}
+        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.8, 0.45]} />
+          <meshStandardMaterial color="#c84a3a" roughness={1} />
+        </mesh>
       </group>
+      {/* ฟูกนอนสัตว์เลี้ยง (เบาะกลมขอบนูน) */}
+      <group position={[-10.6, 0, 0.7]}>
+        <mesh position={[0, 0.06, 0]} scale={[1, 0.25, 0.8]}>
+          <cylinderGeometry args={[0.55, 0.55, 0.45, 20]} />
+          <meshStandardMaterial color="#d88a6a" roughness={1} />
+        </mesh>
+        <mesh position={[0, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.8, 1]}>
+          <torusGeometry args={[0.5, 0.11, 8, 22]} />
+          <meshStandardMaterial color="#c8705a" roughness={1} />
+        </mesh>
+      </group>
+      {/* บ้านหมาไม้หลังคาจั่ว */}
+      <group position={[-12.9, 0, 1.4]}>
+        <mesh position={[0, 0.45, 0]} castShadow>
+          <boxGeometry args={[1.0, 0.9, 1.0]} />
+          <meshStandardMaterial color="#a8784a" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.35, 0.505]}>
+          <planeGeometry args={[0.45, 0.6]} />
+          <meshStandardMaterial color="#2a1a10" />
+        </mesh>
+        <GableRoof width={1.0} depth={1.0} height={0.45} y={0.9} color="#c84a3a" overhang={0.15} />
+      </group>
+    </group>
+  )
+}
+
+/** สัตว์ในทีมที่ไม่ได้ออกเดินทางกับผู้เล่น: อยู่บ้าน ใช้ชีวิตตามวงจรของตัวเอง รอบ ๆ มุมสัตว์เลี้ยง (ชาม ฟูก บ้านหมา) */
+const STAY_SPOTS: [number, number, number][] = [
+  [-11.3, 3.2, 0.4],
+  [-9.0, 2.6, -0.6],
+  [-7.2, 3.4, 2.4],
+  [-5.6, 2.4, -2.0],
+  [-12.6, 4.4, 1.2],
+  [-8.2, 4.6, 3.0],
+  [-6.0, 4.4, -1.0],
+  [-10.2, 5.2, 0.8],
+  [-4.2, 3.6, 2.8],
+]
+function StayHomePets() {
+  useGame((s) => s.save?.activePets)
+  useGame((s) => s.save?.party)
+  const active = new Set(activeKeys())
+  const home = partySlots().filter((k): k is string => !!k && !active.has(k))
+  return (
+    <group>
+      {home.slice(0, STAY_SPOTS.length).map((k, i) => {
+        const o = petOf(k)
+        if (!o || o.pet.species === 'buffalo' || o.pet.species === 'cow') return null
+        const [x, z, r] = STAY_SPOTS[i]
+        return <LivingPet key={k} pet={o.pet} pos={[x, 0, z]} rot={r} />
+      })}
     </group>
   )
 }

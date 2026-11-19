@@ -350,7 +350,7 @@ function ShowerRoom() {
 }
 
 /** หลอดไฟสีเหลือง (ไล่ยุงไล่แมลง) ห้อยจากคาน · glow = ให้แสงจริงด้วย */
-export function YellowBulb({ pos, glow = false, intensity = 2.2, distance = 6 }: { pos: [number, number, number]; glow?: boolean; intensity?: number; distance?: number }) {
+export function YellowBulb({ pos, glow = false, intensity = 2.2, distance = 6, inLight = false }: { pos: [number, number, number]; glow?: boolean; intensity?: number; distance?: number; inLight?: boolean }) {
   return (
     <group position={pos}>
       <mesh position={[0, 0.1, 0]}>
@@ -365,7 +365,8 @@ export function YellowBulb({ pos, glow = false, intensity = 2.2, distance = 6 }:
         <sphereGeometry args={[0.055, 12, 10]} />
         <meshStandardMaterial color="#ffd040" emissive="#ffb820" emissiveIntensity={2.2} toneMapped={false} />
       </mesh>
-      {glow && <pointLight position={[0, -0.15, 0]} color="#ffbe40" intensity={intensity} distance={distance} decay={1.6} />}
+      {/* ไฟส่องจริงเฉพาะในฉากภายใน (inLight) — ข้างนอกใช้หลอดเรืองแสงอย่างเดียว ไม่เพิ่มจำนวนไฟในฉาก (แก้เกมอืด) */}
+      {glow && inLight && <pointLight position={[0, -0.15, 0]} color="#ffbe40" intensity={intensity} distance={distance} decay={1.6} />}
     </group>
   )
 }

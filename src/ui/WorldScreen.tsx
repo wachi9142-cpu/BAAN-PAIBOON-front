@@ -51,6 +51,27 @@ import { StatIcon, type StatIconId } from './StatIcons'
 import { FriendsButton } from './FriendsWindow'
 import { CheckinButton, CheckinWindow } from './CheckinWindow'
 import { ActivityHud } from './ActivityHud'
+import { ActionWheel } from './ActionWheel'
+import { saddleDefFor, saddleFor } from '../game/saddles'
+import { MOUNTS, toggleMount, useMount } from '../game/mounts'
+import { CaveMouth, CaveWatcher, WaterCaveScene } from '../scenes/WaterCave'
+import { CAVE_DOOR, outsideMouth } from '../game/cave'
+import { DeepForest } from '../scenes/DeepForest'
+import { activateForest, forestHint, useForest } from '../game/forest'
+import { warp } from '../game/homeActions'
+
+/** เข้า/ออกถ้ำน้ำลึก */
+function goCave(enter: boolean) {
+  const g = useGame.getState()
+  if (enter) {
+    warp.pending = { x: CAVE_DOOR[0], z: CAVE_DOOR[1] - 1, heading: Math.PI, y: 0 }
+    g.toast({ title: '🕳️ เข้าถ้ำน้ำลึก', body: 'ลงสระแล้วว่ายได้ · ดำน้ำ: กด C ค้าง · ขึ้น: Space · ไม่มีหมวกฟองอากาศกลั้นหายใจได้ ~12 วิ · สัตว์ตัวเล็กจะรอริมฝั่ง', tone: 'info' })
+  } else {
+    const [x, z, h] = outsideMouth()
+    warp.pending = { x, z, heading: h, y: 0 }
+  }
+}
+import { putDown, useCarry } from '../game/carry'
 import { WaterLife } from '../scenes/WaterLife'
 import { Villagers } from '../scenes/Villagers'
 import { GameMenu, type Tab } from './GameMenu'
@@ -212,9 +233,15 @@ export function WorldScreen() {
         if (g.paused) return
         const hn = useInterior.getState().near
         const fs = useFestival.getState().near
-        if (fs && !hn) doFestSpot(fs)
+        // ขี่มังกรน้ำ/พญานาคอยู่ = E ลง · อยู่ใกล้ = E ขึ้นขี่
+        if (useMount.getState().riding) toggleMount()
+        else if (useMount.getState().near) toggleMount(useMount.getState().near)
+        // อุ้มสัตว์อยู่: E = วางลง (ที่ชามอาหาร/ฟูก/เตียง/บ้านสัตว์ หรือข้างหน้า)
+        else if (useCarry.getState().key) putDown()
+        else if (fs && !hn) doFestSpot(fs)
         else if (hn) {
-          if (hn === 'enter') enterHome()
+          if (hn === 'cave-in' || hn === 'cave-out') goCave(hn === 'cave-in')
+          else if (hn === 'enter') enterHome()
           else if (hn.startsWith('enter:')) enterHome(hn.slice(6))
           else activateHomeSpot(hn)
         }
@@ -242,6 +269,7 @@ export function WorldScreen() {
           if (useWater.getState().menu) useWater.setState({ menu: null })
           else activateWater(useWater.getState().near!, playerPose.x, playerPose.z)
         }
+        else if (useForest.getState().near) activateForest(useForest.getState().near!)
         else if (useChests.getState().near) openChest(useChests.getState().near!)
         else if (useBuild.getState().near) {
           const uid = useBuild.getState().near!
@@ -292,7 +320,7 @@ export function WorldScreen() {
     <>
       <Canvas
         shadows="soft"
-        dpr={[1, 1.5]}
+        dpr={[1, 1.25]}
         camera={{ fov: 50, near: 0.1, far: 400 }}
         gl={{ preserveDrawingBuffer: true }}
         style={{ position: 'absolute', inset: 0, filter: softFilter }}
@@ -312,6 +340,10 @@ export function WorldScreen() {
         <Wildlife />
         <Player />
         <HomeInterior />
+        <CaveMouth />
+        <CaveWatcher />
+        <WaterCaveScene />
+        <DeepForest />
         <WaterLife />
         <LayoutDragger />
         <HoldInteract />
@@ -332,6 +364,11 @@ export function WorldScreen() {
       <WaterMenu />
       <CheckinWindow />
       <ActivityHud />
+      <ActionWheel />
+      <DiveHud />
+      <MountHint />
+      <ForestHint />
+      <CarryHint />
       <TouchControls />
       <LayoutEditor />
       <HoldMenu />
@@ -789,6 +826,12 @@ function toggleRide() {
     g.toast({ title: 'ห้ามขี่สัตว์ขึ้นโบสถ์นะ', tone: 'warn' })
     return
   }
+  // ต้องมีอานของสัตว์ชนิดนี้ (ใช้แทนกันไม่ได้) — ผู้สร้าง 19 พ.ย.
+  if (!saddleFor(pet.species)) {
+    const d = saddleDefFor(pet.species)
+    g.toast({ title: `ยังไม่มี${d?.name ?? 'อาน'}สำหรับ${pet.name}`, body: 'สร้างอานก่อนที่ สมุด → สร้าง → อาน (อานของสัตว์ชนิดอื่นใช้แทนกันไม่ได้)', tone: 'warn' })
+    return
+  }
   g.setRiding(true)
   if (g.save?.petLeashed) g.setPetLeashed(false)
   g.toast({ title: `🐃 ขี่${pet.name}แล้ว`, body: 'เดินเร็วขึ้น · กด F อีกครั้งเพื่อลง', tone: 'success' })
@@ -835,7 +878,8 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
 
   const place = nearby && !nearby.startsWith('plot:') ? PLACES.find((p) => p.id === nearby) : null
   const plot = nearby?.startsWith('plot:') ? PLOTS.find((p) => 'plot:' + p.id === nearby) : null
-  const locationName = place?.name ?? (plot ? plot.houseName ?? `บ้านของ${save.player.name}` : 'หมู่บ้านไพบูลย์')
+  const inForestNow = useForest((s) => s.inside)
+  const locationName = place?.name ?? (plot ? plot.houseName ?? `บ้านของ${save.player.name}` : inForestNow ? 'ป่าดงลึก (นอกหมู่บ้าน)' : 'หมู่บ้านไพบูลย์')
   // การ์ดคำอธิบายสถานที่: โผล่ตอนเพิ่งมาถึง แล้วซ่อนเอง ให้หน้าจอเป็นของเกม
   const [cardFresh, setCardFresh] = useState(true)
   useEffect(() => {
@@ -941,7 +985,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
       )}
       {homeNear && (
         <div className="gather-hint">
-          <kbd>E</kbd> {homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeNear.startsWith('enter:') ? '🚪 เปิดประตูเข้า' + (PLACES.find((p) => 'enter:' + p.id === homeNear)?.name ?? (homeNear === 'enter:cookhouse' ? 'บ้านหลังที่สอง (ครัว)' : homeNear === 'enter:bathhouse' ? 'ห้องน้ำนอกบ้าน' : homeNear === 'enter:barber' ? 'ร้านตัดผม ช่างโรจน์' : 'บ้าน')) : homeSpotLabel(homeNear)}
+          <kbd>E</kbd> {homeNear === 'cave-in' ? '🕳️ เข้าถ้ำน้ำลึก' : homeNear === 'cave-out' ? '🌤️ ออกจากถ้ำ' : homeNear === 'enter' ? '🏡 เข้าบ้านตารัง–ยายเลียน' : homeNear.startsWith('enter:') ? '🚪 เปิดประตูเข้า' + (PLACES.find((p) => 'enter:' + p.id === homeNear)?.name ?? (homeNear === 'enter:cookhouse' ? 'บ้านหลังที่สอง (ครัว)' : homeNear === 'enter:bathhouse' ? 'ห้องน้ำนอกบ้าน' : homeNear === 'enter:barber' ? 'ร้านตัดผม ช่างโรจน์' : 'บ้าน')) : homeSpotLabel(homeNear)}
         </div>
       )}
       {!building && toyNear && (
@@ -1045,7 +1089,7 @@ function PartyFollowers() {
       {keys.map((k, i) => {
         const o = petOf(k)
         if (!o) return null
-        return <PetFollower key={k + o.pet.color + o.pet.name} pet={o.pet} start={save.position} slot={i} mood={moodOf(k, o.pet)} />
+        return <PetFollower key={k + o.pet.color + o.pet.name} pet={o.pet} start={save.position} slot={i} mood={moodOf(k, o.pet)} petKey={k} />
       })}
     </>
   )
@@ -1068,6 +1112,71 @@ function HeldGear() {
           <GearIcon id={it} size={34} /> {gearById(it)?.name} <kbd>R</kbd>
         </div>
       )}
+    </div>
+  )
+}
+
+/** ปุ่มช่วยตอนอุ้มสัตว์ */
+function CarryHint() {
+  const pet = useCarry((s) => s.pet)
+  const near = useCarry((s) => s.near)
+  if (!pet) return null
+  const verb = !near ? 'วางลงตรงนี้' : near.kind === 'bowl' ? 'วางให้กินข้าวที่ชาม' : near.kind === 'pethouse' ? 'วางเข้าบ้านสัตว์' : 'วางให้นอน (' + near.label + ')'
+  return (
+    <div className="gather-hint" style={{ bottom: 150 }}>
+      🤲 อุ้ม{pet.name}อยู่ · <kbd>E</kbd> {verb}
+    </div>
+  )
+}
+
+/** ดำน้ำ: แถบลมหายใจ + จอสีฟ้าใต้น้ำ + วิธีกด */
+function DiveHud() {
+  const mode = useWater((s) => s.mode)
+  const dive = useWater((s) => s.dive)
+  const breath = useWater((s) => s.breath)
+  const helmet = useWater((s) => s.helmet)
+  if (mode !== 'swim' && dive <= 0 && breath >= 100) return null
+  const under = dive > 0.35
+  const low = breath < 30
+  return (
+    <>
+      {under && <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 3, background: `rgba(20, 120, 150, ${Math.min(0.42, 0.18 + dive * 0.05)})`, mixBlendMode: 'multiply' }} />}
+      <div style={{ position: 'fixed', left: '50%', top: 150, transform: 'translateX(-50%)', zIndex: 30, padding: '6px 14px', borderRadius: 14, background: 'rgba(255,250,240,0.92)', boxShadow: '0 3px 0 #d8c8a8', color: '#3a4a50', fontSize: '0.82rem', textAlign: 'center', minWidth: 220, pointerEvents: 'none' }}>
+        <div style={{ fontWeight: 800 }}>
+          {under ? `🤿 ใต้น้ำ ลึก ${dive.toFixed(1)} ม.` : '🏊 ว่ายน้ำ'} {helmet ? '· 🥽 หมวกฟองอากาศ' : ''}
+        </div>
+        <div style={{ margin: '4px 0', height: 8, borderRadius: 999, background: '#d8e8ec', overflow: 'hidden' }}>
+          <div style={{ width: `${breath}%`, height: '100%', background: low ? '#e05a4a' : '#3aa8d8', transition: 'width 0.2s' }} />
+        </div>
+        <div style={{ fontSize: '0.72rem', opacity: 0.8 }}>
+          ลมหายใจ {breath}% · <kbd>C</kbd> ค้าง = ดำลง · <kbd>Space</kbd> = ขึ้น
+          {low && under ? ' · รีบขึ้นไปหายใจ!' : ''}
+        </div>
+      </div>
+    </>
+  )
+}
+
+/** ปุ่มช่วยขี่มังกรน้ำ/พญานาค */
+function ForestHint() {
+  const near = useForest((s) => s.near)
+  useGame((s) => s.save?.forest)
+  if (!near) return null
+  return (
+    <div className="gather-hint" style={{ bottom: 150 }}>
+      <kbd>E</kbd> {forestHint(near)}
+    </div>
+  )
+}
+
+function MountHint() {
+  const near = useMount((s) => s.near)
+  const riding = useMount((s) => s.riding)
+  if (!near && !riding) return null
+  const m = MOUNTS[(riding ?? near)!]
+  return (
+    <div className="gather-hint" style={{ bottom: 150 }}>
+      {riding ? <>{m.icon} ขี่{m.name}อยู่ · <kbd>C</kbd> ดำ · <kbd>Space</kbd> ขึ้น · <kbd>E</kbd> ลง</> : <><kbd>E</kbd> {m.icon} ขี่{m.name} (ต้องมีอาน)</>}
     </div>
   )
 }

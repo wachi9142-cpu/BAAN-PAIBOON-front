@@ -10,7 +10,8 @@ import { canAfford, craft, hasTool } from '../game/inventory'
 import { startPlacing } from '../game/building'
 import { NPC_INFO } from '../game/content/villagers'
 import { getSpecies } from '../game/content/pets'
-import { activeKeys, MAX_ACTIVE, moodOf, MOODS, openParty, PARTY_SIZE, partySlots, petOf, toggleActive } from '../game/party'
+import { buildSaddle, canBuildSaddle, costText, RARITY_INFO, SADDLES } from '../game/saddles'
+import { activeKeys, MAX_ACTIVE, openParty, PARTY_SIZE, partySlots, petOf, toggleActive, traitText } from '../game/party'
 import { careOf, renamePet, sexOf } from '../game/petCare'
 import { openFriends } from '../game/social'
 import { ItemIcon } from './ItemIcon'
@@ -21,10 +22,10 @@ import { BOOK_THEMES, bookStyle, CHARMS, COVER_COLORS, moveInOrder, PATTERNS, re
 
 /**
  * หนังสือเมนูหลัก (Main Game Book) — ศูนย์รวมระบบของเกมในเล่มเดียว
- * แท็บด้านบน = ระบบหลัก · แท็บข้างขวา = หมวดสร้าง/จัดการสิ่งของ · แต่ละหมวดมีสัญลักษณ์และสีประจำ
+ * แท็บด้านบน = ระบบหลัก · แท็บข้าง (ค่าเริ่มต้นฝั่งซ้าย) = หมวดสร้าง/จัดการสิ่งของ · แต่ละหมวดมีสัญลักษณ์และสีประจำ
  */
 type TopTab = 'party' | 'calendar' | 'storage' | 'tech' | 'quests' | 'guild' | 'options'
-type SideTab = 'make' | 'store' | 'food' | 'infra' | 'light' | 'build' | 'defend' | 'tools'
+type SideTab = 'make' | 'saddle' | 'store' | 'food' | 'infra' | 'light' | 'build' | 'defend' | 'tools'
 type Page = { kind: 'top'; id: TopTab } | { kind: 'side'; id: SideTab } | { kind: 'deco' }
 
 const TOP: { id: TopTab; icon: string; label: string; color: string }[] = [
@@ -38,6 +39,7 @@ const TOP: { id: TopTab; icon: string; label: string; color: string }[] = [
 ]
 const SIDE: { id: SideTab; icon: string; label: string; color: string }[] = [
   { id: 'make', icon: '🔨', label: 'สร้าง', color: '#c0762e' },
+  { id: 'saddle', icon: '🐎', label: 'อาน', color: '#9a5a2a' },
   { id: 'store', icon: '📦', label: 'จัดเก็บ', color: '#8a5a2a' },
   { id: 'food', icon: '🍲', label: 'อาหาร', color: '#c9573a' },
   { id: 'infra', icon: '🧱', label: 'โครงสร้างพื้นฐาน', color: '#7a6a5a' },
@@ -54,14 +56,16 @@ type Entry =
   | { t: 'soon'; icon: string; name: string; note: string }
 const rec = (id: string) => ({ t: 'recipe' as const, r: RECIPES.find((r) => r.id === id)! })
 const ENTRIES: Record<SideTab, Entry[]> = {
-  make: [{ t: 'structure', id: 'workbench' }, rec('plank'), { t: 'soon', icon: '🔥', name: 'เตาถ่าน', note: 'เผาถ่านไว้หุงข้าว (เร็ว ๆ นี้)' }],
-  store: [{ t: 'structure', id: 'chest' }, { t: 'structure', id: 'shed' }, rec('bag1'), rec('bag2'), rec('bag3')],
+  // สร้าง = ของชิ้นเล็กทั่วไป (โต๊ะ เตา กล่อง เฟอร์นิเจอร์) · ปลูกสร้าง = สิ่งก่อสร้างใหญ่ (บ้าน คอกสัตว์ โรงเก็บของ รั้ว) — ผู้สร้าง 19 พ.ย.
+  make: [{ t: 'structure', id: 'workbench' }, { t: 'structure', id: 'chest' }, rec('plank'), { t: 'soon', icon: '🔥', name: 'เตาถ่าน', note: 'เผาถ่านไว้หุงข้าว (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🪑', name: 'แคร่ไม้ไผ่', note: 'นั่งเล่นหน้าบ้าน (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🗄️', name: 'ตู้กับข้าว', note: 'เฟอร์นิเจอร์ในครัว (เร็ว ๆ นี้)' }],
+  saddle: [],
+  store: [rec('bag1'), rec('bag2'), rec('bag3')],
   food: [rec('feed'), { t: 'soon', icon: '🍚', name: 'หม้อนึ่งข้าวเหนียว', note: 'ทำอาหารเองที่บ้าน (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🏺', name: 'ไหปลาร้า', note: 'หมักปลาเก็บไว้กิน (เร็ว ๆ นี้)' }],
-  infra: [{ t: 'structure', id: 'fence' }, { t: 'soon', icon: '🌉', name: 'สะพานไม้', note: 'ข้ามลำน้ำ (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🪣', name: 'โอ่งเก็บน้ำ', note: 'รองน้ำฝน (เร็ว ๆ นี้)' }],
+  infra: [{ t: 'soon', icon: '🌉', name: 'สะพานไม้', note: 'ข้ามลำน้ำ (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🪣', name: 'โอ่งเก็บน้ำ', note: 'รองน้ำฝน (เร็ว ๆ นี้)' }],
   light: [{ t: 'soon', icon: '🏮', name: 'โคมไม้ไผ่', note: 'แขวนหน้าบ้าน สว่างตอนกลางคืน (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🕯️', name: 'ตะเกียงน้ำมัน', note: 'ถือเดินตอนกลางคืน (เร็ว ๆ นี้)' }],
-  build: [{ t: 'structure', id: 'greenhouse' }, { t: 'structure', id: 'pen' }, { t: 'soon', icon: '🛖', name: 'เถียงนา', note: 'เพิงพักกลางทุ่ง (เร็ว ๆ นี้)' }],
+  build: [{ t: 'structure', id: 'pen' }, { t: 'structure', id: 'shed' }, { t: 'structure', id: 'greenhouse' }, { t: 'structure', id: 'fence' }, { t: 'soon', icon: '⛺', name: 'เถียงนา', note: 'เพิงพักกลางทุ่ง (เร็ว ๆ นี้)' }, { t: 'soon', icon: '🏠', name: 'บ้านหลังใหม่', note: 'ปลูกบ้านในที่ดินของตัวเอง (เร็ว ๆ นี้)' }],
   defend: [{ t: 'structure', id: 'scarecrow' }, { t: 'soon', icon: '🪤', name: 'กับดักหนู', note: 'กันหนูกินข้าวในยุ้ง (เร็ว ๆ นี้)' }],
-  tools: ['axe', 'hammer', 'machete', 'saw', 'rod', 'wand'].map(rec),
+  tools: ['axe', 'hammer', 'machete', 'saw', 'rod', 'wand', 'bubble_helmet'].map(rec),
 }
 
 export const useBook = create<{ open: boolean; page: Page }>(() => ({ open: false, page: { kind: 'top', id: 'party' } }))
@@ -267,7 +271,7 @@ function DecoPages() {
               ด้านล่าง
             </button>
           </div>
-          <label className="deco-label">แท็บหมวดสร้าง</label>
+          <label className="deco-label">แท็บข้าง (สร้าง จัดเก็บ …)</label>
           <div className="deco-chips">
             <button type="button" className={st.sidePos === 'left' ? 'on' : ''} onClick={() => setBook({ sidePos: 'left' })}>
               ด้านซ้าย
@@ -300,7 +304,7 @@ function DecoPages() {
               <Order which="topOrder" items={TOP} />
             </div>
             <div>
-              <label className="deco-label">ลำดับแท็บหมวดสร้าง</label>
+              <label className="deco-label">ลำดับแท็บข้าง</label>
               <Order which="sideOrder" items={SIDE} />
             </div>
           </div>
@@ -333,6 +337,10 @@ function Spread({ left, right }: { left: React.ReactNode; right: React.ReactNode
 
 /* ───────── หมวดสร้าง/จัดการสิ่งของ ───────── */
 function MakePages({ cat, close }: { cat: SideTab; close: () => void }) {
+  if (cat === 'saddle') return <SaddlePages />
+  return <MakeList cat={cat} close={close} />
+}
+function MakeList({ cat, close }: { cat: SideTab; close: () => void }) {
   const save = useGame((s) => s.save)!
   const list = ENTRIES[cat]
   const [sel, setSel] = useState(0)
@@ -555,7 +563,7 @@ function PartyPages({ close }: { close: () => void }) {
             </div>
             <PetNameEdit k={cur.key} pet={cur.pet} />
             <p>
-              {getSpecies(cur.pet.species).label} · นิสัย{MOODS[moodOf(cur.key, cur.pet)].label}
+              {getSpecies(cur.pet.species).label} · นิสัย{traitText(cur.key, cur.pet)}
             </p>
             <MiniCare k={cur.key} />
             <div className="book-row">
@@ -770,5 +778,82 @@ function PetNameEdit({ k, pet }: { k: string; pet: { name: string } & Parameters
       <button type="submit" className="btn small">ตกลง</button>
       <button type="button" className="btn small ghost" onClick={() => setEdit(null)}>ยกเลิก</button>
     </form>
+  )
+}
+
+/* ───────── อานสัตว์: ช่องแดง = ยังไม่ได้สร้าง · เขียว = พร้อมใช้งาน ───────── */
+function SaddlePages() {
+  const save = useGame((s) => s.save)!
+  const [filter, setFilter] = useState<'all' | 'land' | 'water'>('all')
+  const [sel, setSel] = useState(SADDLES[0].id)
+  const owned = save.saddles ?? []
+  const list = SADDLES.filter((x) => filter === 'all' || x.group === filter)
+  const cur = SADDLES.find((x) => x.id === sel) ?? SADDLES[0]
+  const have = owned.includes(cur.id)
+  return (
+    <Spread
+      left={
+        <>
+          <h2 className="book-h">🐎 เลือกอานสัตว์</h2>
+          <div style={{ display: 'flex', gap: 6, margin: '4px 0 10px' }}>
+            {(
+              [
+                ['all', '🐎 ทั้งหมด'],
+                ['land', '🐾 สัตว์บก'],
+                ['water', '🌊 สัตว์น้ำ'],
+              ] as const
+            ).map(([k, t]) => (
+              <button key={k} type="button" className={'chip' + (filter === k ? ' on' : '')} onClick={() => setFilter(k)} style={{ fontWeight: filter === k ? 800 : 500 }}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="book-grid">
+            {list.map((x) => {
+              const ok = owned.includes(x.id)
+              return (
+                <button
+                  key={x.id}
+                  type="button"
+                  className={'book-cell' + (x.id === sel ? ' sel' : '')}
+                  onClick={() => setSel(x.id)}
+                  style={{ borderWidth: 3, borderColor: ok ? '#4aa83a' : '#d8483a', background: ok ? 'rgba(120,200,100,0.16)' : 'rgba(220,80,60,0.10)' }}
+                >
+                  <span className="book-cicon" style={{ fontSize: 30 }}>{x.icon}</span>
+                  <small style={{ fontWeight: 700 }}>{x.name}</small>
+                  <small style={{ fontSize: 10, color: ok ? '#2f7a24' : '#a8321e' }}>{ok ? '✔ พร้อมใช้งาน' : 'ยังไม่ได้สร้าง'}</small>
+                </button>
+              )
+            })}
+          </div>
+          <p className="book-note">
+            🟥 ยังไม่ได้สร้าง · 🟩 พร้อมใช้งาน · อานแต่ละชนิดใช้กับสัตว์ชนิดนั้นเท่านั้น · ประดิษฐ์ได้ทุกที่ ไม่ต้องกลับบ้าน
+          </p>
+        </>
+      }
+      right={
+        <div className="book-detail">
+          <div style={{ fontSize: 64 }}>{cur.icon}</div>
+          <h3>{cur.name}</h3>
+          <p>
+            <span style={{ padding: '2px 10px', borderRadius: 999, color: '#fff', background: RARITY_INFO[cur.rarity].color, fontSize: 12, fontWeight: 800 }}>{RARITY_INFO[cur.rarity].label}</span>{' '}
+            ใช้ได้กับ <b>{cur.speciesLabel}</b> เท่านั้น{cur.future ? ' (สัตว์ชนิดนี้จะมาเร็ว ๆ นี้)' : ''}
+          </p>
+          <p>{cur.note}</p>
+          <p>⭐ {cur.stat}</p>
+          {have ? (
+            <p style={{ color: '#2f7a24', fontWeight: 800 }}>✔ สร้างแล้ว — {cur.future ? 'เก็บไว้ในรายการอาน รอสัตว์ชนิดนี้' : cur.group === 'water' ? 'ไปที่สระน้ำในถ้ำ เดินเข้าใกล้' + cur.speciesLabel + ' แล้วกด E ขี่' : 'เรียก' + cur.speciesLabel + 'ออกมาเดินตาม แล้วกด F ขี่'}</p>
+          ) : (
+            <>
+              <p className="book-note">ต้องใช้: {costText(cur)}</p>
+              <button type="button" className="btn" disabled={!canBuildSaddle(cur)} onClick={() => buildSaddle(cur.id)}>
+                🛠️ สร้างอาน
+              </button>
+            </>
+          )}
+          <p className="book-note">💰 เงินของคุณ {save.coins.toLocaleString('th-TH')} บาท</p>
+        </div>
+      }
+    />
   )
 }

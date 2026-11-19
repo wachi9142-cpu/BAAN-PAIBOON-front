@@ -130,7 +130,14 @@ function Hills() {
         const d = (ring ? 250 : 175) + ((i * 37) % 30)
         out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, sx: 40 + ((i * 53) % 30) + ring * 25, sy: (ring ? 38 : 22) + ((i * 71) % 18), c: cols[(i + ring * 2) % cols.length] })
       }
-    return out
+    // เว้นช่องให้ป่าดงลึก (ฝั่งตะวันตก นอกหมู่บ้าน) — ย้ายเนินที่ทับป่าไปไว้ด้านหลังป่า
+    const keep = out.filter((h) => {
+      const dx = Math.max(-215 - h.x, 0, h.x - -110)
+      const dz = Math.max(-70 - h.z, 0, h.z - 70)
+      return Math.hypot(dx, dz) > h.sx * 0.95
+    })
+    for (let i = 0; i < 5; i++) keep.push({ x: -275 - (i % 2) * 20, z: -80 + i * 40, sx: 55 + (i % 3) * 10, sy: 30 + (i % 2) * 10, c: cols[i % cols.length] })
+    return keep
   }, [])
   return (
     <group>
@@ -192,7 +199,8 @@ function SoftenPass() {
       })
     }
     pass()
-    const id = window.setInterval(pass, 2500)
+    // ตรวจของใหม่เป็นระยะ (ห่างขึ้น ลดอาการกระตุกทุก 2.5 วิ — แก้เกมอืด)
+    const id = window.setInterval(pass, 7000)
     return () => window.clearInterval(id)
   }, [scene])
   return null
@@ -200,6 +208,7 @@ function SoftenPass() {
 
 export function SoftWorld() {
   const fx = useSettings((s) => s.prettyFx ?? true)
+  const ao = useSettings((s) => s.aoFx ?? false)
   return (
     <>
       <SkyDome />
@@ -208,7 +217,7 @@ export function SoftWorld() {
       <SoftenPass />
       {fx && (
         <EffectComposer multisampling={0}>
-          <N8AO halfRes aoRadius={1.6} intensity={1.6} distanceFalloff={0.6} color="#3a3020" />
+          {ao ? <N8AO halfRes aoRadius={1.6} intensity={1.6} distanceFalloff={0.6} color="#3a3020" /> : <></>}
           <Bloom mipmapBlur luminanceThreshold={0.82} luminanceSmoothing={0.2} intensity={0.45} />
           <Vignette offset={0.32} darkness={0.35} />
         </EffectComposer>

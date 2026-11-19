@@ -28,6 +28,8 @@ export interface BookStyle {
   listSide: 'left' | 'right'
   topOrder: string[]
   sideOrder: string[]
+  /** ผู้เล่นเลือกฝั่งแท็บข้างเองแล้ว (ไม่มี = ใช้ค่าเริ่มต้นใหม่: ซ้าย — ผู้สร้าง 19 พ.ย.) */
+  sidePosChosen?: boolean
 }
 
 export const BOOK_THEMES: Record<BookTheme, { label: string; note: string; vars: Record<string, string> }> = {
@@ -68,7 +70,7 @@ export const CHARMS: Record<BookCharm, { icon: string; label: string }> = {
 }
 
 export const TOP_IDS = ['party', 'calendar', 'storage', 'tech', 'quests', 'guild', 'options']
-export const SIDE_IDS = ['make', 'store', 'food', 'infra', 'light', 'build', 'defend', 'tools']
+export const SIDE_IDS = ['make', 'saddle', 'store', 'food', 'infra', 'light', 'build', 'defend', 'tools']
 
 export function defaultBook(): BookStyle {
   const name = useGame.getState().save?.player.name ?? ''
@@ -81,7 +83,7 @@ export function defaultBook(): BookStyle {
     corners: true,
     charm: 'none',
     topPos: 'top',
-    sidePos: 'right',
+    sidePos: 'left',
     density: 'detailed',
     listSide: 'right',
     topOrder: [...TOP_IDS],
@@ -94,13 +96,14 @@ export function bookStyle(): BookStyle {
   const d = defaultBook()
   if (!b) return d
   const fix = (order: string[] | undefined, all: string[]) => [...(order ?? []).filter((x) => all.includes(x)), ...all.filter((x) => !(order ?? []).includes(x))]
-  return { ...d, ...b, topOrder: fix(b.topOrder, TOP_IDS), sideOrder: fix(b.sideOrder, SIDE_IDS) }
+  // แท็บข้าง (สร้าง จัดเก็บ …) ย้ายไปฝั่งซ้ายเป็นค่าเริ่มต้น — เซฟเก่าที่ยังไม่เคยเลือกเองก็ย้ายด้วย
+  return { ...d, ...b, sidePos: b.sidePosChosen ? b.sidePos : 'left', topOrder: fix(b.topOrder, TOP_IDS), sideOrder: fix(b.sideOrder, SIDE_IDS) }
 }
 
 export function setBook(patch: Partial<BookStyle>) {
   const g = useGame.getState()
   if (!g.save) return
-  useGame.setState({ save: { ...g.save, book: { ...bookStyle(), ...patch } }, dirty: true })
+  useGame.setState({ save: { ...g.save, book: { ...bookStyle(), ...patch, ...('sidePos' in patch ? { sidePosChosen: true } : {}) } }, dirty: true })
 }
 
 /** คืนค่าเริ่มต้น: เลือกได้ว่าจะคืนแค่รูปลักษณ์ หรือแค่โครงสร้าง หรือทั้งหมด */
