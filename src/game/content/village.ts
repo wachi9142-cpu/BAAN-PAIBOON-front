@@ -7,6 +7,8 @@ export type Vec2 = [number, number]
 export type PlaceKind =
   | 'temple'
   | 'pond'
+  | 'overgrown'
+  | 'woodyard'
   | 'ricefield'
   | 'questboard'
   | 'shop'
@@ -55,6 +57,10 @@ export interface Plot {
   price: number
   /** ตำแหน่งบ้านภายในแปลง (relative to center) */
   houseOffset: Vec2
+  /** ป้ายชื่อบ้าน (ไม่ใส่ = "บ้านของ<ชื่อผู้เล่น>") */
+  houseName?: string
+  /** หันหน้าบ้าน (เรเดียน · 0 = หันไปทาง +z) */
+  houseRot?: number
 }
 
 export interface Road {
@@ -76,25 +82,27 @@ export const ROADS: Road[] = [
   // ถนนใหญ่ตัดผ่านหมู่บ้าน (ตะวันตก–ตะวันออก)
   { from: [-88, 0], to: [88, 0], width: 7, surface: 'concrete' },
   // สี่แยกกลางหมู่บ้าน: แยกเหนือไปทุ่งนา · แยกใต้ไปวัด
-  { from: [0, 3.5], to: [0, 50], width: 5 },
-  { from: [0, -3.5], to: [0, -38], width: 5 },
+  { from: [0, 3.5], to: [0, 51], width: 7 },
+  { from: [0, -3.5], to: [0, -38], width: 7 },
   // ซอย 1–5 (ทุกซอยมีร้านประจำซอย)
-  { from: [30, 3.5], to: [30, 60], width: 3.5 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
+  { from: [30, 3.5], to: [30, 60], width: 7 }, // ซอย 1 ไปบ้านผู้เล่น · ร้านต้นไม้
+  // แยกจากซอย 1 ไปทางตะวันออก เลียบรั้วด้านหน้าบ้านแม่ฉัตร (ผู้สร้าง 19 พ.ย. 2569)
+  { from: [33.5, 48.6], to: [72, 48.6], width: 7 },
   { from: [-37.5, 3.5], to: [-37.5, 116.5], width: 7 }, // ซอย 2 (ถนนดินแดง 2 เลน) · ร้านข้าวแกง · บ่อปลา · บ้านตารัง–ยายเลียน
   // ซอย 2: ช่วงแรกบ้าน 2–3 หลัง → คอกควาย ยุ้งข้าว พื้นที่ส่วนบุคคล (มีรั้ว) → สี่แยก (ทางสี่แพร่ง)
   // แยกขวา (ตะวันออก) = ถนนดินแดงเข้ากลุ่มบ้านตารัง–ยายเลียน (บ้านตาอยู่เหนือถนน · บ้านพ่อน้องน้ำฝนอยู่ตรงข้าม) · แยกซ้ายไปทุ่งนา
-  { from: [-34, 55], to: [25, 55], width: 3.5 },
+  { from: [-34, 54.5], to: [26.5, 54.5], width: 7 },
   // หลังรั้วฝั่งเหนือของบ้านฟ่าง = ถนนดินแดงแนวนอน 2 เลน ต่อซอย 2 กับถนนเลียบรั้วตะวันออก (ขอบเดินได้ของแผนที่ 120)
   { from: [-41, 113], to: [25, 113], width: 7 },
-  { from: [-41, 55], to: [-69, 55], width: 3 }, // แยกซ้ายเลียบลานหน้าบ้านยายวาน
-  { from: [66, -3.5], to: [66, -36], width: 3.5 }, // ซอย 3 · ร้านเครื่องมือช่าง
-  { from: [-37.5, -3.5], to: [-37.5, -30], width: 7 }, // ซอย 4 (2 เลน ตรงแนวซอย 2) · ร้านจักสาน (ตรงแนวเดียวกับซอย 2 ข้ามถนนใหญ่เป็นสี่แยก)
-  { from: [-80, 3.5], to: [-80, 28], width: 3.5 }, // ซอย 5 · ร้านอาหารสัตว์ (ปลายหมู่บ้านฝั่งตะวันตก ห่างซอย 2)
+  { from: [-41, 54.5], to: [-69, 54.5], width: 7 }, // แยกซ้ายเลียบลานหน้าบ้านยายวาน
+  { from: [66, -3.5], to: [66, -36], width: 7 }, // ซอย 3 · ร้านเครื่องมือช่าง
+  { from: [-37.5, -3.5], to: [-37.5, -37], width: 7 }, // ซอย 4 (2 เลน ตรงแนวซอย 2) · ร้านจักสาน (ตรงแนวเดียวกับซอย 2 ข้ามถนนใหญ่เป็นสี่แยก)
+  { from: [-80, 3.5], to: [-80, 28], width: 7 }, // ซอย 5 · ร้านอาหารสัตว์ (ปลายหมู่บ้านฝั่งตะวันตก ห่างซอย 2)
   // ซอย 6 ซอยร้านค้า: ตรงแนวซอย 5 ข้ามถนนใหญ่ (สี่แยก) ลงไปชนถนนหน้าโรงเรียน · ร้านเรียงสองฝั่ง
-  { from: [-80, -3.5], to: [-80, -37], width: 3.5 },
+  { from: [-80, -3.5], to: [-80, -37], width: 7 },
   // ถนนเข้าโรงเรียน + ถนนหน้าโรงเรียน (คอนกรีต 2 เลน วิ่งแนวนอนขนานหน้าโรงเรียน)
   { from: [-62, -3.5], to: [-62, -37], width: 7, surface: 'concrete' },
-  { from: [-82, -40.5], to: [-21, -40.5], width: 7, surface: 'concrete' },
+  { from: [-83.5, -40.5], to: [-21, -40.5], width: 7, surface: 'concrete' },
 ]
 
 export const PLACES: Place[] = [
@@ -179,15 +187,15 @@ export const PLACES: Place[] = [
     solidRadius: 0,
   },
   // ---------- ร้านประจำซอย (ขายของต่างกัน) ----------
-  { id: 'shop-plants', name: 'ร้านต้นไม้ลุงชิต (ซอย 1)', kind: 'shop', style: 'stall', color: '#5f9e47', pos: [35.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'เมล็ดผัก ต้นกล้า และของทำสวน', solidRadius: 0 },
+  { id: 'shop-plants', name: 'ร้านต้นไม้ลุงชิต (ซอย 1)', kind: 'shop', style: 'stall', color: '#5f9e47', pos: [36.1, 8], rotation: Math.PI, size: [6, 5], arriveText: 'เมล็ดผัก ต้นกล้า และของทำสวน', solidRadius: 0 },
   { id: 'shop-food', name: 'ร้านข้าวแกงป้านวล (ซอย 2)', kind: 'shop', style: 'stall', color: '#e0802e', pos: [-44.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'ข้าวแกง ขนม น้ำดื่ม กินอิ่มเติมแรง', solidRadius: 0 },
-  { id: 'shop-tools', name: 'ร้านเครื่องมือช่างหน่อย (ซอย 3)', kind: 'shop', style: 'stall', color: '#4a6a8a', pos: [71.5, -8], size: [6, 5], arriveText: 'ขวาน ค้อน เลื่อย มีดพร้า เครื่องมือช่างครบ', solidRadius: 0 },
+  { id: 'shop-tools', name: 'ร้านเครื่องมือช่างหน่อย (ซอย 3)', kind: 'shop', style: 'stall', color: '#4a6a8a', pos: [72.1, -8], size: [6, 5], arriveText: 'ขวาน ค้อน เลื่อย มีดพร้า เครื่องมือช่างครบ', solidRadius: 0 },
   { id: 'shop-craft', name: 'ร้านจักสานยายจันทร์ (ซอย 4)', kind: 'shop', style: 'stall', color: '#b8904a', pos: [-29.5, -9], size: [6, 5], arriveText: 'กระเป๋าสาน ย่าม เชือกกล้วย งานจักสานฝีมือคนในหมู่บ้าน', solidRadius: 0 },
-  { id: 'shop-pet', name: 'ร้านอาหารสัตว์พี่แดง (ซอย 5)', kind: 'shop', style: 'stall', color: '#c0504a', pos: [-85.5, 8], rotation: Math.PI, size: [6, 5], arriveText: 'อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์', solidRadius: 0 },
+  { id: 'shop-pet', name: 'ร้านอาหารสัตว์พี่แดง (ซอย 5)', kind: 'shop', style: 'stall', color: '#c0504a', pos: [-86.1, 8], rotation: Math.PI, size: [6, 5], arriveText: 'อาหารสัตว์ ผลไม้ล่อสัตว์ และคฑาจับสัตว์', solidRadius: 0 },
   // ซอย 6 ซอยร้านค้า (ชื่อร้าน/เจ้าของเปลี่ยนได้ภายหลัง)
-  { id: 'shop-grocery', name: 'ร้านขายของชำยายบุญ (ซอย 6)', kind: 'shop', style: 'stall', color: '#5a8fc0', pos: [-75, -11], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ขนม น้ำดื่ม ของใช้ในบ้าน ของกินเล่น', solidRadius: 0 },
-  { id: 'shop-build', name: 'ร้านวัสดุก่อสร้างลุงเปีย (ซอย 6)', kind: 'shop', style: 'stall', color: '#8a8f96', pos: [-75, -26], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ไม้กระดาน หิน เชือก วัสดุสร้างบ้าน', solidRadius: 0 },
-  { id: 'shop-fishing', name: 'ร้านเบ็ดและเหยื่อน้าสิงห์ (ซอย 6)', kind: 'shop', style: 'stall', color: '#3f8f86', pos: [-85, -18], rotation: Math.PI / 2, size: [5, 6], arriveText: 'เบ็ดตกปลา เหยื่อ รับซื้อปลาและดอกบัว', solidRadius: 0 },
+  { id: 'shop-grocery', name: 'ร้านขายของชำยายบุญ (ซอย 6)', kind: 'shop', style: 'stall', color: '#5a8fc0', pos: [-73.9, -11], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ขนม น้ำดื่ม ของใช้ในบ้าน ของกินเล่น', solidRadius: 0 },
+  { id: 'shop-build', name: 'ร้านวัสดุก่อสร้างลุงเปีย (ซอย 6)', kind: 'shop', style: 'stall', color: '#8a8f96', pos: [-73.9, -26], rotation: -Math.PI / 2, size: [5, 6], arriveText: 'ไม้กระดาน หิน เชือก วัสดุสร้างบ้าน', solidRadius: 0 },
+  { id: 'shop-fishing', name: 'ร้านเบ็ดและเหยื่อน้าสิงห์ (ซอย 6)', kind: 'shop', style: 'stall', color: '#3f8f86', pos: [-86.1, -18], rotation: Math.PI / 2, size: [5, 6], arriveText: 'เบ็ดตกปลา เหยื่อ รับซื้อปลาและดอกบัว', solidRadius: 0 },
   // ---------- บอร์ดประกาศ 3 จุด ----------
   {
     id: 'questboard',
@@ -213,7 +221,7 @@ export const PLACES: Place[] = [
     id: 'board-headman',
     name: 'บอร์ดประกาศหน้าบ้านผู้ใหญ่บ้าน',
     kind: 'questboard',
-    pos: [27, 46],
+    pos: [25.9, 46],
     size: [3, 1],
     rotation: Math.PI / 2,
     arriveText: 'ประกาศจากผู้ใหญ่บ้าน งานช่วยเหลือชาวบ้าน และตามหาของหาย',
@@ -233,7 +241,8 @@ export const PLACES: Place[] = [
     id: 'pond',
     name: 'บ่อปลาลุงเขียว',
     kind: 'pond',
-    pos: [-52, 38],
+    // ผู้สร้าง 19 พ.ย. 2569: ที่เดิม (−52, 38) เป็นบ้านคนทำฟืนขาย — ย้ายบ่อมาที่ว่างทางใต้ใกล้ ๆ
+    pos: [-64, 20],
     size: [20, 14],
     arriveText: 'บ่อปลาดุกของลุงเขียว · ไปริมบ่อหรือท่าน้ำแล้วกด E: ตกปลา เล่นน้ำ เสื้อชูชีพ พายเรือ เก็บบัว',
     solidRadius: 0,
@@ -255,8 +264,8 @@ export const PLACES: Place[] = [
   { id: 'house-thong', name: 'บ้านตาทอง', kind: 'npchouse', pos: [80, -16], size: [6, 5], color: '#a8805a', solidRadius: 4.2 },
   // กลุ่มบ้านเดียวกับบ้านตารัง–ยายเลียน (ฝั่งตรงข้ามถนนดินแดงที่ตัดเข้าไป) — ชื่อเปลี่ยนได้ภายหลัง
   // ซอย 2 ช่วงแรก: บ้าน 2–3 หลัง (หันหน้าเข้าซอย)
-  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-28.5, 10], rotation: -Math.PI / 2, size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
-  { id: 'house-noi', name: 'บ้านยายน้อย', kind: 'npchouse', pos: [-28.5, 19], rotation: -Math.PI / 2, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
+  { id: 'house-kaew', name: 'บ้านน้าแก้ว', kind: 'npchouse', pos: [-18, 10], rotation: Math.PI, size: [6, 5], color: '#d4c4a8', solidRadius: 4.2 },
+  { id: 'house-noi', name: 'บ้านยายน้อย', kind: 'npchouse', pos: [-8, 10], rotation: Math.PI, size: [6, 5], color: '#9a6a42', solidRadius: 4.2 },
   // คอกควาย ยุ้งข้าว และพื้นที่ส่วนบุคคล (กว้างประมาณบ้าน 4 หลัง มีรั้วล้อม)
   {
     id: 'farm-soi2',
@@ -268,6 +277,11 @@ export const PLACES: Place[] = [
     arriveText: 'พื้นที่ส่วนบุคคลกว้าง มีรั้วล้อม คอกควาย ยุ้งข้าว กองฟาง',
     solidRadius: 0,
   },
+  // ที่เดิมของบ้านฟ่างหลังเก่า: กลายเป็นที่รกร้าง หญ้ารก ไม้พุ่ม (ผู้สร้าง 19 พ.ย. 2569)
+  { id: 'wild-lot', name: 'ที่รกร้าง', kind: 'overgrown', pos: [44, 36], size: [20, 18], arriveText: 'หญ้าขึ้นรก ไม้พุ่มเต็มไปหมด ไม่มีใครดูแลมานาน', solidRadius: 0 },
+  // บ้านคนทำฟืนขาย (ที่เดิมของบ่อปลา) + ลานกองฟืน หันหน้าออกซอย 2
+  { id: 'house-firewood', name: 'บ้านลุงสีทำฟืนขาย', kind: 'npchouse', pos: [-50, 33.5], rotation: Math.PI / 2, size: [6, 5], color: '#8a6040', arriveText: 'ลุงสีตัดไม้ ผ่าฟืน มัดเป็นกำวางขายหน้าบ้าน', solidRadius: 4.2 },
+  { id: 'woodyard', name: 'ลานกองฟืนขาย', kind: 'woodyard', pos: [-50, 43.5], rotation: Math.PI / 2, size: [10, 7], arriveText: 'กองฟืนเรียงสูง ฟืนมัดเป็นกำ ขายกำละ 10 บาท', solidRadius: 0 },
   // ตรงข้ามบ้านตารัง–ยายเลียน (ฝั่งใต้ถนนดินแดง): บ้านพ่อน้องน้ำฝน (หลังคาม่วง) + บ้านอีก 2 หลังในกลุ่มเดียวกัน
   { id: 'house-namfon', name: 'บ้านพ่อน้องน้ำฝน', kind: 'npchouse', houseStyle: 'concrete', roof: '#4f3a7a', pos: [-28.5, 28], rotation: -Math.PI / 2, size: [6, 5], color: '#e8dcc0', solidRadius: 4.2 },
   { id: 'house-boon', name: 'บ้านลุงบุญมา', kind: 'npchouse', pos: [-19.5, 28], rotation: Math.PI, size: [6, 5], color: '#8a6040', solidRadius: 4.2 },
@@ -291,7 +305,7 @@ for (const p of PLACES) {
 }
 
 export const PLOTS: Plot[] = [
-  { id: 'start-plot', name: 'ที่ดินของฉัน', center: [44, 36], size: [20, 18], price: 0, houseOffset: [0, -3] },
+  { id: 'start-plot', name: 'ที่ดินของฉัน', houseName: 'บ้านแม่ฉัตร', houseRot: 0, center: [66, 36], size: [20, 18], price: 0, houseOffset: [0, -3] },
 ]
 
 export const STARTING_PLOT_ID = 'start-plot'

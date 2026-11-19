@@ -67,7 +67,7 @@ const p = (species: PetSpecies, color: string, patternColor: string, extra: Part
 export const WILD_SPAWNS: WildSpawn[] = [
   { id: 'w-chicken-1', pet: p('chicken', '#f3efe6', '#b8682e'), home: [10, 18], roam: 4 },
   { id: 'w-chicken-2', pet: p('chicken', '#b8682e', '#2b2a2c'), home: [-12, 9], roam: 4 },
-  { id: 'w-duck-1', pet: p('duck', '#f6f1e2', '#6b8a3a'), home: [-52, 48], roam: 5 },
+  { id: 'w-duck-1', pet: p('duck', '#f6f1e2', '#6b8a3a'), home: [-64, 30], roam: 5 },
   { id: 'w-cat-1', pet: p('cat', '#2b2a2c', '#f3ead8', { pattern: 'tuxedo' }), home: [-22, 6], roam: 5 },
   { id: 'w-dog-1', pet: p('dog', '#c8935a', '#f3ead8'), home: [20, 6], roam: 6 },
   { id: 'w-pig-1', pet: p('pig', '#f2b0b8', '#e8909c'), home: [-44, -26.5], roam: 4 },

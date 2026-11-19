@@ -72,21 +72,21 @@ function Dirt({ w, len, seed, rainy }: { w: number; len: number; seed: number; r
   return (
     <group>
       {/* ขอบทางหญ้าปนดิน */}
-      <Strip w={w + 0.9} l={len} y={0.02} color="#a8925e" />
+      <Strip w={w + 0.9} l={len} y={0.02} color="#b9a982" />
       {/* ดินแดงลูกรัง */}
-      <Strip w={w} l={len} y={0.026} color="#b8673f" />
+      <Strip w={w} l={len} y={0.026} color="#c79b7c" />
       {/* รอยล้อรถสองแนว */}
       {[-1, 1].map((s) => (
-        <Strip key={s} x={s * w * 0.22} w={w * 0.09} l={len} y={0.029} color="#a65c3a" opacity={0.75} />
+        <Strip key={s} x={s * w * 0.22} w={w * 0.09} l={len} y={0.029} color="#bb8f70" opacity={0.6} />
       ))}
       {/* หญ้าแซมกลางทาง */}
-      <Strip w={w * 0.07} l={len} y={0.028} color="#a8804c" opacity={0.5} />
+      <Strip w={w * 0.07} l={len} y={0.028} color="#b9a382" opacity={0.4} />
       {spots.map((p, i) =>
         p.kind < 0.45 ? (
           // ฝุ่นดินสีอ่อน / พื้นไม่เรียบ
           <mesh key={i} position={[p.x, 0.031, p.z]} rotation={[-Math.PI / 2, 0, p.sx]} scale={[p.sx, p.sz, 1]}>
             <circleGeometry args={[0.5, 14]} />
-            <meshStandardMaterial color="#d08a5c" roughness={1} transparent opacity={0.55} depthWrite={false} />
+            <meshStandardMaterial color="#d2ae92" roughness={1} transparent opacity={0.4} depthWrite={false} />
           </mesh>
         ) : p.kind < 0.75 ? (
           // หินกรวดเล็ก ๆ
@@ -99,7 +99,7 @@ function Dirt({ w, len, seed, rainy }: { w: number; len: number; seed: number; r
           <group key={i} position={[p.x, 0, p.z]} scale={[p.sx, 1, p.sz]}>
             <mesh position={[0, 0.032, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <circleGeometry args={[0.75, 18]} />
-              <meshStandardMaterial color="#6e4130" roughness={0.6} />
+              <meshStandardMaterial color="#8a6a58" roughness={0.8} />
             </mesh>
             <mesh position={[0, 0.034, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <circleGeometry args={[0.55, 18]} />
@@ -110,7 +110,7 @@ function Dirt({ w, len, seed, rainy }: { w: number; len: number; seed: number; r
           // หน้าแล้ง: รอยแตกดินแห้ง
           <mesh key={i} position={[p.x, 0.031, p.z]} rotation={[-Math.PI / 2, 0, p.sz]} scale={[p.sx, p.sz * 0.6, 1]}>
             <circleGeometry args={[0.45, 6]} />
-            <meshStandardMaterial color="#a65a36" roughness={1} />
+            <meshStandardMaterial color="#b98e72" roughness={1} />
           </mesh>
         ),
       )}

@@ -21,7 +21,8 @@ export function FarmLand({ w, d }: { w: number; d: number }) {
       <PicketFence x={-h} z={(-dd - 1.8) / 2} len={dd - 1.8} rot={Math.PI / 2} />
       <PicketFence x={-h} z={(dd + 1.8) / 2} len={dd - 1.8} rot={Math.PI / 2} />
       {/* คอกควาย 2 คอก */}
-      <Pen x={-4} z={-3.5} n={3} />
+      {/* คอกนี้: ควาย 3 ตัวของคนเลี้ยงควาย (VillageLife) ออกทุ่งตอนเช้า กลับตอนเย็น */}
+      <Pen x={-4} z={-3.5} n={0} />
       <Pen x={4.5} z={-3.5} n={2} />
       {/* ยุ้งข้าว 2 หลัง */}
       <Barn x={-7} z={5} />

@@ -47,12 +47,12 @@ function RoadLights() {
   const bulbs = useRef<Mesh[]>([])
   const cols = ['#ff5a5a', '#ffd23a', '#5ad06a', '#4aa8ff', '#ff8ad8']
   const poles = useMemo(() => Array.from({ length: 13 }, (_, i) => -48 + i * 8), [])
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const on = night()
-    bulbs.current.forEach((b, i) => {
+    bulbs.current.forEach((b) => {
       if (!b) return
       const m = b.material as unknown as { emissiveIntensity: number }
-      m.emissiveIntensity = on ? 1.2 + Math.sin(clock.elapsedTime * 3 + i) * 0.6 : 0.15
+      m.emissiveIntensity = on ? 0.9 : 0.1
     })
   })
   let k = 0

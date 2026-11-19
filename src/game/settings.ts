@@ -5,6 +5,8 @@ import type { SoundPeriod } from './content/soundscape'
 /** การตั้งค่าเกม (ผูกกับเครื่อง ไม่ใช่ข้อมูลเซฟ) */
 interface Settings {
   mouseSensitivity: number
+  /** โทนภาพนุ่มตา 0 (สีจัดเดิม) – 1 (นุ่มที่สุด) */
+  softLook?: number
   showLabels: boolean
   autoSave: boolean
   /** บันทึกอัตโนมัติทุกกี่นาที */
@@ -39,6 +41,7 @@ export const useSettings = create<Settings>()(
   persist(
     (set) => ({
       mouseSensitivity: 1,
+      softLook: 0.7,
       showLabels: true,
       autoSave: true,
       autoSaveMinutes: 2,

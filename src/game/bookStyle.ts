@@ -67,7 +67,7 @@ export const CHARMS: Record<BookCharm, { icon: string; label: string }> = {
   leaf: { icon: '🍃', label: 'ใบไม้' },
 }
 
-export const TOP_IDS = ['party', 'storage', 'tech', 'quests', 'guild', 'options']
+export const TOP_IDS = ['party', 'calendar', 'storage', 'tech', 'quests', 'guild', 'options']
 export const SIDE_IDS = ['make', 'store', 'food', 'infra', 'light', 'build', 'defend', 'tools']
 
 export function defaultBook(): BookStyle {

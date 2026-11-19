@@ -1,4 +1,5 @@
 import './book.css'
+import { CalendarPages } from './CalendarPages'
 import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { createPortal } from 'react-dom'
@@ -22,7 +23,7 @@ import { BOOK_THEMES, bookStyle, CHARMS, COVER_COLORS, moveInOrder, PATTERNS, re
  * หนังสือเมนูหลัก (Main Game Book) — ศูนย์รวมระบบของเกมในเล่มเดียว
  * แท็บด้านบน = ระบบหลัก · แท็บข้างขวา = หมวดสร้าง/จัดการสิ่งของ · แต่ละหมวดมีสัญลักษณ์และสีประจำ
  */
-type TopTab = 'party' | 'storage' | 'tech' | 'quests' | 'guild' | 'options'
+type TopTab = 'party' | 'calendar' | 'storage' | 'tech' | 'quests' | 'guild' | 'options'
 type SideTab = 'make' | 'store' | 'food' | 'infra' | 'light' | 'build' | 'defend' | 'tools'
 type Page = { kind: 'top'; id: TopTab } | { kind: 'side'; id: SideTab } | { kind: 'deco' }
 
@@ -33,6 +34,7 @@ const TOP: { id: TopTab; icon: string; label: string; color: string }[] = [
   { id: 'quests', icon: '📜', label: 'ภารกิจ', color: '#b0473a' },
   { id: 'guild', icon: '🛡️', label: 'กิลด์', color: '#7a4f9a' },
   { id: 'options', icon: '🔧', label: 'ออปชัน', color: '#6a6a60' },
+  { id: 'calendar', icon: '📅', label: 'ปฏิทิน', color: '#c0762e' },
 ]
 const SIDE: { id: SideTab; icon: string; label: string; color: string }[] = [
   { id: 'make', icon: '🔨', label: 'สร้าง', color: '#c0762e' },
@@ -447,6 +449,7 @@ function EntryDetail({ e, close }: { e: Entry; close: () => void }) {
 /* ───────── ระบบหลัก ───────── */
 function TopPages({ id, close }: { id: TopTab; close: () => void }) {
   if (id === 'party') return <PartyPages close={close} />
+  if (id === 'calendar') return <CalendarPages Spread={Spread} />
   if (id === 'storage')
     return (
       <Spread

@@ -74,7 +74,7 @@ export function DayLight() {
     const cl = weatherRt.cloud
     sunRef.current.intensity *= 1 - 0.78 * cl
     hemiRef.current.intensity *= 1 - 0.32 * cl
-    ambRef.current.intensity = ambRef.current.intensity * (1 - 0.2 * cl) + weatherRt.flash * 2.2
+    ambRef.current.intensity = ambRef.current.intensity * (1 - 0.2 * cl) + weatherRt.flash * 0.7
     fog.color.lerp(tmpB.set('#9aa2a8'), Math.min(0.75, cl * 0.6 + weatherRt.fog * 0.4))
     // ไฟตะเกียงยามค่ำ
     for (const l of lampRefs.current) if (l) l.intensity = s.lamps * 7

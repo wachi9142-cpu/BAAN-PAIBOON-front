@@ -36,9 +36,10 @@ export const WATER_HOURS = 12
 
 /** แปลงผักหน้าบ้าน (พิกัดโลก) — อยู่ในรั้วที่ดินของฉัน ด้านใต้ของตัวบ้าน 4 × 2 แปลง */
 export const BED_SIZE = 1.8
-export const GARDEN_BEDS: Vec2[] = [40.2, 42.6].flatMap((z) => [39.5, 41.9, 44.3, 46.7].map((x): Vec2 => [x, z]))
+/** แปลงผักหน้าบ้านแม่ฉัตร (ย้ายตามที่ดิน +22 ม. ทางตะวันออก) */
+export const GARDEN_BEDS: Vec2[] = [40.2, 42.6].flatMap((z) => [61.5, 63.9, 66.3, 68.7].map((x): Vec2 => [x, z]))
 /** โอ่งน้ำข้างแปลงผัก (ของประดับ) */
-export const GARDEN_JAR: Vec2 = [49.2, 41.4]
+export const GARDEN_JAR: Vec2 = [71.2, 41.4]
 
 /** สถานะแปลงในเซฟ — เวลานับเป็น "นาทีสัมบูรณ์" = วัน × 1440 + นาทีของวัน */
 export interface BedState {

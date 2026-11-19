@@ -40,6 +40,8 @@ import { PetCard } from './PetCard'
 import { FloatingHistory } from './EditHistoryBar'
 import { Weather } from '../scenes/Weather'
 import { Festivals } from '../scenes/Festivals'
+import { VillageLife } from '../scenes/VillageLife'
+import { StreetLights } from '../scenes/StreetLights'
 import { doFestSpot, useFestival } from '../game/festival'
 import { FESTIVALS, setDateOverride, thaiShort, today } from '../game/content/calendar'
 import { forceWeather, seasonLabel, useWeather, WEATHER } from '../game/weather'
@@ -131,6 +133,9 @@ export function WorldScreen() {
   const houseDesignId = useGame((s) => s.save?.home.houseDesignId ?? '')
   const playerName = useGame((s) => s.save?.player.name ?? '')
   const save = hasSave ? { home: { houseDesignId }, player: { name: playerName } } : null
+  // โทนภาพนุ่มตา (Soft 3D): ลดสีจัด ลดความตัดกัน — ค่าเริ่มต้นเปิด
+  const soft = useSettings((s) => s.softLook ?? 0.7)
+  const softFilter = 'saturate(' + (1 - 0.25 * soft) + ') contrast(' + (1 - 0.1 * soft) + ') brightness(' + (1 + 0.04 * soft) + ')'
   const exitToTitle = useGame((s) => s.exitToTitle)
   const setPaused = useGame((s) => s.setPaused)
   const [menu, setMenu] = useState(false)
@@ -277,12 +282,14 @@ export function WorldScreen() {
         dpr={[1, 1.5]}
         camera={{ fov: 50, near: 0.1, far: 400 }}
         gl={{ preserveDrawingBuffer: true }}
-        style={{ position: 'absolute', inset: 0 }}
+        style={{ position: 'absolute', inset: 0, filter: softFilter }}
       >
         {/* แสง ท้องฟ้า หมอก ไฟตะเกียง เปลี่ยนตามเวลาในเกม */}
         <DayLight />
         <Weather />
         <Festivals />
+        <VillageLife />
+        <StreetLights />
         <Village playerHouseId={save.home.houseDesignId} playerName={save.player.name} />
         <Villagers />
         <Wildlife />
@@ -476,6 +483,16 @@ function HudClock() {
       </button>
     </>
   )
+}
+
+/** โหมดนักพัฒนา: พิกัดผู้เล่น (ใช้ระบุจุดจากภาพหน้าจอที่ผู้สร้างส่งมา) */
+function DevCoords() {
+  const [p, setP] = useState('')
+  useEffect(() => {
+    const id = window.setInterval(() => setP(Math.round(playerPose.x) + ', ' + Math.round(playerPose.z)), 500)
+    return () => window.clearInterval(id)
+  }, [])
+  return <small style={{ opacity: 0.6, marginLeft: 8 }}>({p})</small>
 }
 
 /** วันที่ในปฏิทิน + เทศกาลที่กำลังจัด (คลิก = เปิดปฏิทินในหนังสือ) */
@@ -799,7 +816,7 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
 
   const place = nearby && !nearby.startsWith('plot:') ? PLACES.find((p) => p.id === nearby) : null
   const plot = nearby?.startsWith('plot:') ? PLOTS.find((p) => 'plot:' + p.id === nearby) : null
-  const locationName = place?.name ?? (plot ? `บ้านของ${save.player.name}` : 'หมู่บ้านไพบูลย์')
+  const locationName = place?.name ?? (plot ? plot.houseName ?? `บ้านของ${save.player.name}` : 'หมู่บ้านไพบูลย์')
   // การ์ดคำอธิบายสถานที่: โผล่ตอนเพิ่งมาถึง แล้วซ่อนเอง ให้หน้าจอเป็นของเกม
   const [cardFresh, setCardFresh] = useState(true)
   useEffect(() => {
@@ -831,7 +848,10 @@ function Hud({ onMenu, onPause, onShop }: { onMenu: () => void; onPause: () => v
         </div>
       </div>
 
-      <div className="location">📍 {locationName}</div>
+      <div className="location">
+        📍 {locationName}
+        {import.meta.env.DEV && <DevCoords />}
+      </div>
 
       <div className="toasts">
         {toasts.map((t) => (

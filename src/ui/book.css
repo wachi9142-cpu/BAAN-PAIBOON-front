@@ -159,3 +159,24 @@
   .book-ttab b { font-size: 13px; }
   .book-ttab span { font-size: 18px; }
 }
+
+/* ปฏิทิน */
+.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal-head b { font-size: 18px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-wd { text-align: center; font-size: 12px; color: var(--ink2); }
+.cal-day { position: relative; aspect-ratio: 1.15; border-radius: 8px; border: 1px solid var(--line); background: var(--cell); color: var(--ink); font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.cal-day.fest { background: color-mix(in srgb, #f2c94c 22%, var(--cell)); }
+.cal-day.today { border: 2px solid #b0473a; font-weight: 700; }
+.cal-day.sel { box-shadow: 0 0 0 3px rgba(224, 165, 42, 0.45); }
+.cal-day i { font-style: normal; font-size: 13px; line-height: 1; }
+.cal-day em { width: 6px; height: 6px; border-radius: 50%; background: #e0a52a; }
+.cal-fest { padding: 8px 10px; border-radius: 10px; background: var(--cell); border-left: 4px solid #e0a52a; display: flex; flex-direction: column; }
+.cal-fest small { color: var(--ink2); }
+.cal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.cal-list > li { display: flex; gap: 10px; padding: 10px; border-radius: 12px; background: var(--cell); border: 1.5px solid var(--line); }
+.cal-list > li.on { border-color: #e0a52a; box-shadow: 0 0 0 2px rgba(224, 165, 42, 0.3); }
+.cal-list b { display: block; }
+.cal-list small { color: var(--ink2); }
+.cal-icon { font-size: 28px; }
+.cal-changes { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }

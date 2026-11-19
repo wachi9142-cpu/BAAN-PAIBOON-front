@@ -565,6 +565,10 @@ export function SettingsTab() {
         <span>ความไวเมาส์</span>
         <input type="range" min={0.3} max={2} step={0.1} value={settings.mouseSensitivity} onChange={(e) => settings.set({ mouseSensitivity: Number(e.target.value) })} />
       </label>
+      <label className="setting" title="ลดสีจัดและความตัดกันของภาพ ให้สบายตา">
+        <span>โทนภาพนุ่มตา ({Math.round((settings.softLook ?? 0.7) * 100)}%)</span>
+        <input type="range" min={0} max={1} step={0.05} value={settings.softLook ?? 0.7} onChange={(e) => settings.set({ softLook: Number(e.target.value) })} />
+      </label>
     </div>
   )
 }

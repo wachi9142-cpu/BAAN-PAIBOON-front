@@ -12,6 +12,8 @@ import { npcPos, useTalk } from '../game/talk'
 import { playerPose } from '../game/playerPose'
 import { villagersOut } from '../game/content/daytime'
 import { useWeather } from '../game/weather'
+import { useFestival } from '../game/festival'
+import { FESTIVALS } from '../game/content/calendar'
 import { NPC_INFO } from '../game/content/villagers'
 import { TextSprite } from './TextSprite'
 
@@ -86,13 +88,20 @@ function VillagerActor({ v, index }: { v: Villager; index: number }) {
     npcPos.set(v.id, [g.position.x, g.position.z])
   })
 
+  // เทศกาล: ชาวบ้านแต่งตัวตามงาน (สงกรานต์ = เสื้อสีสด + มงกุฎดอกไม้ ฯลฯ)
+  const fests = useFestival((s) => s.active)
+  const dress = FESTIVALS.find((f) => fests.includes(f.id) && f.npcDress)?.npcDress
+  const seed = [...v.id].reduce((a, c) => a + c.charCodeAt(0), 0)
+  const dressed = dress
+    ? ({ ...v.appearance, ...(dress.accessory && v.appearance.age !== 'elder' ? { accessory: dress.accessory } : {}), ...(dress.topColors ? { topColor: dress.topColors[seed % dress.topColors.length] } : {}) } as typeof v.appearance)
+    : v.appearance
   const init: [number, number, number] = b.kind === 'walk' ? [b.path[0][0], 0, b.path[0][1]] : [b.pos[0], 0, b.pos[1]]
   const rotY =
     b.kind === 'stand' ? Math.atan2(b.faceTo[0] - b.pos[0], b.faceTo[1] - b.pos[1]) : b.kind === 'work' ? b.heading : 0
   const action = b.kind === 'work' ? b.action : b.kind === 'stand' && b.talk ? 'talk' : undefined
   return (
     <group ref={root} position={init} rotation-y={rotY}>
-      <Character appearance={v.appearance} motion={motion} action={action} tool={v.tool} />
+      <Character appearance={dressed} motion={motion} action={action} tool={v.tool} />
       <TalkMark id={v.id} />
     </group>
   )

@@ -1,5 +1,7 @@
 import { editables, useLayoutEdit } from '../game/layoutEdit'
 import { FarmLand } from './FarmLand'
+import { WoodYard } from './WoodYard'
+import { OvergrownLot } from './OvergrownLot'
 import { GrandHome } from './GrandHome'
 import { BigStore, Campus, EventGround, Garage, Lake, RoadSurface, Stall } from './VillageLayout'
 import { useGame } from '../game/store'
@@ -197,6 +199,14 @@ function PlaceMesh({ place }: { place: Place }) {
     case 'lake':
       labelY = 3
       body = <Lake w={w} d={d} />
+      break
+    case 'overgrown':
+      labelY = 3
+      body = <OvergrownLot w={w} d={d} />
+      break
+    case 'woodyard':
+      labelY = 3
+      body = <WoodYard w={w} d={d} />
       break
     case 'farm':
       labelY = 4
@@ -460,12 +470,12 @@ function PlotMesh({ plot, houseId, ownerName }: { plot: Plot; houseId?: string; 
         </mesh>
       ))}
       {houseId && (
-        <group position={[plot.houseOffset[0], 0, plot.houseOffset[1]]} rotation={[0, -Math.PI / 2, 0]}>
+        <group position={[plot.houseOffset[0], 0, plot.houseOffset[1]]} rotation={[0, plot.houseRot ?? -Math.PI / 2, 0]}>
           <House design={getHouse(houseId)} />
         </group>
       )}
       <group position={[-w / 2 + 1.5, 0, 0]}>
-        <Label text={ownerName ? `บ้านของ${ownerName}` : plot.name} y={houseId ? 8 : 2} color="#2b4a28" />
+        <Label text={plot.houseName ?? (ownerName ? `บ้านของ${ownerName}` : plot.name)} y={houseId ? 8 : 2} color="#2b4a28" />
       </group>
     </group>
   )

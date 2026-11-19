@@ -122,7 +122,7 @@ export function Weather() {
       </mesh>
       <instancedMesh ref={rain} args={[undefined, undefined, DROPS]} frustumCulled={false}>
         <boxGeometry args={[0.018, 0.55, 0.018]} />
-        <meshBasicMaterial color="#cfdbe6" transparent opacity={0.55} depthWrite={false} />
+        <meshBasicMaterial color="#dfe7ee" transparent opacity={0.3} depthWrite={false} />
       </instancedMesh>
       {puddles.map((p, i) => (
         <group key={i} position={[p.x, 0, p.z]} rotation={[0, p.rot, 0]} scale={[p.sx, 1, p.sz]}>
